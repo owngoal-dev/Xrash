@@ -27,3 +27,10 @@ ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES
 OTHER_SWIFT_FLAGS = $(inherited) -file-prefix-map $(SRCROOT)=. -file-prefix-map $(OBJROOT)/../..=DerivedData
 OTHER_CFLAGS = $(inherited) -ffile-prefix-map=$(SRCROOT)=. -ffile-prefix-map=$(OBJROOT)/../..=DerivedData
+
+// Runestone.xcframework was built with clang module debugging, so its objects
+// name `.pcm` files on the machine that built it and dsymutil warns once per
+// module, per build, about a path nobody here can supply. Only the C type
+// info of that framework's imports is lost. Drop this once the framework is
+// rebuilt with CLANG_ENABLE_MODULE_DEBUGGING = NO.
+DSYMUTIL_QUIET_OPERATION = YES

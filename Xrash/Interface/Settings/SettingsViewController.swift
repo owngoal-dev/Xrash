@@ -66,11 +66,11 @@ final class SettingsViewController: UITableViewController {
 
     init(
         library: ReportLibrary = AppEnvironment.shared.library,
-        settings: AppSettings = .shared,
         backend: ReportBackend = AppEnvironment.shared.backend
     ) {
         self.library = library
-        self.settings = settings
+        // Not a default argument: those are evaluated off the main actor.
+        settings = .shared
         self.backend = backend
         super.init(style: .insetGrouped)
     }

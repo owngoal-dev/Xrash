@@ -38,10 +38,11 @@ final class ReportTextViewController: UIViewController {
     private let settings: AppSettings
     private var pinchStartScale = 1.0
 
-    init(title: String, text: String, language: Language, settings: AppSettings = .shared) {
+    init(title: String, text: String, language: Language) {
         self.text = text
         self.language = language
-        self.settings = settings
+        // Not a default argument: those are evaluated off the main actor.
+        settings = .shared
         super.init(nibName: nil, bundle: nil)
         self.title = title
     }

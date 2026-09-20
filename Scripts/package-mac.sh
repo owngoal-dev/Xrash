@@ -103,7 +103,8 @@ plutil -lint "$staged_app/Contents/Library/LaunchAgents/$agent_plist_name" >/dev
 # survived anyway.
 while IFS= read -r -d '' candidate; do
     if file "$candidate" | grep -F 'Mach-O' >/dev/null; then
-        /usr/bin/strip -xS "$candidate"
+        # A binary framework arrives stripped; saying so is not a finding.
+        /usr/bin/strip -xS "$candidate" 2> >(grep -v 'already stripped' >&2 || true)
         for private_path in "$repository_root" "${GITHUB_WORKSPACE:-}" \
             "${RUNNER_TEMP:-}" /Users/runner/work /home/runner/work; do
             [[ -z "$private_path" || "$private_path" == / ]] && continue
