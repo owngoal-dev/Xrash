@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Entitlements for xrashd inside the distributed macOS app bundle. Empty,
+	for the reason spelled out in Xrash.entitlements: a sandboxed helper
+	would be refused registration beside an unsandboxed app, and a container
+	is exactly what a process whose whole job is opening files outside one
+	must not have.
+
+	The device daemon's entitlements live in Packaging/Xrashd.entitlements
+	and are a different set entirely — that binary runs as root under a
+	bootstrap's launchd. This one runs as the logged-in user in the gui
+	domain and needs nothing.
+-->
+<plist version="1.0">
+<dict/>
+</plist>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	xrashd as a per-user LaunchAgent on macOS, for the Mac Catalyst
+	development build. `make mac-daemon` substitutes @DAEMON@ and installs
+	this into ~/Library/LaunchAgents; `make mac-daemon-uninstall` removes it.
+
+	This is not the file that ships. The sibling wiki.qaq.xrashd.agent.plist
+	is the one Scripts/package-mac.sh stages inside the bundle. The two share
+	the label, so a stale harness job makes SMAppService answer
+	kSMErrorInvalidSignature — run `make mac-daemon-uninstall` before testing
+	a zip.
+
+	On the device xrashd is a root LaunchDaemon in the system domain; here it
+	runs as the logged-in user in the gui domain, which is where the Catalyst
+	app looks the service up. The peer check is the macOS branch of
+	PeerAuthenticator: same uid, and the app built beside this binary.
+
+	No RunAtLoad and no KeepAlive, exactly as on the device: MachServices
+	demand-launches the job on the app's first lookup and the daemon exits
+	when it has been idle for a moment.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>wiki.qaq.xrashd</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>@DAEMON@</string>
+	</array>
+	<key>ProcessType</key>
+	<string>Adaptive</string>
+	<key>MachServices</key>
+	<dict>
+		<key>wiki.qaq.xrash.service</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

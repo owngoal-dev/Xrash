@@ -1,0 +1,47 @@
+{
+  "class": "DepictionTabView",
+  "minVersion": "0.4",
+  "headerImage": "https://raw.githubusercontent.com/owngoal-dev/Xrash/main/Documents/banner.png",
+  "tabs": [
+    {
+      "class": "DepictionStackView",
+      "tabname": "Details",
+      "views": [
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Understand Every Crash",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionHeaderView",
+          "title": "Description"
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Read, symbolicate, and share the crash reports on your iPhone or iPad, on supported roothide and rootless bootstraps.\n\n## Features\n\n- **Every report:** Crashes, hangs, memory events, panics, and diagnostics, grouped into Apps, Services, Jetsam, and Others, with search and filters.\n- **Plain words:** The exception and termination reason explained in a sentence, next to the raw codes.\n- **Symbolicate:** Name frames from the binaries on the device and the system symbol cache, with Swift and C++ names demangled.\n- **Your dSYMs:** Import a dSYM to get file names and line numbers for your own code.\n- **Suspects:** See which tweak sits on the crashed thread and the package that installed it, ranked with reasons.\n- **Report a crash:** Combine related reports from several processes into one file with a PDF, and optionally the binaries involved.\n\nXrash installs no hooks and keeps nothing running in the background. Its root helper starts on demand and exits when idle.\n\nRequires iOS 15 or later and custom firmware with a roothide or rootless bootstrap.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionHeaderView",
+          "title": "Information"
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "iOS Versions",
+          "text": "15 or later"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Developer",
+          "text": "OwnGoal Studio"
+        }
+      ]
+    }
+  ]
+}

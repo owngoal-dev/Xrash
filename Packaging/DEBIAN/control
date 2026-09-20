@@ -1,0 +1,17 @@
+Package: @PACKAGE_ID@
+Name: Xrash
+Version: @VERSION@
+Architecture: @ARCHITECTURE@
+Description: Crash reporter and symbolicator for @FLAVOR@ bootstraps
+ Read every crash, hang and memory report on the device, symbolicated against
+ system frameworks and your own dSYMs, then bundle related reports into one
+ file to share.
+Icon: https://owngoal-dev.github.io/Xrash/icon.png
+Depiction: https://owngoal-dev.github.io/Xrash/
+SileoDepiction: https://owngoal-dev.github.io/Xrash/depiction.json
+Maintainer: OwnGoal Studio <not-gonna-reply@owngoal.dev>
+Author: OwnGoal Studio <not-gonna-reply@owngoal.dev>
+Section: Utilities
+Priority: optional
+Depends: firmware (>= 15.0), uikittools, launchctl
+Installed-Size: @INSTALLED_SIZE@

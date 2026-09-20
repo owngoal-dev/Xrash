@@ -1,0 +1,32 @@
+.DS_Store
+**/.DS_Store
+
+# Xcode / local build
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+# The symbol tests' fixture; without it the harness passes here and fails in CI.
+!Packages/XrashKit/Tests/XrashSymbolsTests/Fixtures/fixture.dylib.dSYM
+
+# Per-developer signing and local overrides
+Configuration/Developer*.xcconfig
+!Configuration/Developer.xcconfig.example
+
+# Editor / agent local state
+.claude/
+.cursor/
+.vscode/
+*.swp
+*~
+
+# SwiftPM / misc
+.build/
+.swiftpm/
+.docs/
+.tmp/

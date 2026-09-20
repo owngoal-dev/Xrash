@@ -1,0 +1,288 @@
+# Named Release so the Pages workflow observes its completion.
+#
+# One product, one machine, all at once: the host tests, the roothide package,
+# the rootless package and the macOS zip each get their own runner and share
+# nothing but `upload-artifact`. `release` is the merge — tag only, and only
+# when every job before it passed.
+#
+# The macOS zip is ad-hoc signed. A runner has no Developer ID certificate and
+# nothing here should invent one, so the artifact is exactly what `make mac-zip`
+# produces on a checkout with no identity; whoever installs it clears the
+# quarantine bit once, and the release notes say so. Signing it properly is a
+# local `make mac-zip MAC_ZIP_IDENTITY=...` away.
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xrash-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_ANALYTICS: "1"
+
+jobs:
+  test:
+    name: Run host tests
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run the XrashKit harness
+        run: make harness
+
+  package-deb:
+    name: Build and verify the ${{ matrix.flavor }} package
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - flavor: roothide
+            prefix: ""
+          - flavor: rootless
+            prefix: /var/jb
+
+    steps:
+      - name: Configure build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "DERIVED_DATA=$RUNNER_TEMP/xrash-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install packaging dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          formulae=()
+          command -v dpkg-deb >/dev/null 2>&1 || formulae+=(dpkg)
+          command -v ldid >/dev/null 2>&1 || formulae+=(ldid)
+          if (( ${#formulae[@]} > 0 )); then
+            brew install "${formulae[@]}"
+          fi
+
+      - name: Apply release version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./Scripts/apply-version.sh "$GITHUB_REF_NAME" "$GITHUB_RUN_NUMBER"
+
+      - name: Build the package with Xcode
+        run: |
+          xcodebuild -version
+          make deb FLAVOR=${{ matrix.flavor }} CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA" SKIP_HARNESS=1
+
+      - name: Verify the package
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(make --no-print-directory print-version)"
+          APP_PATH="$DERIVED_DATA/Build/Products/Release-iphoneos/Xrash.app"
+          DAEMON_PATH="$DERIVED_DATA/Build/Products/Release-iphoneos/xrashd"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            test "$VERSION" = "${GITHUB_REF_NAME#v}"
+          fi
+          test "$(lipo -archs "$APP_PATH/Xrash")" = "arm64"
+          test "$(lipo -archs "$DAEMON_PATH")" = "arm64"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$APP_PATH/Info.plist")" = "AppIcon"
+          make audit-floor CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA"
+          DEB_PATH="$(make --no-print-directory print-deb-path FLAVOR=${{ matrix.flavor }})"
+          ARCHITECTURE="$(dpkg-deb -f "$DEB_PATH" Architecture)"
+          ./Scripts/verify-deb.sh "$DEB_PATH" wiki.qaq.xrash "$VERSION" "$ARCHITECTURE" "${{ matrix.prefix }}"
+          dpkg-deb --info "$DEB_PATH"
+          dpkg-deb --contents "$DEB_PATH"
+
+      # Each flavour is its own build on its own machine, so each ships the
+      # dSYMs of its own binaries; neither strip nor ldid touches LC_UUID.
+      - name: Archive dSYMs and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(make --no-print-directory print-version)"
+          DSYM_ZIP="$PWD/build/Packages/Xrash_${VERSION}_${{ matrix.flavor }}_dSYMs.zip"
+          (cd "$DERIVED_DATA/Build/Products/Release-iphoneos" && zip -qry "$DSYM_ZIP" *.dSYM)
+          cd build/Packages
+          shasum -a 256 *.deb *_dSYMs.zip | tee SHA256SUMS.${{ matrix.flavor }}
+          {
+            echo "### ${{ matrix.flavor }}"
+            echo
+            echo '```'
+            cat SHA256SUMS.${{ matrix.flavor }}
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: xrash-${{ matrix.flavor }}
+          path: |
+            build/Packages/*.deb
+            build/Packages/*_dSYMs.zip
+            build/Packages/SHA256SUMS.${{ matrix.flavor }}
+          if-no-files-found: error
+          retention-days: 30
+
+  package-macos:
+    name: Build and verify the macOS app
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Configure build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "DERIVED_DATA=$RUNNER_TEMP/xrash-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # No ldid or dpkg here: `make mac-zip` deliberately does not depend on
+      # `make check`, so a machine with nothing but Xcode can produce the zip.
+      - name: Apply release version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./Scripts/apply-version.sh "$GITHUB_REF_NAME" "$GITHUB_RUN_NUMBER"
+
+      # MAC_ZIP_IDENTITY defaults to "-": the ad-hoc path in this file's header.
+      - name: Build the macOS app
+        run: |
+          xcodebuild -version
+          make mac-zip DERIVED_DATA="$DERIVED_DATA"
+
+      - name: Verify the bundled helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(mktemp -d)/Xrash.app"
+          ditto -x -k build/Packages/Xrash-*-macos.zip "$(dirname "$app")"
+          test -x "$app/Contents/MacOS/xrashd" || { echo "the helper is missing" >&2; exit 1; }
+          test -f "$app/Contents/Library/LaunchAgents/wiki.qaq.xrashd.plist" \
+            || { echo "the bundled agent plist is missing" >&2; exit 1; }
+          lipo -info "$app/Contents/MacOS/Xrash"
+          lipo -info "$app/Contents/MacOS/xrashd"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+      # The app is the Catalyst build, the helper the plain macOS one.
+      - name: Archive dSYMs and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(make --no-print-directory print-version)"
+          DSYM_ZIP="$PWD/build/Packages/Xrash_${VERSION}_macos_dSYMs.zip"
+          (cd "$DERIVED_DATA/Build/Products" && zip -qry "$DSYM_ZIP" Release-maccatalyst/*.dSYM Release/*.dSYM)
+          cd build/Packages
+          shasum -a 256 *.zip | tee SHA256SUMS.macos
+
+      - name: Upload the app
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: xrash-macos
+          path: |
+            build/Packages/*.zip
+            build/Packages/SHA256SUMS.macos
+          if-no-files-found: error
+          retention-days: 30
+
+  # Skipped unless every job above passed, so a failed test or package fails
+  # the run without publishing. It only moves files: no checkout, no Xcode.
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, package-deb, package-macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: xrash-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        shell: bash
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          cat SHA256SUMS.roothide SHA256SUMS.rootless SHA256SUMS.macos >SHA256SUMS
+          rm SHA256SUMS.roothide SHA256SUMS.rootless SHA256SUMS.macos
+          sha256sum -c SHA256SUMS
+          roothide_deb="$(ls ./*_iphoneos-arm64e.deb)"
+          rootless_deb="$(ls ./*_iphoneos-arm64.deb)"
+          mac_zip="Xrash-${version}-macos.zip"
+          test -f "$mac_zip"
+          for deb_path in "$roothide_deb" "$rootless_deb"; do
+            test "$(dpkg-deb -f "$deb_path" Version)" = "$version"
+          done
+          dsym_zips=(./*_dSYMs.zip)
+          [[ "${#dsym_zips[@]}" -eq 3 ]] || { echo "expected 3 dSYM zips, got ${#dsym_zips[@]}" >&2; exit 1; }
+          notes="$(mktemp "${TMPDIR:-/tmp}/xrash-notes.XXXXXX")"
+          trap 'rm -f "$notes"' EXIT
+          {
+            echo "Xrash $version."
+            echo
+            echo "| Platform | Package |"
+            echo "| --- | --- |"
+            printf '| roothide | `%s` |\n' "$(basename "$roothide_deb")"
+            printf '| rootless (/var/jb) | `%s` |\n' "$(basename "$rootless_deb")"
+            printf '| macOS | `%s` |\n' "$mac_zip"
+            echo
+            echo '```sh'
+            echo "sudo dpkg -i <package>.deb"
+            echo '```'
+            echo
+            echo "The macOS app is ad-hoc signed; after unzipping, clear the quarantine"
+            echo "bit once: \`xattr -dr com.apple.quarantine Xrash.app\`."
+            echo
+            echo "SHA-256 sums are in \`SHA256SUMS\`."
+            echo
+            echo "- Commit: \`$GITHUB_SHA\`"
+          } >"$notes"
+          assets=("$roothide_deb" "$rootless_deb" "$mac_zip" "${dsym_zips[@]}" SHA256SUMS)
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" --clobber "${assets[@]}"
+            gh release edit "$GITHUB_REF_NAME" --notes-file "$notes"
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --verify-tag \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file "$notes" \
+              "${assets[@]}"
+          fi

@@ -1,0 +1,50 @@
+Incident Identifier: AAAAAAAA-0000-0000-0000-000000000007
+CrashReporter Key:   0000000000000000000000000000000000000000
+Hardware Model:      iPhone8,1
+Process:             Crasher [412]
+Path:                /var/containers/Bundle/Application/0000/Crasher.app/Crasher
+Identifier:          wiki.qaq.crasher
+Version:             1.4 (17)
+Code Type:           ARM-64 (Native)
+Role:                Foreground
+Parent Process:      launchd [1]
+Coalition:           wiki.qaq.crasher [318]
+
+Date/Time:           2019-01-02 12:34:56.1234 +0900
+Launch Time:         2019-01-02 12:34:50.0000 +0900
+OS Version:          iPhone OS 15.0 (19A346)
+Baseband Version:    n/a
+Report Version:      104
+
+Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
+Exception Subtype: KERN_INVALID_ADDRESS at 0x0000000000000010
+Exception Codes: 0x0000000000000001, 0x0000000000000010
+VM Region Info: 0x10 is not in any region.
+Termination Reason: SIGNAL 11 Segmentation fault: 11
+Terminating Process: exc handler [412]
+Triggered by Thread:  0
+
+Thread 0 name:  Dispatch queue: com.apple.main-thread
+Thread 0 Crashed:
+0   Crasher                       	0x0000000100088410 -[RootViewController tapped:] + 84
+1   UIKitCore                     	0x00000001a0102f38 -[UIApplication sendAction:to:from:forEvent:] + 96
+2   libdyld.dylib                 	0x00000001a4004104 0x1a4000000 + 16644
+3   Crasher                       	0x0000000100084000 main + 24
+
+Thread 1:
+0   libsystem_kernel.dylib        	0x00000001b2008a1c mach_msg2_trap + 8
+
+Thread 0 crashed with ARM Thread State (64-bit):
+    x0: 0x0000000000000000   x1: 0x0000000000000001   x2: 0x0000000000000002   x3: 0x0000000000000003
+    x4: 0x0000000000000004   x5: 0x0000000000000005   x6: 0x0000000000000006   x7: 0x0000000000000007
+   x28: 0x000000000000001c    fp: 0x000000016f0d1234    lr: 0x00000001a0102f38
+    sp: 0x000000016f0d1200    pc: 0x0000000100088410  cpsr: 0x0000000060000000
+   far: 0x0000000000000010   esr: 0x0000000092000006 (Data Abort) byte read Translation fault
+
+Binary Images:
+0x100080000 - 0x1000a7fff Crasher arm64  <11111111222233334444555555555555> /var/containers/Bundle/Application/0000/Crasher.app/Crasher
+0x1a0000000 - 0x1a2ffffff UIKitCore arm64e  <aaaaaaaabbbbccccddddeeeeeeeeeeee> /System/Library/PrivateFrameworks/UIKitCore.framework/UIKitCore
+0x1a4000000 - 0x1a4023fff libdyld.dylib arm64e  <99999999888877776666555555555555> /usr/lib/system/libdyld.dylib
+0x1b2000000 - 0x1b203ffff libsystem_kernel.dylib arm64e  <12345678abcddcba0000ffffffffffff> /usr/lib/system/libsystem_kernel.dylib
+
+EOF

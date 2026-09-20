@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	xrashd as a *bundled* LaunchAgent, staged by Scripts/package-mac.sh into
+	Xrash.app/Contents/Library/LaunchAgents/ and registered on first launch
+	with SMAppService.agent(plistName:).
+
+	This is not the file `make mac-run` installs. That one is the sibling
+	wiki.qaq.xrashd.plist, an @DAEMON@-substituted sidecar dropped into
+	~/Library/LaunchAgents pointing at a DerivedData binary. The two must
+	never both be loaded: SMAppService checks that the job it manages is the
+	one inside the bundle, and a stale harness job holding the same label
+	answers with kSMErrorInvalidSignature.
+
+	BundleProgram is resolved relative to the bundle, which is the point: the
+	helper moves, updates and is deleted with the app instead of leaving a
+	dangling ~/Library/LaunchAgents entry behind.
+
+	AssociatedBundleIdentifiers is what makes Login Items in System Settings
+	name the app rather than a bare "wiki.qaq.xrashd", so someone looking for
+	what asked to run in the background finds something they recognise.
+
+	No RunAtLoad and no KeepAlive. xrashd is on-demand on every platform: it
+	opens the files the app cannot and exits when idle, and MachServices is
+	what brings it back on the next lookup.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>wiki.qaq.xrashd</string>
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/xrashd</string>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>wiki.qaq.xrash</string>
+	</array>
+	<key>ProcessType</key>
+	<string>Adaptive</string>
+	<key>MachServices</key>
+	<dict>
+		<key>wiki.qaq.xrash.service</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

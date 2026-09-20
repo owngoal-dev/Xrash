@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Entitlements for the distributed macOS build of the app. Deliberately
+	empty, and it has to stay that way.
+
+	The App Sandbox is not a fallback here, it is unsupported. Two reasons,
+	either of which is enough: macOS 14.2's Background Task Management
+	refuses to let a sandboxed app register an unsandboxed SMAppService job,
+	and the reports the app exists to read live in ~/Library/Logs and
+	/Library/Logs — outside any container, reachable by an ordinary
+	unsandboxed process of the logged-in user and by nothing else. Hardening
+	comes from Hardened Runtime (codesign --options runtime) instead.
+
+	The Catalyst build also carries no client entitlement: an iOS-family
+	binary holding an entitlement no provisioning profile granted will not
+	launch on macOS at all. The macOS branch of PeerAuthenticator
+	authenticates by uid and sibling path in its place.
+
+	This file is why the app target must never gain a CODE_SIGN_ENTITLEMENTS
+	build setting: the device package needs Packaging/Xrash.entitlements and
+	this one needs none, and both are applied at signing time by the
+	packaging scripts, never by xcodebuild. `make mac-zip-check` fails if
+	com.apple.security.app-sandbox appears here.
+-->
+<plist version="1.0">
+<dict/>
+</plist>

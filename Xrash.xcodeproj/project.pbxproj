@@ -1,0 +1,613 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A50000000000000000000040 /* XrashKit in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000041 /* XrashKit */; };
+		A50000000000000000000050 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000051 /* SnapKit */; };
+		A50000000000000000000052 /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000053 /* Then */; };
+		A50000000000000000000054 /* AlertController in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000055 /* AlertController */; };
+		A50000000000000000000056 /* SPIndicator in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000057 /* SPIndicator */; };
+		A50000000000000000000058 /* RunestoneEditor in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000059 /* RunestoneEditor */; };
+		A5000000000000000000005A /* RunestoneLanguageSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A5000000000000000000005B /* RunestoneLanguageSupport */; };
+		A5000000000000000000005C /* RunestoneThemeSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A5000000000000000000005D /* RunestoneThemeSupport */; };
+		A51000000000000000000040 /* XrashProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = A51000000000000000000041 /* XrashProtocol */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A51000000000000000000020 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A50000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A51000000000000000000010;
+			remoteInfo = xrashd;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A50000000000000000000002 /* Xrash.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Xrash.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A51000000000000000000001 /* xrashd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xrashd; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A50000000000000000000003 /* Xrash */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Xrash;
+			sourceTree = "<group>";
+		};
+		A51000000000000000000003 /* xrashd */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = xrashd;
+			sourceTree = "<group>";
+		};
+		A52000000000000000000001 /* Configuration */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A50000000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				A50000000000000000000040 /* XrashKit in Frameworks */,
+				A50000000000000000000050 /* SnapKit in Frameworks */,
+				A50000000000000000000052 /* Then in Frameworks */,
+				A50000000000000000000054 /* AlertController in Frameworks */,
+				A50000000000000000000056 /* SPIndicator in Frameworks */,
+				A50000000000000000000058 /* RunestoneEditor in Frameworks */,
+				A5000000000000000000005A /* RunestoneLanguageSupport in Frameworks */,
+				A5000000000000000000005C /* RunestoneThemeSupport in Frameworks */,
+			);
+		};
+		A51000000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				A51000000000000000000040 /* XrashProtocol in Frameworks */,
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000000000000000000004 = {
+			isa = PBXGroup;
+			children = (
+				A52000000000000000000001 /* Configuration */,
+				A50000000000000000000003 /* Xrash */,
+				A51000000000000000000003 /* xrashd */,
+				A50000000000000000000005 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50000000000000000000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A50000000000000000000002 /* Xrash.app */,
+				A51000000000000000000001 /* xrashd */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000010 /* Xrash */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A50000000000000000000030 /* Build configuration list for PBXNativeTarget "Xrash" */;
+			buildPhases = (
+				A50000000000000000000011 /* Sources */,
+				A50000000000000000000012 /* Frameworks */,
+				A50000000000000000000013 /* Resources */,
+				A50000000000000000000014 /* Collect Licenses */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A51000000000000000000021 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A50000000000000000000003 /* Xrash */,
+			);
+			name = Xrash;
+			packageProductDependencies = (
+				A50000000000000000000041 /* XrashKit */,
+				A50000000000000000000051 /* SnapKit */,
+				A50000000000000000000053 /* Then */,
+				A50000000000000000000055 /* AlertController */,
+				A50000000000000000000057 /* SPIndicator */,
+				A50000000000000000000059 /* RunestoneEditor */,
+				A5000000000000000000005B /* RunestoneLanguageSupport */,
+				A5000000000000000000005D /* RunestoneThemeSupport */,
+			);
+			productName = Xrash;
+			productReference = A50000000000000000000002 /* Xrash.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A51000000000000000000010 /* xrashd */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A51000000000000000000030 /* Build configuration list for PBXNativeTarget "xrashd" */;
+			buildPhases = (
+				A51000000000000000000011 /* Sources */,
+				A51000000000000000000012 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				A51000000000000000000003 /* xrashd */,
+			);
+			name = xrashd;
+			packageProductDependencies = (
+				A51000000000000000000041 /* XrashProtocol */,
+			);
+			productName = xrashd;
+			productReference = A51000000000000000000001 /* xrashd */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A50000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2710;
+				TargetAttributes = {
+					A50000000000000000000010 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					A51000000000000000000010 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = A50000000000000000000006 /* Build configuration list for PBXProject "Xrash" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				ar,
+				de,
+				es,
+				fr,
+				it,
+				ja,
+				ko,
+				"pt-BR",
+				ru,
+				vi,
+				"zh-Hans",
+				"zh-Hant",
+			);
+			mainGroup = A50000000000000000000004;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A53000000000000000000001 /* XCLocalSwiftPackageReference "Packages/XrashKit" */,
+				A54000000000000000000001 /* XCRemoteSwiftPackageReference "SnapKit" */,
+				A54000000000000000000002 /* XCRemoteSwiftPackageReference "Then" */,
+				A54000000000000000000003 /* XCRemoteSwiftPackageReference "AlertController" */,
+				A54000000000000000000004 /* XCRemoteSwiftPackageReference "SPIndicator" */,
+				A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A50000000000000000000005 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A50000000000000000000010 /* Xrash */,
+				A51000000000000000000010 /* xrashd */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A50000000000000000000013 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A50000000000000000000014 /* Collect Licenses */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			name = "Collect Licenses";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Licenses.json",
+			);
+			shellPath = /bin/sh;
+			shellScript = (
+				"exec \"$SRCROOT/Scripts/collect-licenses.py\" --project \"$SRCROOT\" --build-dir \"$BUILD_DIR\" --output \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Licenses.json\"",
+				"",
+			);
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A50000000000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		A51000000000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A51000000000000000000021 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A51000000000000000000010 /* xrashd */;
+			targetProxy = A51000000000000000000020 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A50000000000000000000007 /* Debug configuration for PBXProject "Xrash" */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = A52000000000000000000001 /* Configuration */;
+			baseConfigurationReferenceRelativePath = Development.xcconfig;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A50000000000000000000008 /* Release configuration for PBXProject "Xrash" */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = A52000000000000000000001 /* Configuration */;
+			baseConfigurationReferenceRelativePath = Release.xcconfig;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A50000000000000000000031 /* Debug configuration for PBXNativeTarget "Xrash" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/Xrash-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Xrash;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportsDocumentBrowser = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.xrash;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A50000000000000000000032 /* Release configuration for PBXNativeTarget "Xrash" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/Xrash-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Xrash;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportsDocumentBrowser = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.xrash;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A51000000000000000000031 /* Debug configuration for PBXNativeTarget "xrashd" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.xrashd;
+				PRODUCT_NAME = xrashd;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A51000000000000000000032 /* Release configuration for PBXNativeTarget "xrashd" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.xrashd;
+				PRODUCT_NAME = xrashd;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A50000000000000000000006 /* Build configuration list for PBXProject "Xrash" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A50000000000000000000007 /* Debug configuration for PBXProject "Xrash" */,
+				A50000000000000000000008 /* Release configuration for PBXProject "Xrash" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		A50000000000000000000030 /* Build configuration list for PBXNativeTarget "Xrash" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A50000000000000000000031 /* Debug configuration for PBXNativeTarget "Xrash" */,
+				A50000000000000000000032 /* Release configuration for PBXNativeTarget "Xrash" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		A51000000000000000000030 /* Build configuration list for PBXNativeTarget "xrashd" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A51000000000000000000031 /* Debug configuration for PBXNativeTarget "xrashd" */,
+				A51000000000000000000032 /* Release configuration for PBXNativeTarget "xrashd" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A53000000000000000000001 /* XCLocalSwiftPackageReference "Packages/XrashKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/XrashKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A54000000000000000000001 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.0.0;
+			};
+		};
+		A54000000000000000000002 /* XCRemoteSwiftPackageReference "Then" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/devxoul/Then";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+		A54000000000000000000003 /* XCRemoteSwiftPackageReference "AlertController" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Lakr233/AlertController";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.3;
+			};
+		};
+		A54000000000000000000004 /* XCRemoteSwiftPackageReference "SPIndicator" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ivanvorobei/SPIndicator.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.5;
+			};
+		};
+		A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Lakr233/Runestone.xcframework.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A50000000000000000000041 /* XrashKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XrashKit;
+		};
+		A50000000000000000000051 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000001 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		A50000000000000000000053 /* Then */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000002 /* XCRemoteSwiftPackageReference "Then" */;
+			productName = Then;
+		};
+		A50000000000000000000055 /* AlertController */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000003 /* XCRemoteSwiftPackageReference "AlertController" */;
+			productName = AlertController;
+		};
+		A50000000000000000000057 /* SPIndicator */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000004 /* XCRemoteSwiftPackageReference "SPIndicator" */;
+			productName = SPIndicator;
+		};
+		A50000000000000000000059 /* RunestoneEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */;
+			productName = RunestoneEditor;
+		};
+		A5000000000000000000005B /* RunestoneLanguageSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */;
+			productName = RunestoneLanguageSupport;
+		};
+		A5000000000000000000005D /* RunestoneThemeSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */;
+			productName = RunestoneThemeSupport;
+		};
+		A51000000000000000000041 /* XrashProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XrashProtocol;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A50000000000000000000001 /* Project object */;
+	validationLevel = 1;
+}

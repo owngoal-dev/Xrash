@@ -1,0 +1,151 @@
+import UIKit
+import XrashBlame
+import XrashReport
+
+/// Every binary that was mapped into the process. Searchable, because the one
+/// question asked here is "was *that* tweak loaded", and there are six hundred
+/// of them in a modern process.
+final class ImagesViewController: UITableViewController, UISearchResultsUpdating {
+    private let crash: CrashReport
+    private let packages: DpkgDatabase?
+    private var dataSource: SectionedTableDataSource<Int, String>!
+    private var shown = [BinaryImage]()
+    private var searchText = ""
+    private var focusUUID: String?
+
+    init(crash: CrashReport, packages: DpkgDatabase?) {
+        self.crash = crash
+        self.packages = packages
+        super.init(style: .insetGrouped)
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+
+    /// Opens with one image already found — what "Show Image" on a frame does.
+    func focus(on uuid: String) {
+        focusUUID = uuid
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = String(localized: "Binary Images")
+        navigationItem.largeTitleDisplayMode = .never
+        navigationItem.backButtonDisplayMode = .minimal
+
+        let search = UISearchController(searchResultsController: nil)
+        search.searchResultsUpdater = self
+        search.obscuresBackgroundDuringPresentation = false
+        search.searchBar.placeholder = String(localized: "Search Images")
+        navigationItem.searchController = search
+        navigationItem.hidesSearchBarWhenScrolling = true
+        definesPresentationContext = true
+
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "image")
+        dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, uuid in
+            let cell = tableView.dequeueReusableCell(withIdentifier: "image", for: indexPath)
+            self?.configure(cell, uuid: uuid)
+            return cell
+        }
+        dataSource.header = { [weak self] _ in
+            String(inflecting: "^[\(self?.shown.count ?? 0) image](inflect: true)")
+        }
+        if let focusUUID, let image = crash.images.first(where: { $0.uuid == focusUUID }) {
+            search.searchBar.text = image.name
+            searchText = image.name
+        }
+        render()
+    }
+
+    func updateSearchResults(for searchController: UISearchController) {
+        searchText = searchController.searchBar.text ?? ""
+        render()
+    }
+
+    private func render() {
+        let needle = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        shown = needle.isEmpty ? crash.images : crash.images.filter { image in
+            let owner = packages?.owner(ofPath: image.path)
+            return [image.name, image.path, image.uuid, owner?.name, owner?.identifier]
+                .compactMap(\.self)
+                .contains { $0.matches(needle) }
+        }
+        var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+        if !shown.isEmpty {
+            snapshot.appendSections([0])
+            // The UUID is the identity a symbolicator uses; duplicates in one
+            // report would be the same binary mapped twice.
+            snapshot.appendItems(shown.map(\.uuid).removingDuplicates())
+        }
+        dataSource.apply(snapshot, animatingDifferences: false)
+        tableView.setEmptyState(shown.isEmpty ? .message(
+            symbolName: "magnifyingglass",
+            title: String(localized: "No Results"),
+            description: String(localized: "No image in this report matches “\(needle)”."),
+            actionTitle: nil
+        ) : nil)
+    }
+
+    private func configure(_ cell: UITableViewCell, uuid: String) {
+        guard let image = shown.first(where: { $0.uuid == uuid }) else { return }
+        var configuration = UIListContentConfiguration.subtitleCell()
+        configuration.text = image.name
+        configuration.secondaryTextProperties.numberOfLines = 0
+        configuration.secondaryTextProperties.color = .secondaryLabel
+        configuration.secondaryTextProperties.font = UIFontMetrics(forTextStyle: .caption1)
+            .scaledFont(for: .monospacedSystemFont(ofSize: 11, weight: .regular))
+        let owner = packages?.owner(ofPath: image.path)
+        configuration.secondaryText = [
+            [image.arch, ReportFormat.address(image.base)].compactMap(\.self).joined(separator: " · "),
+            image.uuid,
+            owner.map { [$0.name ?? $0.identifier, $0.version].compactMap(\.self).joined(separator: " ") },
+        ].compactMap(\.self).joined(separator: "\n")
+        cell.contentConfiguration = configuration
+        cell.accessoryType = .disclosureIndicator
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard let uuid = dataSource.itemIdentifier(for: indexPath),
+              let image = shown.first(where: { $0.uuid == uuid }) else { return }
+        inspectBinary(image)
+    }
+
+    override func tableView(
+        _: UITableView,
+        contextMenuConfigurationForRowAt indexPath: IndexPath,
+        point _: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        guard let uuid = dataSource.itemIdentifier(for: indexPath),
+              let image = shown.first(where: { $0.uuid == uuid }) else { return nil }
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            UIMenu(children: [
+                UIAction(
+                    title: String(localized: "Inspect Binary"),
+                    image: UIImage(systemName: "doc.text.magnifyingglass")
+                ) { _ in
+                    self?.inspectBinary(image)
+                },
+                UIAction(title: String(localized: "Copy Path"), image: UIImage(systemName: "doc.on.doc")) { _ in
+                    UIPasteboard.general.string = image.path
+                    Toast.show(String(localized: "Path Copied"))
+                },
+                UIAction(title: String(localized: "Copy UUID"), image: UIImage(systemName: "number")) { _ in
+                    UIPasteboard.general.string = image.uuid
+                    Toast.show(String(localized: "Copied"))
+                },
+            ])
+        }
+    }
+}
+
+extension Array where Element: Hashable {
+    /// A diffable snapshot traps on a repeated identifier, and a report is an
+    /// untrusted file that can repeat one.
+    func removingDuplicates() -> [Element] {
+        var seen = Set<Element>()
+        return filter { seen.insert($0).inserted }
+    }
+}
