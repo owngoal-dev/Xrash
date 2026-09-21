@@ -22,6 +22,8 @@ if [ "${1:-}" = remove ] || [ "${1:-}" = purge ]; then
         "$launchctl" bootout "user/501/$label" 2>/dev/null || true
         "$launchctl" bootout "gui/501/$label" 2>/dev/null || true
     fi
+    # The daemon's ledger of what it has announced; nothing else lives there.
+    rm -rf "@PREFIX@/var/lib/xrashd"
 fi
 
 exit 0

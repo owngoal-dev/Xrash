@@ -16,11 +16,19 @@
 	under `/var/mobile/Library/Photos` (and friends) needs
 	`com.apple.private.security.storage.<Class>` on *this* process. A sampler
 	or a thin proxy does not.
+
+	`usernotifications.bundle-identifiers` is what lets the daemon post a
+	notification as the app while the app is not running. Without it
+	`usernotificationsd` refuses the center and says so only in the device log.
 -->
 <plist version="1.0">
 <dict>
 	<key>com.apple.private.security.no-sandbox</key>
 	<true/>
+	<key>com.apple.private.usernotifications.bundle-identifiers</key>
+	<array>
+		<string>wiki.qaq.xrash</string>
+	</array>
 	<key>com.apple.private.security.storage.AppBundles</key>
 	<true/>
 	<key>com.apple.private.security.storage.AppDataContainers</key>

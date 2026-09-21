@@ -80,9 +80,21 @@ final class ReportSummaryViewController: UITableViewController {
         ))
     }
 
+    /// The icon, above the first section. Made once and reconfigured, so a
+    /// symbolicated report does not blink it.
+    private let iconHeader = ReportIconHeaderView(
+        frame: CGRect(x: 0, y: 0, width: 0, height: ReportIconHeaderView.height)
+    )
+
     private func rebuild(animated: Bool = false) {
         guard let content else { return }
         tableView.setEmptyState(nil)
+        if let summary {
+            iconHeader.configure(with: content.report, summary: summary)
+            if tableView.tableHeaderView !== iconHeader {
+                tableView.tableHeaderView = iconHeader
+            }
+        }
         var snapshot = NSDiffableDataSourceSnapshot<DetailSection, DetailItem>()
         for entry in DetailLayout.sections(for: content) {
             snapshot.appendSections([entry.section])

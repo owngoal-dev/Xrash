@@ -14,6 +14,11 @@ public enum XrashOperation: UInt64, Sendable {
     /// `path` of a Mach-O or a dyld shared cache file → a read-only descriptor.
     case openImage = 5
     case goodbye = 6
+    /// `payload` = `NoticePolicy` → kept by the daemon, which from then on
+    /// announces new reports itself. `refused` from a daemon that cannot post
+    /// for the app — the Mac's per-user agent — and `invalidRequest` from one
+    /// that predates this; either way the app goes on announcing on its own.
+    case setNoticePolicy = 7
 }
 
 public enum XrashReplyCode: Int64, Sendable {
@@ -61,6 +66,30 @@ public struct HelloReply: Codable, Equatable, Sendable {
 
     public init(installRoot: String) {
         self.installRoot = installRoot
+    }
+}
+
+/// What the app wants announced while it is not running. The daemon has no
+/// settings of its own: this is the app's filter and switch, sent whenever
+/// either changes, and nothing is announced until one has arrived.
+public struct NoticePolicy: Codable, Equatable, Sendable {
+    public static let maximumHiddenProcessNameCount = 4096
+
+    public var isEnabled: Bool
+    /// `ReportKind` raw values. Strings, so the wire does not grow a
+    /// dependency on the report model.
+    public var kinds: Set<String>
+    /// Case-sensitive process names that are never announced.
+    public var hiddenProcessNames: Set<String>
+    /// The app's unread count when this was sent. The badge a notification
+    /// carries is this plus what the daemon has announced since.
+    public var unreadCount: Int
+
+    public init(isEnabled: Bool, kinds: Set<String>, hiddenProcessNames: Set<String>, unreadCount: Int) {
+        self.isEnabled = isEnabled
+        self.kinds = kinds
+        self.hiddenProcessNames = hiddenProcessNames
+        self.unreadCount = unreadCount
     }
 }
 

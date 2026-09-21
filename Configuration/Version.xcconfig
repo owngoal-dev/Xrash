@@ -6,4 +6,4 @@
 // `make check` rejects that; keep it that way.
 
 MARKETING_VERSION = 0.3.0
-CURRENT_PROJECT_VERSION = 63
+CURRENT_PROJECT_VERSION = 74

@@ -13,6 +13,43 @@ shared cache file as root and hands the descriptor back over XPC; parsing,
 symbolication and everything that allocates happen in the app. The daemon is
 on-demand — no `KeepAlive`, no `RunAtLoad` — and exits when idle.
 
+## Notifications
+
+The crash reporter posts no event when a report is written (OSAnalytics has no
+`notify_post` for it; checked 2026-09-21), so the directory changing is the
+event: `WatchPaths` in the daemon's plist has launchd start `xrashd` for it,
+which is still on-demand. `ReportAnnouncer` lists, `NoticeLedger` (XrashNotice,
+tested on the Mac) decides what is new, `NoticePoster` posts *as the app*
+through `UNUserNotificationCenter(bundleIdentifier:)` — the daemon carries
+`usernotifications.bundle-identifiers` for it — and the process idles out.
+
+- **The daemon has no settings.** The app sends a `NoticePolicy` (switch,
+  filter, unread count) over `setNoticePolicy` whenever one changes. A daemon
+  that takes it announces everything, app running or not, and the app then
+  posts nothing; `refused` (the Mac's agent) or `invalidRequest` (an older
+  daemon) leaves the app announcing on its own. Same identifier — the report's
+  path — on both sides.
+- **Root still does not read.** The line under the title comes from the report,
+  so the daemon opens it with the same guards as `openReport` and spawns itself
+  as `xrashd describe`: the child becomes `mobile` for good before it reads
+  descriptor 3, decodes and answers with a clamped `NoticeDetail` on stdout,
+  against a deadline.
+- **A crash is two lines**: `Fila Crashed` over
+  `EXC_CRASH (SIGABRT) · 0.2.0 (43)`, the list row's words from
+  `Report.reason`. `threadIdentifier` is the process name, so a crash loop is
+  one stack.
+- **No sender icon.** A communication notification (`INSendMessageIntent`)
+  does draw the crashed app's icon with Xrash's as the badge, but the image
+  travels as an `intents-remote-image-proxy:` reference, and neither image
+  data nor a file URL from the daemon resolves in SpringBoard — the grey
+  silhouette is what shows (tried 2026-09-21). Not worth a server.
+- **Keys the daemon posts are keys the app spells.** Title and kind are
+  `localizedUserNotificationString` keys resolved against the app's catalogue;
+  `CrashNotice.post` and `ReportFormat.kindLabel` are where the compiler
+  extracts them.
+- **`willPresent` shows a report the list has not met.** The daemon's
+  notification can beat the app's own refresh.
+
 ## Hard rules
 
 - **One app, several wrappers, and the backend is resolved at runtime.** Never a

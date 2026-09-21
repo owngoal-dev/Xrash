@@ -16,6 +16,7 @@ final class DaemonServer {
     )
     private let authenticator = PeerAuthenticator()
     private var listener: xpc_connection_t?
+    private var announcer: ReportAnnouncer?
     private var sessions = [UUID: PeerSession]()
     /// Bumped by every accept and every scheduled exit, so a stale timer
     /// cannot take the process down under a client that arrived after it.
@@ -29,6 +30,14 @@ final class DaemonServer {
         self.listener = listener
         xpc_connection_set_event_handler(listener) { [weak self] event in
             autoreleasepool { self?.accept(event) }
+        }
+        // launchd starts this process for a changed report directory as well
+        // as for a lookup, and does not say which it was. Made before the
+        // listener is live, so the first session already has it.
+        queue.sync {
+            guard let installRoot = authenticator.installRoot else { return }
+            announcer = ReportAnnouncer(installRoot: installRoot, queue: queue)
+            announcer?.start()
         }
         xpc_connection_activate(listener)
         // A launch nobody connects to still has to end.
@@ -45,7 +54,7 @@ final class DaemonServer {
 
         idleGeneration &+= 1
         let sessionID = UUID()
-        let session = PeerSession(connection: event, installRoot: installRoot) { [weak self] in
+        let session = PeerSession(connection: event, installRoot: installRoot, announcer: announcer) { [weak self] in
             self?.sessionInvalidated(sessionID)
         }
         sessions[sessionID] = session
@@ -65,6 +74,8 @@ final class DaemonServer {
         let scheduledGeneration = idleGeneration
         queue.asyncAfter(deadline: .now() + Self.idleExitDelay) { [weak self] in
             guard let self, sessions.isEmpty, idleGeneration == scheduledGeneration else { return }
+            // A notification on its way out is not idleness.
+            guard announcer?.isBusy != true else { return scheduleIdleExit() }
             exit(EXIT_SUCCESS)
         }
     }

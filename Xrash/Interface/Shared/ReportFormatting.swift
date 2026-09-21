@@ -46,19 +46,8 @@ enum ReportFormat {
         }
     }
 
-    /// The tile glyph for anything without an app icon of its own.
-    static func glyph(for summary: ReportSummary) -> String {
-        switch summary.kind {
-        case .jetsam: "memorychip"
-        // `bolt.trianglebadge.exclamationmark` reads better and is iOS 16.1.
-        case .panic: "bolt.fill"
-        case .hang: "hourglass"
-        case .resource: "speedometer"
-        case .analytics: "chart.bar.doc.horizontal"
-        case .crash, .other: summary.group == .app ? "app.dashed" : "terminal"
-        }
-    }
-
+    /// The colour of the badge on a report's icon, which is the only place a
+    /// kind is a colour: a row's tile is artwork, never a tinted symbol.
     static func tint(for summary: ReportSummary) -> UIColor {
         switch summary.kind {
         case .crash: .systemRed
@@ -72,20 +61,10 @@ enum ReportFormat {
 
     // MARK: Rows
 
-    /// `EXC_CRASH (SIGABRT)`, or the termination reason when there is no
-    /// exception. Nil for a report whose kind says everything already.
+    /// `EXC_CRASH (SIGABRT)`. Decided in the Kit, where the daemon's
+    /// notification says the same words.
     static func reason(for report: Report) -> String? {
-        if let exception = report.crash?.exception {
-            return exception.typeAndSignal
-        }
-        if let termination = report.crash?.termination {
-            let namespace = termination.namespace.map { "\($0)" }
-            return [namespace, termination.indicator].compactMap(\.self).first
-        }
-        if let panic = report.panic {
-            return panic.panicString.split(separator: "\n").first.map(String.init)
-        }
-        return nil
+        report.reason
     }
 
     /// `EXC_CRASH (SIGABRT) · 0.3.7 (58)`. Falls back to the kind while the

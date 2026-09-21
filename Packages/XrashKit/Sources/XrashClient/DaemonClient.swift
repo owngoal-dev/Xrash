@@ -131,6 +131,17 @@
             })
         }
 
+        /// Throws `rejected` when this daemon does not announce: `refused` from
+        /// one that cannot post for the app, `invalidRequest` from an older one.
+        public func setNoticePolicy(_ policy: NoticePolicy) async throws {
+            let payload = try XrashWire.encode(policy)
+            _ = try await request(.setNoticePolicy) { message in
+                payload.withUnsafeBytes {
+                    xpc_dictionary_set_data(message, XrashWireKey.payload, $0.baseAddress!, $0.count)
+                }
+            }
+        }
+
         public func disconnect() async {
             if hello != nil {
                 _ = try? await send(.goodbye)

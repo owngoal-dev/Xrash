@@ -15,6 +15,15 @@ public enum XrashService {
     /// Where the only admitted client sits inside the same install root.
     public static let appExecutablePathSuffix = "/Applications/Xrash.app/Xrash"
 
+    /// The app a notification from the daemon belongs to. The daemon's
+    /// entitlements name the same id, or `usernotificationsd` refuses it.
+    public static let appBundleIdentifier = "wiki.qaq.xrash"
+
+    /// Where the daemon keeps its `NoticeLedger` inside the install root: a
+    /// root-owned directory, so nothing `mobile` does can redirect the write.
+    public static let noticeLedgerDirectorySuffix = "/var/lib/xrashd"
+    public static let noticeLedgerFileName = "notice.plist"
+
     /// The Mac build carries the helper inside the app bundle, so the client
     /// is its sibling in `Contents/MacOS` rather than a path under a root.
     public static let macAppExecutableName = "Xrash"

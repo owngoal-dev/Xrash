@@ -8,13 +8,20 @@ import XrashProtocol
 /// beyond the four bytes `openImage` needs to tell a Mach-O from a secret.
 final class PeerSession {
     private let installRoot: String
+    private let announcer: ReportAnnouncer?
     private let onInvalidation: () -> Void
     private var connection: xpc_connection_t?
     private var handshakeComplete = false
 
-    init(connection: xpc_connection_t, installRoot: String, onInvalidation: @escaping () -> Void) {
+    init(
+        connection: xpc_connection_t,
+        installRoot: String,
+        announcer: ReportAnnouncer?,
+        onInvalidation: @escaping () -> Void
+    ) {
         self.connection = connection
         self.installRoot = installRoot
+        self.announcer = announcer
         self.onInvalidation = onInvalidation
     }
 
@@ -58,6 +65,8 @@ final class PeerSession {
         case .goodbye:
             send(reply, .success)
             invalidate()
+        case .setNoticePolicy:
+            setNoticePolicy(request, reply)
         }
     }
 
@@ -103,6 +112,18 @@ final class PeerSession {
         sendDescriptor(descriptor, in: reply)
     }
 
+    private func setNoticePolicy(_ request: xpc_object_t, _ reply: xpc_object_t) {
+        guard let payload = data(XrashWireKey.payload, in: request),
+              let policy = try? XrashWire.decode(NoticePolicy.self, from: payload),
+              policy.hiddenProcessNames.count <= NoticePolicy.maximumHiddenProcessNameCount
+        else {
+            return send(reply, .invalidRequest)
+        }
+        // Refused is an answer, not a failure: the app then announces itself.
+        guard let announcer else { return send(reply, .refused) }
+        send(reply, announcer.adopt(policy) ? .success : .operationFailed)
+    }
+
     // MARK: Opening as root
 
     /// A read-only descriptor for a regular file below one of `roots`, or -1
@@ -114,7 +135,7 @@ final class PeerSession {
     /// that answer is what the roots are compared against. `O_NONBLOCK` is
     /// there for the other half of the same trick — a fifo left in a report
     /// directory would otherwise park the daemon's one queue inside `open`.
-    private static func openRegularFile(_ path: String, below roots: [String]) -> Int32 {
+    static func openRegularFile(_ path: String, below roots: [String]) -> Int32 {
         let descriptor = open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
         guard descriptor >= 0 else { return descriptor }
         var metadata = stat()

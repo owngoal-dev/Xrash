@@ -4,18 +4,20 @@ import PackageDescription
 /// Everything that is not UIKit lives here so it is testable on a Mac with
 /// plain `swift test`: the wire protocol, the report parsers, symbolication.
 ///
-/// `xrashd` links XrashProtocol only. launchd caps a LaunchDaemon at 6 MB, so
-/// nothing third-party may reach a target the daemon links.
+/// `xrashd` links the XrashProtocol product only. launchd caps a LaunchDaemon
+/// at 6 MB, so nothing third-party may reach a target the daemon links.
 let package = Package(
     name: "XrashKit",
     platforms: [.iOS(.v15), .macOS(.v13)],
     products: [
-        .library(name: "XrashProtocol", targets: ["XrashProtocol"]),
+        // What the daemon links, under the name the project file already
+        // knows: the wire, and the ledger that decides what it announces.
+        .library(name: "XrashProtocol", targets: ["XrashProtocol", "XrashNotice"]),
         // What the app links: one product, so a new module is a line here and
         // never an edit to the hand-written project file.
         .library(name: "XrashKit", targets: [
             "XrashProtocol", "XrashClient", "XrashReport", "XrashSymbols", "XrashBlame", "XrashBundle",
-            "XrashSystemState",
+            "XrashSystemState", "XrashNotice",
         ]),
     ],
     dependencies: [
@@ -53,6 +55,10 @@ let package = Package(
         // The report model, the `.ips` / `.crash` decoders and the text forms.
         // Foundation only.
         .target(name: "XrashReport"),
+
+        // Which directory changes are new reports. The daemon's half of a
+        // notification that is not the posting of it. Foundation only.
+        .target(name: "XrashNotice", dependencies: ["XrashProtocol", "XrashReport"]),
 
         // Address → name, file and line. The only target that links MachOKit.
         .target(
@@ -97,6 +103,7 @@ let package = Package(
         .testTarget(name: "XrashProtocolTests", dependencies: ["XrashProtocol"]),
         .testTarget(name: "XrashReportTests", dependencies: ["XrashReport"], resources: [.copy("Fixtures")]),
         .testTarget(name: "XrashSymbolsTests", dependencies: ["XrashSymbols"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "XrashNoticeTests", dependencies: ["XrashNotice"]),
         .testTarget(name: "XrashBlameTests", dependencies: ["XrashBlame"]),
         .testTarget(name: "XrashBundleTests", dependencies: ["XrashBundle"]),
         .testTarget(name: "XrashSystemStateTests", dependencies: ["XrashSystemState"]),

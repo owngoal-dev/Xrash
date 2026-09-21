@@ -3,12 +3,65 @@ import Then
 import UIKit
 import XrashReport
 
+/// The report's icon, above the first section and outside every card: inside
+/// the top row it pushed that row's text off the margin the rows under it
+/// keep. Centred, with the kind's badge on its corner.
+final class ReportIconHeaderView: UIView {
+    static let iconSide: CGFloat = 200
+    private static let badgeSide: CGFloat = 56
+    private static let topPadding: CGFloat = 24
+    private static let bottomPadding: CGFloat = 12
+
+    /// What a table has to be told, since a table header sizes nothing itself.
+    static let height = topPadding + iconSide + bottomPadding
+
+    private let iconView = ReportIconView()
+    private let badgeView = UIImageView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        iconView.magnification = Self.iconSide / ReportIconView.size
+        // An app's own icon says nothing about how it ended, so the corner
+        // does: the kind's colour, cut out of the page the way a badge is.
+        badgeView.do {
+            $0.image = UIImage(
+                systemName: "exclamationmark.circle.fill",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: Self.badgeSide, weight: .bold)
+            )
+            $0.contentMode = .scaleAspectFit
+            $0.backgroundColor = .systemGroupedBackground
+            $0.layer.cornerRadius = Self.badgeSide / 2
+            $0.layer.masksToBounds = true
+            $0.isAccessibilityElement = false
+        }
+        addSubview(iconView)
+        addSubview(badgeView)
+        iconView.snp.makeConstraints { make in
+            make.size.equalTo(Self.iconSide)
+            make.centerX.equalToSuperview()
+            make.top.equalToSuperview().inset(Self.topPadding)
+        }
+        badgeView.snp.makeConstraints { make in
+            make.size.equalTo(Self.badgeSide)
+            make.trailing.bottom.equalTo(iconView).offset(10)
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+
+    func configure(with report: Report, summary: ReportSummary) {
+        iconView.configure(with: summary, executablePath: report.crash?.process.path)
+        badgeView.tintColor = ReportFormat.tint(for: summary)
+    }
+}
+
 /// The top of a report: whose it is, which version, and what kind of ending.
 final class ReportHeaderCell: UITableViewCell {
     static let reuseIdentifier = "reportHeader"
 
-    private let iconView = ReportIconView()
-    private let badgeView = UIImageView()
     private let nameLabel = UILabel()
     private let detailLabel = UILabel()
 
@@ -17,7 +70,7 @@ final class ReportHeaderCell: UITableViewCell {
         selectionStyle = .none
         nameLabel.do {
             // The card's own field name: the same bold body as the rows
-            // under it, because the icon beside it is the prominence.
+            // under it, because the icon above the card is the prominence.
             $0.font = DetailTypography.name
             $0.numberOfLines = 2
         }
@@ -36,32 +89,10 @@ final class ReportHeaderCell: UITableViewCell {
             $0.axis = .vertical
             $0.spacing = 3
         }
-        let content = UIStackView(arrangedSubviews: [iconView, names]).then {
-            $0.alignment = .center
-            $0.spacing = 14
-        }
-        // An app's own icon says nothing about how it ended, so the corner
-        // does: the kind's colour, cut out of the card the way a badge is.
-        badgeView.do {
-            $0.image = UIImage(
-                systemName: "exclamationmark.circle.fill",
-                withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .bold)
-            )
-            $0.contentMode = .scaleAspectFit
-            $0.backgroundColor = .secondarySystemGroupedBackground
-            $0.layer.cornerRadius = 11
-            $0.layer.masksToBounds = true
-            $0.isAccessibilityElement = false
-        }
-
-        contentView.addSubview(content)
-        contentView.addSubview(badgeView)
-        iconView.snp.makeConstraints { $0.size.equalTo(56) }
-        badgeView.snp.makeConstraints { make in
-            make.size.equalTo(22)
-            make.trailing.bottom.equalTo(iconView).offset(4)
-        }
-        content.snp.makeConstraints { make in
+        // No icon in here: it sits above the section, so this row's text
+        // starts on the same margin as every row under it.
+        contentView.addSubview(names)
+        names.snp.makeConstraints { make in
             make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
             make.top.bottom.equalToSuperview().inset(12)
         }
@@ -73,8 +104,6 @@ final class ReportHeaderCell: UITableViewCell {
     }
 
     func configure(with report: Report, summary: ReportSummary) {
-        iconView.configure(with: summary, executablePath: report.crash?.process.path)
-        badgeView.tintColor = ReportFormat.tint(for: summary)
         let name = report.crash?.process.name.isEmpty == false
             ? report.crash?.process.name
             : summary.processName

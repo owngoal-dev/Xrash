@@ -62,9 +62,10 @@ final class SettingsViewController: UITableViewController {
             ),
             Section(
                 title: String(localized: "Notifications"),
-                footer: String(
-                    localized: "A new report is noticed only while Xrash is running."
-                ),
+                // Who announces is the backend's answer, so the sentence is too.
+                footer: CrashNotice.shared.daemonAnnounces.value
+                    ? String(localized: "A new report is announced even while Xrash is not running.")
+                    : String(localized: "A new report is noticed only while Xrash is running."),
                 rows: [.crashNotifications]
             ),
             Section(
@@ -118,6 +119,11 @@ final class SettingsViewController: UITableViewController {
             }
             .store(in: &observers)
         settings.preferences
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .store(in: &observers)
+        CrashNotice.shared.daemonAnnounces
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.tableView.reloadData() }
             .store(in: &observers)

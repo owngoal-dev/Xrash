@@ -6,8 +6,15 @@
 	load, and /var/jb for rootless. Never a resolved bootstrap path.
 
 	xrashd is on-demand: launchd starts it when the app looks the Mach service
-	up, and it exits when the last client has been gone for a moment. `make
-	check` and both packaging scripts fail on KeepAlive or RunAtLoad here.
+	up, or when a report directory changes, and it exits when the last client
+	has been gone for a moment. `make check` and both packaging scripts fail on
+	KeepAlive or RunAtLoad here.
+
+	WatchPaths is what makes a notification possible while the app is not
+	running without a resident process: the crash reporter posts no event of
+	its own when a report is written (OSAnalytics has no notify_post for it),
+	so the directory changing is the event. The paths are the fixed report
+	roots of `ReportRoots`; one that does not exist is ignored by launchd.
 -->
 <plist version="1.0">
 <dict>
@@ -30,6 +37,12 @@
 		<key>wiki.qaq.xrash.service</key>
 		<true/>
 	</dict>
+	<key>WatchPaths</key>
+	<array>
+		<string>/private/var/mobile/Library/Logs/CrashReporter</string>
+		<string>/private/var/root/Library/Logs/CrashReporter</string>
+		<string>/Library/Logs/CrashReporter</string>
+	</array>
 	<!-- Nothing may inject into the process that does privileged work. -->
 	<key>EnvironmentVariables</key>
 	<dict>

@@ -2,17 +2,22 @@ import Combine
 import Foundation
 import UIKit
 import UserNotifications
+import XrashClient
 import XrashProtocol
 import XrashReport
 
-/// A local notification and an icon badge for a report that arrives while the
-/// app is running.
+/// A notification and an icon badge for a report that arrives.
 ///
-/// Xrash injects nothing into anything, so there is no notification for a
-/// crash that happened while this process was not alive. What it watches is
-/// the report directory; what it can honestly say is that a report appeared.
-/// One notification per report, and the badge is the unread count the list
-/// would show.
+/// Xrash injects nothing into anything. What is watched is the report
+/// directory; what can honestly be said is that a report appeared. One
+/// notification per report, and the badge is the unread count the list would
+/// show.
+///
+/// Who posts is the backend's answer, asked at runtime. A daemon that takes
+/// the `NoticePolicy` announces every report, launched by launchd when the
+/// directory changes, whether or not this process is alive — and this one
+/// then posts nothing, or a report would be announced twice. With no such
+/// daemon the app posts what it sees while it runs, which is all it can see.
 @MainActor
 final class CrashNotice {
     static let shared = CrashNotice()
@@ -30,8 +35,15 @@ final class CrashNotice {
     private var watches = [DispatchSourceFileSystemObject]()
     private var pendingRefresh: Task<Void, Never>?
     private var observers = Set<AnyCancellable>()
+    private let backend: ReportBackend
+    /// Whether the daemon took the last policy, and so posts instead of us.
+    /// Settings words its footer from this.
+    let daemonAnnounces = CurrentValueSubject<Bool, Never>(false)
+    private var sentPolicy: NoticePolicy?
+    private var policyTask: Task<Void, Never>?
 
     private init() {
+        backend = AppEnvironment.shared.backend
         library = AppEnvironment.shared.library
         // Not a default argument: those are evaluated off the main actor.
         settings = .shared
@@ -69,6 +81,20 @@ final class CrashNotice {
                 self?.render(summaries, unread: unread, filter: filter)
             }
             .store(in: &observers)
+        // A backend that turns privileged later — the daemon was slow, or was
+        // installed since — is asked then.
+        backend.status
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                guard let self else { return }
+                sentPolicy = nil
+                if case .privileged = status {
+                    sendPolicy()
+                } else if daemonAnnounces.value {
+                    daemonAnnounces.send(false)
+                }
+            }
+            .store(in: &observers)
         watchReportDirectories()
     }
 
@@ -94,8 +120,14 @@ final class CrashNotice {
     /// What a banner should do while the app is in front. The report a person
     /// is already looking at was marked read when it opened, so an unread
     /// report is one they have not seen.
+    ///
+    /// The daemon's notification can arrive before the list has caught up with
+    /// the directory, and a report the list has not met yet is as unseen as
+    /// they come.
     func presentationOptions(for reportID: String?) -> UNNotificationPresentationOptions {
-        guard let reportID, library.unreadIDs.value.contains(reportID) else { return [] }
+        guard let reportID else { return [] }
+        let isListed = library.summaries.value.contains { $0.id == reportID }
+        guard !isListed || library.unreadIDs.value.contains(reportID) else { return [] }
         return [.banner, .list]
     }
 
@@ -109,18 +141,61 @@ final class CrashNotice {
             filter: filter
         )
         accounted.formUnion(summaries.map(\.id))
+        sendPolicy()
         guard isAuthorized, settings.preferences.value.notifiesOnNewReports else {
             return UnreadBadge.set(0)
         }
-        arrived.forEach(post)
-        UnreadBadge.set(summaries.filter { unread.contains($0.id) && filter.admits($0) }.count)
+        if !daemonAnnounces.value {
+            arrived.forEach(post)
+        }
+        UnreadBadge.set(unreadCount(summaries, unread: unread, filter: filter))
+    }
+
+    private func unreadCount(_ summaries: [ReportSummary], unread: Set<String>, filter: ReportFilter) -> Int {
+        summaries.filter { unread.contains($0.id) && filter.admits($0) }.count
+    }
+
+    // MARK: Handing the daemon its policy
+
+    /// The filter, the switch and the unread count, whenever one of them is
+    /// not what the daemon was last told. One request at a time, and the
+    /// latest value wins: a send that finds the policy moved on goes again.
+    private func sendPolicy() {
+        guard policyTask == nil, case .privileged = backend.status.value else { return }
+        let filter = settings.filter.value
+        let policy = NoticePolicy(
+            isEnabled: settings.preferences.value.notifiesOnNewReports,
+            kinds: Set(filter.kinds.map(\.rawValue)),
+            hiddenProcessNames: filter.hiddenProcessNames,
+            unreadCount: unreadCount(library.summaries.value, unread: library.unreadIDs.value, filter: filter)
+        )
+        guard policy != sentPolicy else { return }
+        policyTask = Task { [weak self, backend] in
+            let taken = await backend.setNoticePolicy(policy)
+            guard let self else { return }
+            policyTask = nil
+            sentPolicy = policy
+            if daemonAnnounces.value != taken {
+                daemonAnnounces.send(taken)
+            }
+            sendPolicy()
+        }
     }
 
     private func post(_ summary: ReportSummary) {
         let content = UNMutableNotificationContent()
         // The process and what happened to it, in the words the list uses.
-        content.title = summary.processName
-        content.body = ReportFormat.kindLabel(summary.kind)
+        // The daemon's two lines, as far as a summary can say them: who and
+        // what, then the version once the header has been read.
+        if summary.kind == .crash {
+            content.title = String(localized: "\(summary.processName) Crashed")
+            content.body = summary.appVersion ?? ""
+        } else {
+            content.title = summary.processName
+            content.body = ReportFormat.subtitle(for: summary, reason: nil)
+        }
+        // One stack per binary, as the daemon groups them.
+        content.threadIdentifier = summary.processName
         content.sound = .default
         content.userInfo = [Self.reportIDKey: summary.id]
         UNUserNotificationCenter.current().add(

@@ -80,6 +80,13 @@
             }
         }
 
+        /// Hands the daemon what to announce while the app is not running.
+        /// False when nothing took it — no daemon, or one that does not
+        /// announce — and the app is then the only one that can.
+        public func setNoticePolicy(_ policy: NoticePolicy) async -> Bool {
+            (try? await perform { try await $0.setNoticePolicy(policy); return true } locally: { false }) ?? false
+        }
+
         /// The current answer to "am I privileged", waiting out the grace period
         /// when the daemon has not shown up yet.
         public func resolve() async -> BackendStatus {
