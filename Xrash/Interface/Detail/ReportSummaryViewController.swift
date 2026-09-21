@@ -148,9 +148,9 @@ final class ReportSummaryViewController: UITableViewController {
         configuration.textProperties.numberOfLines = 0
         configuration.secondaryTextProperties.numberOfLines = 0
         configuration.secondaryTextProperties.color = .secondaryLabel
-        // One size a row, decided here: a field's name in bold, the value
+        // One size a row, decided here: a field's name in body, the value
         // under it monospaced like every other line the report itself wrote,
-        // and a row that opens something in plain body.
+        // and a row that opens something in the same body.
         configuration.textProperties.font = if item.namesAField {
             DetailTypography.name
         } else if item.isMachineText {

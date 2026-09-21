@@ -69,8 +69,8 @@ final class ReportHeaderCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         nameLabel.do {
-            // The card's own field name: the same bold body as the rows
-            // under it, because the icon above the card is the prominence.
+            // The card's own field name: the same body as the rows under it,
+            // because the icon above the card is the prominence.
             $0.font = DetailTypography.name
             $0.numberOfLines = 2
         }
