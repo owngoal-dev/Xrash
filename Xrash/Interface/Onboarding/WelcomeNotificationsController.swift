@@ -16,26 +16,6 @@ import UIKit
 final class WelcomeNotificationsController: UIViewController {
     private let onFinish: () -> Void
 
-    private static let features: [WelcomeController.Feature] = [
-        .init(
-            symbol: "bell.badge",
-            title: String.LocalizationValue("Who and Why"),
-            detail: String.LocalizationValue(
-                "The app that crashed, then the exception and the version, on two lines."
-            )
-        ),
-        .init(
-            symbol: "square.stack",
-            title: String.LocalizationValue("One Stack per App"),
-            detail: String.LocalizationValue("A crash loop becomes one pile, not a wall of banners.")
-        ),
-        .init(
-            symbol: "line.3.horizontal.decrease.circle",
-            title: String.LocalizationValue("Your Filter Applies"),
-            detail: String.LocalizationValue("Hidden processes and the kinds you turned off stay quiet.")
-        ),
-    ]
-
     private lazy var actionBar = WelcomeActionBar(title: String(localized: "Turn On Notifications")) { [weak self] in
         self?.turnOn()
     }
@@ -118,12 +98,8 @@ final class WelcomeNotificationsController: UIViewController {
             $0.textColor = WelcomeStyle.detailColor
             $0.numberOfLines = 0
         }
-        let rows = UIStackView(arrangedSubviews: Self.features.map(WelcomeFeatureRow.init(feature:))).then {
-            $0.axis = .vertical
-            $0.spacing = 10
-            $0.alignment = .fill
-        }
-        let stack = UIStackView(arrangedSubviews: [heading, intro, WelcomeNoticePreview(), rows]).then {
+        // The drawn notification says what one is; nothing under it repeats it.
+        let stack = UIStackView(arrangedSubviews: [heading, intro, WelcomeNoticePreview()]).then {
             $0.axis = .vertical
             $0.spacing = 18
             $0.alignment = .fill
@@ -161,7 +137,8 @@ final class WelcomeNotificationsController: UIViewController {
             x.width.equalTo(scrollView.snp.width)
         }
         stack.snp.makeConstraints { x in
-            x.top.bottom.equalToSuperview().inset(28)
+            x.top.equalToSuperview().inset(WelcomeStyle.headingTopMargin)
+            x.bottom.equalToSuperview().inset(28)
             x.leading.trailing.equalToSuperview().inset(WelcomeStyle.horizontalMargin)
         }
         later.snp.makeConstraints { x in
@@ -175,7 +152,7 @@ final class WelcomeNotificationsController: UIViewController {
 }
 
 /// A notification as it will arrive, drawn rather than described: this app's
-/// icon, `Fila Crashed`, and the list row's line under it.
+/// icon, `Dopamine Crashed`, and the list row's line under it.
 private final class WelcomeNoticePreview: UIView {
     init() {
         super.init(frame: .zero)
@@ -192,7 +169,7 @@ private final class WelcomeNoticePreview: UIView {
         }
         let title = UILabel().then {
             // The words the notification itself uses, from the same key.
-            $0.text = String(localized: "\("Fila") Crashed")
+            $0.text = String(localized: "\("Dopamine") Crashed")
             $0.font = WelcomeStyle.featureTitleFont
             $0.adjustsFontForContentSizeCategory = true
             $0.textColor = WelcomeStyle.titleColor

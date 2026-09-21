@@ -77,4 +77,8 @@ enum WelcomeStyle {
     /// The horizontal margin of everything on both pages — the original's
     /// content inset, and the same number its action bar insets its button by.
     static let horizontalMargin: CGFloat = 24
+
+    /// Where a page that opens on its heading starts it: where the first
+    /// page's icon starts, its 28 of inset and the 64 above the icon.
+    static let headingTopMargin: CGFloat = 92
 }

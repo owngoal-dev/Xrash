@@ -219,7 +219,7 @@ final class WelcomePreparingController: UIViewController {
             x.width.equalTo(scrollView.snp.width)
         }
         stack.snp.makeConstraints { x in
-            x.top.equalToSuperview().inset(28)
+            x.top.equalToSuperview().inset(WelcomeStyle.headingTopMargin)
             x.bottom.equalToSuperview().inset(28)
             x.leading.trailing.equalToSuperview().inset(WelcomeStyle.horizontalMargin)
         }

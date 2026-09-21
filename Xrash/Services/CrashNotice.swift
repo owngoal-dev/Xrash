@@ -283,6 +283,8 @@ enum UnreadBadge {
             let analytics = report("Siri", secondsFromStart: 40, kind: .analytics)
             var filter = ReportFilter()
             filter.hiddenProcessNames = ["SpringBoard"]
+            // Everything is on out of the box; a kind turned off stays quiet.
+            filter.showsAnalytics = false
             // `Self` is not allowed in a stored property initializer, even on
             // a final class: name the type.
             let found = CrashNotice.arrivals(
