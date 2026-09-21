@@ -10,7 +10,7 @@ extension SymbolStoreFailure: @retroactive LocalizedError {
         case .noDebugSymbols:
             String(localized: "No debug symbols were found in that file.")
         case .noSharedCache:
-            String(localized: "The system's shared cache could not be read.")
+            String(localized: "The system symbols could not be read.")
         }
     }
 }

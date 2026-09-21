@@ -31,9 +31,9 @@ enum MaintainerMail {
         // A suspect is a suspect: the mail says where the package turned up,
         // not that it is to blame. The blank lines are where the sender writes.
         let appears = String(
-            localized: "Your package (\(owner.identifier)) appears on the crashed stack of the attached report."
+            localized: "Your package (\(owner.identifier)) appears on the crashed thread’s stack in the attached report."
         )
-        composer.setMessageBody(appears + "\n\n" + String(localized: "Additional Details:") + "\n\n", isHTML: false)
+        composer.setMessageBody(appears + "\n\n" + String(localized: "Additional details:") + "\n\n", isHTML: false)
         composer.addAttachmentData(
             Data(ReportRenderer.crashText(report).utf8),
             mimeType: "text/plain",
@@ -48,7 +48,7 @@ enum MaintainerMail {
         guard MFMailComposeViewController.canSendMail() else {
             return controller.presentMessage(
                 String.LocalizationValue("Unable to Send Mail"),
-                message: String.LocalizationValue("No mail account is set up.")
+                message: String.LocalizationValue("No mail account is set up. Set one up in Mail.")
             )
         }
         guard let composer = compose(owner: owner, report: report, stem: stem) else { return }

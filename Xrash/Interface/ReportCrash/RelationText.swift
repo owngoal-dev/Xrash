@@ -8,7 +8,7 @@ enum RelationText {
         switch relation {
         case .sameIncident: String(localized: "Same incident")
         case .sameTime: String(localized: "Around the same time")
-        case .terminator: String(localized: "Terminated by")
+        case .terminator: String(localized: "Terminating process")
         case .relatedProcess: String(localized: "Related process")
         case .sharedSuspect: String(localized: "Shared suspect")
         case .manual: String(localized: "Added manually")

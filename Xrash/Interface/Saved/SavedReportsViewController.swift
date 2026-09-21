@@ -223,7 +223,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             do {
                 let imported = try await ProgressCard.run(
                     from: self,
-                    title: String(localized: "Importing the Report")
+                    title: String(localized: "Importing Report…")
                 ) { report in
                     var ids = [String]()
                     for (offset, url) in urls.enumerated() {

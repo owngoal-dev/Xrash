@@ -347,7 +347,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         ) { [weak self] text in
             guard let repository = GitHubReleaseSymbols.repository(from: text) else {
                 self?.presentMessage(
-                    "That Is Not a Repository",
+                    "Invalid Repository",
                     message: String.LocalizationValue(
                         "Enter it as owner/repo, or paste the repository's GitHub address."
                     )
@@ -407,12 +407,12 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                     return count
                 }
                 render()
-                Toast.show(String(inflecting: "Imported ^[\(imported) symbol file](inflect: true)"))
+                Toast.show(String(inflecting: "Imported ^[\(imported) dSYM file](inflect: true)"))
             } catch is CancellationError {
                 render()
             } catch {
                 render()
-                presentFailure("Could Not Import the Symbols", error)
+                presentFailure("Unable to Import Symbols", error)
             }
         }
     }
@@ -455,7 +455,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 render()
             } catch {
                 render()
-                presentFailure("Could Not Extract System Symbols", error)
+                presentFailure("Unable to Extract System Symbols", error)
             }
         }
     }
@@ -463,10 +463,9 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
     private func confirmExtractAll() {
         let alert = AlertViewController(
             title: String.LocalizationValue("Extract System Symbols"),
-            message: String.LocalizationValue("""
-            Every image in this build's shared cache is read and stored, which takes more than a \
-            gigabyte of space and several minutes.
-            """)
+            message: String.LocalizationValue(
+                "Extracting every system image takes several minutes and more than a gigabyte of storage."
+            )
         ) { [weak self] context in
             context.allowSimpleDispose()
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
@@ -482,10 +481,9 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         guard !builds.isEmpty else { return }
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete System Symbols"),
-            message: String.LocalizationValue("""
-            The stored tables are removed and system frames go back to addresses until they are \
-            extracted again.
-            """)
+            message: String.LocalizationValue(
+                "System frames go back to addresses until you extract them again."
+            )
         ) { [weak self] context in
             context.allowSimpleDispose()
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }

@@ -62,9 +62,9 @@ enum GitHubReleaseSymbols {
             case .noSymbolArchive:
                 String(localized: "That release has no debug symbol archive attached.")
             case .tooLarge:
-                String(localized: "That archive is larger than a gigabyte, which is too big to import.")
+                String(localized: "That archive is too large to import. The limit is 1 GB.")
             case .unreadable:
-                String(localized: "GitHub answered with something Xrash could not read.")
+                String(localized: "Xrash could not read GitHub’s response. Try again later.")
             }
         }
     }

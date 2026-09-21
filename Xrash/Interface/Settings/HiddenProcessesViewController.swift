@@ -49,8 +49,8 @@ final class HiddenProcessesViewController: UITableViewController, UITextFieldDel
 
     override func tableView(_: UITableView, titleForFooterInSection _: Int) -> String? {
         String(localized: """
-        Hidden processes stay off the list and do not send notifications. \
-        Reports on disk are not deleted.
+        Hidden processes stay off the list and do not trigger notifications. \
+        Their reports are not deleted.
         """)
     }
 

@@ -63,7 +63,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         let search = UISearchController(searchResultsController: nil)
         search.searchResultsUpdater = self
         search.obscuresBackgroundDuringPresentation = false
-        search.searchBar.placeholder = String(localized: "Search the reports in this bundle")
+        search.searchBar.placeholder = String(localized: "Search Reports")
         navigationItem.searchController = search
         navigationItem.hidesSearchBarWhenScrolling = true
         definesPresentationContext = true

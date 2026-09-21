@@ -301,7 +301,7 @@ final class ReportCrashViewController: UITableViewController {
 
     private func header(for section: Section) -> String? {
         switch section {
-        case .primary: String(localized: "Primary")
+        case .primary: String(localized: "Primary Crash")
         case .linked: String(localized: "Linked Crashes")
         case .suggestions: String(localized: "Suggestions")
         case .details: String(localized: "Details")
@@ -330,8 +330,8 @@ final class ReportCrashViewController: UITableViewController {
         """)]
         if SystemState.isAvailable {
             paragraphs.append(String(localized: """
-            System State names every app, package, tweak, process and service installed and running. \
-            Review the files and decide for yourself what to send.
+            System State lists every app, package, tweak, process and service installed and running. \
+            Review the files before you share them.
             """))
         }
         paragraphs.append(String(localized: "Estimated size: \(estimatedSizeText)"))
@@ -415,7 +415,7 @@ final class ReportCrashViewController: UITableViewController {
         do {
             let collected = try await ProgressCard.run(
                 from: self,
-                title: String(localized: "Collecting System State")
+                title: String(localized: "Collecting System State…")
             ) { report in
                 await Self.collect(into: directory, packages: packages) { name in
                     Task { @MainActor in report(nil, name) }
@@ -496,7 +496,7 @@ final class ReportCrashViewController: UITableViewController {
             do {
                 let bundle = try await ProgressCard.run(
                     from: self,
-                    title: String(localized: "Creating the Report")
+                    title: String(localized: "Creating Report…")
                 ) { report in
                     try await ReportBundleBuilder.build(request, environment: self.environment) { fraction, stage in
                         report(fraction, stage)
@@ -506,7 +506,7 @@ final class ReportCrashViewController: UITableViewController {
             } catch is CancellationError {
                 return
             } catch {
-                presentFailure("Could Not Create the Report", error)
+                presentFailure("Unable to Create Report", error)
             }
         }
     }

@@ -76,7 +76,7 @@ final class ReportSummaryViewController: UITableViewController {
         tableView.setEmptyState(.message(
             symbolName: "exclamationmark.triangle",
             title: String(localized: "Unable to Read This Report"),
-            description: String(localized: "The file could not be opened or understood."),
+            description: String(localized: "This file is not a report Xrash can read."),
             actionTitle: nil
         ))
     }
@@ -338,10 +338,10 @@ final class ReportSummaryViewController: UITableViewController {
 
     private func reasonLabel(_ reason: Suspect.Reason) -> String {
         switch reason {
-        case .onFaultingStack: String(localized: "On the crashed stack")
+        case .onFaultingStack: String(localized: "On the crashed thread’s stack")
         case .inExceptionBacktrace: String(localized: "In the exception backtrace")
         case .injectedTweak: String(localized: "Injected tweak")
-        case .thirdPartyImage: String(localized: "Not Apple’s code")
+        case .thirdPartyImage: String(localized: "Third-party code")
         case .recentlyInstalled: String(localized: "Installed recently")
         }
     }

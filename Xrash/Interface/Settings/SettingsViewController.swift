@@ -36,7 +36,7 @@ final class SettingsViewController: UITableViewController {
             Section(
                 title: String(localized: "Reports"),
                 footer: String(
-                    localized: "Most of what the system writes is analytics and logs, not crashes."
+                    localized: "Most reports the system writes are analytics and logs, not crashes."
                 ),
                 rows: [.defaultView, .showAnalytics, .hiddenProcesses]
             ),
@@ -44,8 +44,8 @@ final class SettingsViewController: UITableViewController {
                 title: String(localized: "Notifications"),
                 // Who announces is the backend's answer, so the sentence is too.
                 footer: CrashNotice.shared.daemonAnnounces.value
-                    ? String(localized: "A new report is announced even while Xrash is not running.")
-                    : String(localized: "A new report is noticed only while Xrash is running."),
+                    ? String(localized: "You are notified of new reports even when Xrash is not running.")
+                    : String(localized: "You are notified of new reports only while Xrash is running."),
                 rows: [.crashNotifications]
             ),
             Section(
@@ -233,7 +233,7 @@ final class SettingsViewController: UITableViewController {
         let alert = AlertViewController(
             title: String.LocalizationValue("Notifications Are Turned Off"),
             message: String.LocalizationValue(
-                "Allow notifications for Xrash in Settings to be told when a report arrives."
+                "Allow notifications for Xrash in Settings to know when a new report arrives."
             )
         ) { context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
@@ -284,7 +284,7 @@ final class SettingsViewController: UITableViewController {
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete All Reports?"),
             message: String.LocalizationValue(
-                "Every report file is removed. This cannot be undone."
+                "All reports are deleted. This cannot be undone."
             )
         ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
@@ -298,8 +298,8 @@ final class SettingsViewController: UITableViewController {
                         Toast.show(String(localized: "Reports Deleted"))
                     } else {
                         self.presentMessage(
-                            String.LocalizationValue("Some Reports Remain"),
-                            message: String.LocalizationValue("\(failed.count) of them could not be deleted.")
+                            String.LocalizationValue("Unable to Delete Some Reports"),
+                            message: String.LocalizationValue("\(failed.count) of the reports could not be deleted.")
                         )
                     }
                 }

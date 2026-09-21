@@ -80,7 +80,7 @@ enum ReportBundleBuilder {
             guard let summary = summaries[entry.id] else { throw Failure.reportUnavailable(entry.id) }
             progress(
                 0.05 + 0.35 * Double(offset) / Double(wanted.count),
-                String(localized: "Reading \(summary.processName)")
+                String(localized: "Reading \(summary.processName)…")
             )
             let report = try await report(for: entry.id, in: library)
             var member = BundleManifest.Member(
@@ -114,13 +114,13 @@ enum ReportBundleBuilder {
         let primaryCrash = primary.report.crash
         if request.options.includesBinaries, let crash = primaryCrash {
             try Task.checkCancellation()
-            progress(0.4, String(localized: "Copying binaries"))
+            progress(0.4, String(localized: "Copying binaries…"))
             let copied = await copyImages(
                 includedImages(in: crash),
                 into: working,
                 backend: environment.backend
             ) { fraction, name in
-                Task { @MainActor in progress(0.4 + 0.3 * fraction, String(localized: "Copying \(name)")) }
+                Task { @MainActor in progress(0.4 + 0.3 * fraction, String(localized: "Copying \(name)…")) }
             }
             manifest.binaries = copied.binaries
             files.append(contentsOf: copied.files)
@@ -131,13 +131,13 @@ enum ReportBundleBuilder {
 
         if request.includesDSYMs, let crash = primaryCrash {
             try Task.checkCancellation()
-            progress(0.72, String(localized: "Adding debug symbols"))
+            progress(0.72, String(localized: "Adding debug symbols…"))
             files.append(contentsOf: matchingDSYMs(for: crash, in: environment.dsyms))
         }
 
         if request.options.includesPDF {
             try Task.checkCancellation()
-            progress(0.76, String(localized: "Drawing the PDF"))
+            progress(0.76, String(localized: "Creating PDF…"))
             let packages = environment.packages
             // Both are read here, on the main actor, because the renderer runs
             // off it and neither UIKit's asset manager nor dpkg's cache likes
@@ -154,7 +154,7 @@ enum ReportBundleBuilder {
         // to print what is installed.
         if request.options.includesSystemState, !request.systemFiles.isEmpty {
             try Task.checkCancellation()
-            progress(0.82, String(localized: "Adding system state"))
+            progress(0.82, String(localized: "Adding system state…"))
             manifest.systemFiles = request.systemFiles.map {
                 BundleManifest.SystemFile(
                     name: $0.name,
@@ -168,11 +168,11 @@ enum ReportBundleBuilder {
         }
 
         try Task.checkCancellation()
-        progress(0.85, String(localized: "Writing the archive"))
+        progress(0.85, String(localized: "Writing the archive…"))
         let destination = environment.savedBundles.archiveURL(for: manifest.id)
         do {
             try await writeArchive(manifest, files: files, to: destination) { fraction in
-                Task { @MainActor in progress(0.85 + 0.15 * fraction, String(localized: "Writing the archive")) }
+                Task { @MainActor in progress(0.85 + 0.15 * fraction, String(localized: "Writing the archive…")) }
             }
             // libarchive cannot be stopped part-way, so a cancellation during
             // the write shows up here — with a finished file nobody asked for.

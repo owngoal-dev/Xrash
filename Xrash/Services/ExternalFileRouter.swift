@@ -56,7 +56,7 @@ enum ExternalFileRouter {
             let bundle = try AppEnvironment.shared.savedBundles.add(archiveAt: url)
             (select(.saved, in: root) as? SavedReportsViewController)?.show(bundleID: bundle.id)
         } catch {
-            present("Could Not Open the Report", error.localizedDescription, from: root)
+            present("Unable to Open Report", error.localizedDescription, from: root)
         }
     }
 
@@ -66,7 +66,7 @@ enum ExternalFileRouter {
                 _ = try await AppEnvironment.shared.library.importReport(at: url)
                 select(.reports, in: root)
             } catch {
-                present("Could Not Open the Report", error.localizedDescription, from: root)
+                present("Unable to Open Report", error.localizedDescription, from: root)
             }
         }
     }
@@ -85,14 +85,14 @@ enum ExternalFileRouter {
             _ = try DSYMImport.run(at: url, into: AppEnvironment.shared.dsyms)
             select(.symbols, in: root)
         } catch {
-            present("Could Not Import the Symbols", error.localizedDescription, from: root)
+            present("Unable to Import Symbols", error.localizedDescription, from: root)
         }
     }
 
     private static func presentUnsupported(_ url: URL, from root: UIViewController?) {
         present(
-            "Could Not Open This File",
-            url.lastPathComponent,
+            "Unable to Open File",
+            String(localized: "“\(url.lastPathComponent)” is not a crash report, a dSYM, or an Xrash report."),
             from: root
         )
     }

@@ -112,7 +112,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
         } else if let failure {
             tableView.setEmptyState(.message(
                 symbolName: "exclamationmark.triangle",
-                title: String(localized: "Could Not Load Releases"),
+                title: String(localized: "Unable to Load Releases"),
                 description: failure.localizedDescription,
                 actionTitle: String(localized: "Try Again")
             )) { [weak self] in self?.load() }
@@ -165,7 +165,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
         let assets = release.symbolAssets
         switch assets.count {
         case 0:
-            presentFailure("Could Not Import the Symbols", GitHubReleaseSymbols.Failure.noSymbolArchive)
+            presentFailure("Unable to Import Symbols", GitHubReleaseSymbols.Failure.noSymbolArchive)
         case 1:
             download(assets[0]) {}
         default:
@@ -196,25 +196,25 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
                 let imported = try await ProgressCard.run(
                     // The archive list may be the page on top.
                     from: navigationController ?? self,
-                    title: String(localized: "Importing Debug Symbols")
+                    title: String(localized: "Importing Symbols")
                 ) { report in
                     try FileManager.default.createDirectory(
                         at: destination.deletingLastPathComponent(),
                         withIntermediateDirectories: true
                     )
-                    report(0, String(localized: "Downloading \(asset.name)"))
+                    report(0, String(localized: "Downloading \(asset.name)…"))
                     try await GitHubReleaseSymbols.download(asset, to: destination) { fraction, bytes in
                         Task { @MainActor in
                             report(fraction, String(localized: "Downloaded \(ReportFormat.byteCount(UInt64(bytes)))"))
                         }
                     }
-                    report(nil, String(localized: "Unpacking \(asset.name)"))
+                    report(nil, String(localized: "Unpacking \(asset.name)…"))
                     return try await DSYMImport.runDetached(at: destination, into: store)
                 }
                 onImport()
-                Toast.show(imported == 0
-                    ? String(localized: "Every symbol file in that archive was already imported")
-                    : String(localized: "Imported \(imported) dSYMs"))
+                Toast.show(imported > 0
+                    ? String(inflecting: "Imported ^[\(imported) dSYM file](inflect: true)")
+                    : String(localized: "Every dSYM in that archive was already imported"))
                 self.imported.insert(asset)
                 done()
                 var snapshot = dataSource.snapshot()
@@ -223,7 +223,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             } catch is CancellationError {
                 return
             } catch {
-                (navigationController ?? self).presentFailure("Could Not Import the Symbols", error)
+                (navigationController ?? self).presentFailure("Unable to Import Symbols", error)
             }
         }
     }
@@ -254,7 +254,7 @@ private final class GitHubAssetsViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = String(localized: "Choose an Archive")
+        title = String(localized: "Choose Archive")
         navigationItem.largeTitleDisplayMode = .never
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "asset")
     }

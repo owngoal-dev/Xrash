@@ -74,8 +74,8 @@ final class SystemStateViewController: UITableViewController {
     static func open(_ file: SystemStateFile, from controller: UIViewController) {
         guard let text = try? String(contentsOf: file.url, encoding: .utf8) else {
             return controller.presentMessage(
-                "Could Not Open the File",
-                message: "\(file.name) could not be read."
+                "Unable to Open File",
+                message: "“\(file.name)” could not be opened. The file may be damaged."
             )
         }
         controller.navigationController?.pushViewController(

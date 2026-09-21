@@ -41,8 +41,8 @@ enum ReportFormat {
         switch group {
         case .app: String(localized: "Apps")
         case .service: String(localized: "Services")
-        case .jetsam: String(localized: "Jetsam")
-        case .other: String(localized: "Others")
+        case .jetsam: String(localized: "Out of Memory")
+        case .other: String(localized: "Other")
         }
     }
 

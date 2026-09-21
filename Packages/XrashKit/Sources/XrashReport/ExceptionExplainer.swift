@@ -64,8 +64,8 @@ enum ExceptionExplainer {
         }),
         Rule(matches: { $0.namespace == "CODESIGNING" }, sentence: { signals in
             signals.mentions("invalid page")
-                ? "The code signature stopped matching while the app was running: a page of the executable "
-                + "changed on disk, usually because it was updated or re-signed underneath it."
+                ? "The code signature stopped matching while the app was running: part of the executable "
+                + "changed on disk, usually because the app was updated or re-signed."
                 : "The system refused the app's code signature, so it was killed before it could run."
         }),
         Rule(matches: { $0.namespace == "DYLD" }, sentence: { signals in
@@ -85,7 +85,7 @@ enum ExceptionExplainer {
             "The app failed to finish launching in the time the system allows."
         }),
         Rule(matches: { $0.namespace == "TCC" }, sentence: { _ in
-            "The app used a protected resource without the privacy permission for it, and was killed."
+            "The app used a protected resource without the required privacy permission, and was killed."
         }),
         Rule(matches: { $0.namespace == "LIBXPC" }, sentence: { _ in
             "An XPC service the app depends on failed, and the app was torn down with it."
@@ -100,12 +100,12 @@ enum ExceptionExplainer {
         Rule(matches: { $0.type.hasPrefix("EXC_BAD_ACCESS") || $0.signal == "SIGSEGV" || $0.signal == "SIGBUS" },
              sentence: { signals in
                  if signals.mentions("pointer authentication") || signals.mentions("ptrauth") {
-                     return "The app jumped through a pointer whose authentication code did not check out — "
-                         + "a corrupted function pointer or a stack overwrite."
+                     return "The app called through a pointer whose authentication code was invalid — "
+                         + "a corrupted function pointer or an overwritten stack."
                  }
                  if let address = signals.address, address < 0x4000 {
                      return "The app read or wrote through a null pointer (address "
-                         + String(format: "0x%llx", address) + ") — an object was gone or was never set up."
+                         + String(format: "0x%llx", address) + ") — an object was released or was never created."
                  }
                  if let address = signals.address {
                      return "The app touched memory it does not own, at address "
@@ -115,7 +115,7 @@ enum ExceptionExplainer {
              }),
         Rule(matches: { $0.type == "EXC_CRASH" || $0.signal == "SIGABRT" }, sentence: { signals in
             signals.mentions("terminating app due to uncaught exception") || signals.mentions("nsexception")
-                ? "An exception was thrown and nobody caught it, so the app aborted."
+                ? "An exception was thrown and never caught, so the app aborted."
                 : "The app called abort(), usually after an uncaught exception or a failed assertion."
         }),
         Rule(matches: { $0.type == "EXC_BREAKPOINT" || $0.signal == "SIGTRAP" }, sentence: { _ in
@@ -131,7 +131,7 @@ enum ExceptionExplainer {
     ]
 
     private static func fallback(_ signals: Signals) -> String {
-        guard !signals.type.isEmpty else { return "The process ended without a recognised exception." }
+        guard !signals.type.isEmpty else { return "The process ended without a recognized exception." }
         let signal = signals.signal.isEmpty ? "" : " (\(signals.signal))"
         return "The process ended with \(signals.type)\(signal)."
     }

@@ -402,7 +402,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             symbolName: "checkmark.circle",
             title: String(localized: "No Reports"),
             description: String(
-                localized: "Nothing has crashed here, or the system has already cleared the reports."
+                localized: "Reports appear here when the system writes one."
             ),
             actionTitle: nil
         ))

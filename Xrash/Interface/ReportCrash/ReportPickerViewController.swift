@@ -93,12 +93,23 @@ final class ReportPickerViewController: UITableViewController, UISearchResultsUp
         }
         dataSource.apply(snapshot, animatingDifferences: false)
 
-        tableView.setEmptyState(matches.isEmpty ? .message(
-            symbolName: "magnifyingglass",
-            title: String(localized: "No Results"),
-            description: String(localized: "No other report matches “\(query)”."),
-            actionTitle: nil
-        ) : nil)
+        if !matches.isEmpty {
+            tableView.setEmptyState(nil)
+        } else if query.isEmpty {
+            tableView.setEmptyState(.message(
+                symbolName: "tray",
+                title: String(localized: "No Reports"),
+                description: String(localized: "There are no other reports to add."),
+                actionTitle: nil
+            ))
+        } else {
+            tableView.setEmptyState(.message(
+                symbolName: "magnifyingglass",
+                title: String(localized: "No Results"),
+                description: String(localized: "No other reports match “\(query)”. Try a different search."),
+                actionTitle: nil
+            ))
+        }
     }
 
     /// Case- and diacritic-insensitive, which `localizedStandardContains`

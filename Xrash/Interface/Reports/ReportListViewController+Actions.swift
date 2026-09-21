@@ -313,7 +313,7 @@ extension ReportListViewController {
             guard !urls.isEmpty else {
                 return presentMessage(
                     String.LocalizationValue("Nothing to Share"),
-                    message: String.LocalizationValue("No report could be read.")
+                    message: String.LocalizationValue("No report could be read. Try again.")
                 )
             }
             ReportShare.present(urls, from: self, source: source)
@@ -334,7 +334,7 @@ extension ReportListViewController {
             )
         }
         let alert = AlertViewController(
-            title: String.LocalizationValue("Delete \(ids.count) reports from \(name)?"),
+            title: String.LocalizationValue("Delete All Reports from \(name)?"),
             message: String.LocalizationValue(
                 "The report files are removed. This cannot be undone."
             )
@@ -373,8 +373,8 @@ extension ReportListViewController {
         }
         guard !failed.isEmpty else { return }
         presentMessage(
-            String.LocalizationValue("Some Reports Remain"),
-            message: String.LocalizationValue("\(failed.count) of them could not be deleted.")
+            String.LocalizationValue("Unable to Delete Some Reports"),
+            message: String.LocalizationValue("\(failed.count) of the reports could not be deleted.")
         )
     }
 }

@@ -134,7 +134,7 @@ extension ReportDetailViewController {
             guard let data = try? await AppEnvironment.shared.library.data(for: reportID) else {
                 return presentMessage(
                     String.LocalizationValue("Unable to Share"),
-                    message: String.LocalizationValue("The report could not be read.")
+                    message: String.LocalizationValue("The report could not be read. Try again.")
                 )
             }
             shareFile(named: name, contents: data)

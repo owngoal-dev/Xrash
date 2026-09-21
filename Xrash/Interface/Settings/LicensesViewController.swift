@@ -92,7 +92,7 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
             tableView.setEmptyState(.message(
                 symbolName: "doc.text",
                 title: String(localized: "No Licenses"),
-                description: String(localized: "This build shipped without its license file."),
+                description: String(localized: "License information is not available."),
                 actionTitle: nil
             ))
         } else {

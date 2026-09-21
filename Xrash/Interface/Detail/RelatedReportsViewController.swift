@@ -53,7 +53,7 @@ final class RelatedReportsViewController: UITableViewController, UISearchResults
         }
         dataSource.header = { [weak self] _ in
             String(
-                inflecting: "^[\(self?.shown.count ?? 0) report](inflect: true) with the same signature"
+                inflecting: "^[\(self?.shown.count ?? 0) report](inflect: true) of the same crash"
             )
         }
         render()
@@ -80,7 +80,7 @@ final class RelatedReportsViewController: UITableViewController, UISearchResults
         tableView.setEmptyState(shown.isEmpty ? .message(
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
-            description: String(localized: "No report here matches “\(needle)”."),
+            description: String(localized: "No report in this list matches “\(needle)”."),
             actionTitle: nil
         ) : nil)
     }

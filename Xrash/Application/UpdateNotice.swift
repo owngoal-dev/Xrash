@@ -29,7 +29,7 @@ final class UpdateNotice {
         isPending = false
         let alert = AlertViewController(
             title: String.LocalizationValue("Xrash Was Updated or Removed"),
-            message: String.LocalizationValue("This copy is no longer installed. Quit it and open Xrash again to continue.")
+            message: String.LocalizationValue("This copy of Xrash is no longer installed. Quit and open Xrash again.")
         ) { context in
             context.addAction(title: String.LocalizationValue("Later")) {
                 context.dispose()

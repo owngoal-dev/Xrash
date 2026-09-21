@@ -130,7 +130,7 @@ enum ReportPDFRenderer {
         }
         if members.count > Self.coverRowLimit {
             table.append(attributed(
-                String(localized: "and \(members.count - Self.coverRowLimit) more"),
+                String(inflecting: "^[\(members.count - Self.coverRowLimit) more report](inflect: true) not listed."),
                 style: .caption
             ))
         }
@@ -234,7 +234,7 @@ enum ReportPDFRenderer {
         }
         if systemCount > 0 {
             text.append(attributed(
-                String(localized: "and \(systemCount) system images, left out because they are Apple's."),
+                String(inflecting: "^[\(systemCount) Apple system image](inflect: true) left out."),
                 style: .caption
             ))
         }
@@ -530,11 +530,11 @@ enum ReportPDFRenderer {
 
     private static func reasonText(_ reason: Suspect.Reason) -> String {
         switch reason {
-        case .onFaultingStack: String(localized: "On the faulting stack")
+        case .onFaultingStack: String(localized: "On the crashed thread’s stack")
         case .inExceptionBacktrace: String(localized: "In the exception backtrace")
         case .injectedTweak: String(localized: "Injected tweak")
-        case .thirdPartyImage: String(localized: "Third-party image")
-        case .recentlyInstalled: String(localized: "Recently installed")
+        case .thirdPartyImage: String(localized: "Third-party code")
+        case .recentlyInstalled: String(localized: "Installed recently")
         }
     }
 

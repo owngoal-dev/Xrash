@@ -104,7 +104,7 @@ final class RendererTests: XCTestCase {
         XCTAssertTrue(explain(type: "EXC_CRASH", signal: "SIGABRT").contains("abort()"))
         XCTAssertTrue(explain(type: "EXC_CRASH", signal: "SIGABRT",
                               info: ["CoreFoundation: *** Terminating app due to uncaught exception"])
-                .contains("nobody caught it"))
+                .contains("never caught"))
         XCTAssertTrue(explain(type: "EXC_BAD_ACCESS", signal: "SIGSEGV",
                               subtype: "KERN_INVALID_ADDRESS at 0x0000000000000010").contains("null pointer"))
         XCTAssertTrue(explain(type: "EXC_BAD_ACCESS", signal: "SIGSEGV",
@@ -130,7 +130,7 @@ final class RendererTests: XCTestCase {
             .contains("launching"))
         XCTAssertTrue(explain(type: "EXC_CRASH", signal: "SIGKILL", namespace: "TCC").contains("privacy"))
         XCTAssertTrue(explain(type: "EXC_CRASH", signal: "SIGKILL", namespace: "LIBXPC").contains("XPC"))
-        XCTAssertTrue(explain(type: "", signal: "").contains("without a recognised exception"))
+        XCTAssertTrue(explain(type: "", signal: "").contains("without a recognized exception"))
     }
 
     func testExplanationOfARealCrash() throws {

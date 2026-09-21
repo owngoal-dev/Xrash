@@ -91,8 +91,8 @@ final class WelcomeNotificationsController: UIViewController {
             // Who announces is the backend's answer, so the sentence is too —
             // the same two Settings words its footer with.
             $0.text = CrashNotice.shared.daemonAnnounces.value
-                ? String(localized: "A new report is announced even while Xrash is not running.")
-                : String(localized: "A new report is noticed only while Xrash is running.")
+                ? String(localized: "You are notified of new reports even when Xrash is not running.")
+                : String(localized: "You are notified of new reports only while Xrash is running.")
             $0.font = WelcomeStyle.subtitleFont
             $0.adjustsFontForContentSizeCategory = true
             $0.textColor = WelcomeStyle.detailColor

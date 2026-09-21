@@ -156,7 +156,7 @@ private final class ReportPlaceholderViewController: UIViewController {
         let view = EmptyStateView(.message(
             symbolName: "doc.text.magnifyingglass",
             title: String(localized: "Select a Report"),
-            description: String(localized: "Choose a report on the left to see what happened."),
+            description: String(localized: "Choose a report to see what happened."),
             actionTitle: nil
         ))
         view.backgroundColor = .systemGroupedBackground
