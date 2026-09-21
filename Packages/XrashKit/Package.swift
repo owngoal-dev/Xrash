@@ -15,6 +15,7 @@ let package = Package(
         // never an edit to the hand-written project file.
         .library(name: "XrashKit", targets: [
             "XrashProtocol", "XrashClient", "XrashReport", "XrashSymbols", "XrashBlame", "XrashBundle",
+            "XrashSystemState",
         ]),
     ],
     dependencies: [
@@ -29,6 +30,13 @@ let package = Package(
         .package(url: "https://github.com/p-x9/swift-fileio.git", "0.14.0" ..< "0.15.0"),
         // Zip writing and reading for `.xrashreport` and zipped dSYMs.
         .package(url: "https://github.com/Lakr233/libarchive.xcframework.git", from: "0.1.1"),
+        // Read-only system state — launchd, LaunchServices, processes, jetsam —
+        // for the report bundle. `IcliSystem` is the half of icli that links
+        // Foundation and CoreFoundation and nothing else, and it resolves every
+        // private symbol it names at runtime, so it is safe on an iOS 15 floor.
+        // Nothing here changes system state; the half that does stays in
+        // `IcliKit`, which this does not link.
+        .package(url: "https://github.com/owngoal-dev/icli.git", from: "0.5.0"),
     ],
     targets: [
         // The wire vocabulary. Compiled into both sides, so it must stay free
@@ -74,10 +82,23 @@ let package = Package(
             ]
         ),
 
+        // What is installed and running, as the JSON files a bundle carries.
+        // `IcliSystem` is an iOS-only product here — the Mac harness and the
+        // Catalyst app build this target without it, and `SystemState` then
+        // reports itself unavailable rather than growing a second variant.
+        .target(
+            name: "XrashSystemState",
+            dependencies: [
+                "XrashBlame",
+                .product(name: "IcliSystem", package: "icli", condition: .when(platforms: [.iOS])),
+            ]
+        ),
+
         .testTarget(name: "XrashProtocolTests", dependencies: ["XrashProtocol"]),
         .testTarget(name: "XrashReportTests", dependencies: ["XrashReport"], resources: [.copy("Fixtures")]),
         .testTarget(name: "XrashSymbolsTests", dependencies: ["XrashSymbols"], resources: [.copy("Fixtures")]),
         .testTarget(name: "XrashBlameTests", dependencies: ["XrashBlame"]),
         .testTarget(name: "XrashBundleTests", dependencies: ["XrashBundle"]),
+        .testTarget(name: "XrashSystemStateTests", dependencies: ["XrashSystemState"]),
     ]
 )

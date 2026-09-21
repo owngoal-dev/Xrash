@@ -51,6 +51,12 @@
 		supported on macOS — Catalyst warns and ignores it — and a Finder drop
 		hands over the file where it lies either way.
 	-->
+	<!-- SiblingApps asks whether Fila and Irisin are installed before it offers them. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fila</string>
+		<string>irisin</string>
+	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>

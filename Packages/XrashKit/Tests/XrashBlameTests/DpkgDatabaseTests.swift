@@ -21,6 +21,7 @@ final class DpkgDatabaseTests: XCTestCase {
             Package: com.example.relative
             Name: Relative Tweak
             Version: 1.2.3
+            Maintainer: Jane <jane@example.com>
             Status: install ok installed
 
             Package: com.example.prefixed
@@ -82,6 +83,36 @@ final class DpkgDatabaseTests: XCTestCase {
     func testAListedPathIsMatchedAsWritten() {
         let database = DpkgDatabase(installRoot: root.path)
         XCTAssertEqual(database.owner(ofPath: "/usr/lib/relative.dylib")?.identifier, "com.example.relative")
+    }
+
+    /// The field as the status file spells it, display name and all; a package
+    /// that does not name one has nobody to write to.
+    func testMaintainerIsReadAsWritten() {
+        let database = DpkgDatabase(installRoot: root.path)
+        XCTAssertEqual(
+            database.owner(ofPath: "/usr/lib/relative.dylib")?.maintainer,
+            "Jane <jane@example.com>"
+        )
+        XCTAssertNil(database.owner(ofPath: "/var/jb/usr/lib/prefixed.dylib")?.maintainer)
+    }
+
+    /// What a mail goes to. A status file is untrusted input, so anything that
+    /// would smuggle in a second recipient is no address at all.
+    func testMaintainerAddressIsParsedAndChecked() {
+        XCTAssertEqual(address(of: "Jane <jane@example.com>"), "jane@example.com")
+        XCTAssertEqual(address(of: "Jane <old@example.com> (now <new@example.com>)"), "new@example.com")
+        XCTAssertEqual(address(of: "  jane@example.com \n"), "jane@example.com")
+        XCTAssertNil(address(of: "Jane Doe"))
+        XCTAssertNil(address(of: "Jane <jane at example.com>"))
+        XCTAssertNil(address(of: "jane@example.com, bob@example.com"))
+        XCTAssertNil(address(of: "jane@example.com\nBcc: bob@example.com"))
+        XCTAssertNil(PackageOwner(identifier: "com.example.relative").maintainerAddress)
+    }
+
+    private func address(of maintainer: String) -> String? {
+        var owner = PackageOwner(identifier: "com.example.relative")
+        owner.maintainer = maintainer
+        return owner.maintainerAddress
     }
 
     func testUnknownPathHasNoOwner() {

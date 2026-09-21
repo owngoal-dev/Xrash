@@ -2,6 +2,7 @@ import QuickLook
 import UIKit
 import XrashBundle
 import XrashReport
+import XrashSystemState
 
 /// One saved bundle: what it says about itself, the reports inside it, the
 /// files it carries and what can be done with the archive.
@@ -11,7 +12,7 @@ import XrashReport
 /// into the detail screen; only a file the user asks to see is extracted.
 final class BundleDetailViewController: UITableViewController, UISearchResultsUpdating {
     private enum Section: Hashable {
-        case about, members, files, actions
+        case about, members, files, systemState, actions
     }
 
     private enum Row: Hashable {
@@ -20,6 +21,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         case member(String)
         case pdf
         case binary(String)
+        case systemFile(String)
         case share
         case exportPDF
     }
@@ -28,6 +30,10 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
     private let store: SavedBundleStore
     private var dataSource: SectionedTableDataSource<Section, Row>!
     private var query = ""
+    /// Unpacked once, for the PDF and the collected files both, and removed
+    /// when the screen goes away. Unpacking per tap left a copy of the whole
+    /// archive in the temporary directory every time.
+    private var unpacked: URL?
 
     init(bundle: SavedBundleStore.SavedBundle, store: SavedBundleStore) {
         self.bundle = bundle
@@ -38,6 +44,11 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) is unavailable")
+    }
+
+    deinit {
+        guard let unpacked else { return }
+        try? FileManager.default.removeItem(at: unpacked)
     }
 
     private var members: [BundleManifest.Member] {
@@ -67,9 +78,19 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             case .about, .actions: nil
             case .members: String(localized: "Reports")
             case .files: String(localized: "Files")
+            case .systemState: String(localized: "System State")
             }
         }
+        dataSource.footer = { section in
+            guard section == .systemState else { return nil }
+            return String(localized: "What was installed and running when the report was made.")
+        }
         render()
+    }
+
+    /// What the manifest says was collected, in the order it was collected.
+    private var manifestSystemFiles: [BundleManifest.SystemFile] {
+        bundle.manifest.systemFiles ?? []
     }
 
     /// While a search is running the page is only its reports: the notes, the
@@ -94,6 +115,10 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             if !files.isEmpty {
                 snapshot.appendSections([.files])
                 snapshot.appendItems(files, toSection: .files)
+            }
+            if !manifestSystemFiles.isEmpty {
+                snapshot.appendSections([.systemState])
+                snapshot.appendItems(manifestSystemFiles.map { Row.systemFile($0.name) }, toSection: .systemState)
             }
             snapshot.appendSections([.actions])
             snapshot.appendItems(
@@ -181,6 +206,17 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 disclosure: false
             )
 
+        case let .systemFile(name):
+            let file = manifestSystemFiles.first { $0.name == name }
+            return action(
+                table,
+                indexPath,
+                title: name,
+                symbol: "doc.text",
+                detail: ReportFormat.byteCount(file?.byteCount ?? 0),
+                disclosure: true
+            )
+
         case .share:
             return action(
                 table,
@@ -240,13 +276,16 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 ReportDetailViewController(report: member.report, title: member.summary.processName),
                 animated: true
             )
+        case let .systemFile(name):
+            tableView.deselectRow(at: indexPath, animated: true)
+            openSystemFile(named: name)
         case .pdf, .exportPDF:
             tableView.deselectRow(at: indexPath, animated: true)
             openPDF(exporting: item == .exportPDF,
                     from: tableView.cellForRow(at: indexPath))
         case .share:
             tableView.deselectRow(at: indexPath, animated: true)
-            ReportShare.present([bundle.url], from: self, source: tableView.cellForRow(at: indexPath))
+            ReportShare.present(bundle, from: self, source: tableView.cellForRow(at: indexPath))
         default:
             tableView.deselectRow(at: indexPath, animated: true)
         }
@@ -257,7 +296,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         // out of someone else's archive, and the writer only ever uses one.
         guard bundle.manifest.pdfPath != nil else { return }
         do {
-            let url = try store.extract(bundle).appendingPathComponent(BundleLayout.pdf)
+            let url = try extracted().appendingPathComponent(BundleLayout.pdf)
             if exporting {
                 ReportShare.present([url], from: self, source: source)
             } else {
@@ -266,6 +305,45 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         } catch {
             presentFailure("Could Not Open the PDF", error)
         }
+    }
+
+    private func openSystemFile(named name: String) {
+        do {
+            let files = Self.systemFiles(of: bundle.manifest, in: try extracted())
+            guard let file = files.first(where: { $0.name == name }) else { return }
+            SystemStateViewController.open(file, from: self)
+        } catch {
+            presentFailure("Could Not Open the File", error)
+        }
+    }
+
+    /// The archive, unpacked once for this screen.
+    private func extracted() throws -> URL {
+        if let unpacked {
+            return unpacked
+        }
+        let directory = try store.extract(bundle)
+        unpacked = directory
+        return directory
+    }
+
+    /// The collected files inside an extracted bundle.
+    ///
+    /// The manifest says *what* was collected; where each file sits is this
+    /// app's own layout, the same way the PDF's is. A name out of someone
+    /// else's archive may not carry a separator, a NUL or a walk upwards, so a
+    /// name that is not a plain file name names nothing.
+    static func systemFiles(of manifest: BundleManifest, in directory: URL) -> [SystemStateFile] {
+        manifest.systemFiles?.compactMap { declared in
+            let name = declared.name
+            guard !name.isEmpty, name != ".", name != "..",
+                  !name.contains("/"), !name.utf8.contains(0) else { return nil }
+            return SystemStateFile(
+                name: name,
+                url: directory.appendingPathComponent(BundleLayout.systemFile(name: name)),
+                byteCount: declared.byteCount
+            )
+        } ?? []
     }
 }
 

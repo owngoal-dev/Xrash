@@ -120,8 +120,9 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
     ) -> UIContextMenuConfiguration? {
         guard let uuid = dataSource.itemIdentifier(for: indexPath),
               let image = shown.first(where: { $0.uuid == uuid }) else { return nil }
+        let owner = packages?.owner(ofPath: image.path)
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            UIMenu(children: [
+            var elements: [UIMenuElement] = [
                 UIAction(
                     title: String(localized: "Inspect Binary"),
                     image: UIImage(systemName: "doc.text.magnifyingglass")
@@ -136,7 +137,26 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
                     UIPasteboard.general.string = image.uuid
                     Toast.show(String(localized: "Copied"))
                 },
-            ])
+            ]
+            // The sibling apps, each offered only where it is installed.
+            if let fila = SiblingApps.revealInFila(path: image.path) {
+                elements.append(
+                    UIAction(title: String(localized: "Reveal in Fila"), image: UIImage(systemName: "folder")) { _ in
+                        SiblingApps.open(fila)
+                    }
+                )
+            }
+            if let owner, let irisin = SiblingApps.packageInIrisin(identifier: owner.identifier) {
+                elements.append(
+                    UIAction(
+                        title: String(localized: "Show Package in Irisin"),
+                        image: UIImage(systemName: "shippingbox")
+                    ) { _ in
+                        SiblingApps.open(irisin)
+                    }
+                )
+            }
+            return UIMenu(children: elements)
         }
     }
 }

@@ -192,6 +192,11 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.image = UIImage(systemName: "exclamationmark.circle")
             configuration.imageProperties.tintColor = .systemOrange
             cell.selectionStyle = .default
+            // One thing to do happens on the tap; several open as a list, and
+            // the row says so.
+            if suspect.map({ suspectActions($0).count > 1 }) == true {
+                cell.accessoryType = .disclosureIndicator
+            }
         case .showAllFrames:
             configuration.text = String(localized: "Show All Frames")
             configuration.textProperties.color = .tintColor
@@ -237,6 +242,10 @@ final class ReportSummaryViewController: UITableViewController {
             cell.selectionStyle = .default
         case .header, .frame:
             break
+        }
+        // A tap copies what the row shows, so a row showing nothing is inert.
+        if item.isCopyable, displayedText(of: configuration)?.isEmpty == false {
+            cell.selectionStyle = .default
         }
         // The system's own margins follow the fonts and the line count, so a
         // monospaced row, a wrapped row and a one-line row each came out a
@@ -320,18 +329,118 @@ final class ReportSummaryViewController: UITableViewController {
             push(ImagesViewController(crash: crash, packages: AppEnvironment.shared.packages))
         case .linkedReports:
             push(RelatedReportsViewController(summaries: content.similar))
-        case .viewContents, .panicText:
+        case .viewContents:
             (parent as? ReportDetailViewController)?.showRawSegment()
         case let .suspect(id):
             guard let suspect = content.suspects.first(where: { $0.id == id }) else { return }
-            UIPasteboard.general.string = suspect.id
-            Toast.show(String(localized: "Path Copied"))
-        case .incident:
-            UIPasteboard.general.string = content.report.header.incidentID
+            let actions = suspectActions(suspect)
+            // One thing to do is done, not asked about: the row that only
+            // copies its path still copies it on the tap.
+            guard actions.count > 1 else {
+                actions.first?.run()
+                return
+            }
+            presentSuspectActions(suspect, actions)
+        case _ where item.isCopyable:
+            guard let text = displayedText(at: indexPath), !text.isEmpty else { return }
+            UIPasteboard.general.string = text
             Toast.show(String(localized: "Copied"))
         default:
             break
         }
+    }
+
+    /// What the row is showing: its value if it has one, else the line itself —
+    /// a line of application information and a panic string *are* the line.
+    private func displayedText(of configuration: UIListContentConfiguration) -> String? {
+        configuration.secondaryText ?? configuration.text
+    }
+
+    /// Read back off the cell, so what lands on the clipboard is what the
+    /// reader is looking at rather than a second assembly of it.
+    private func displayedText(at indexPath: IndexPath) -> String? {
+        guard let configuration = tableView.cellForRow(at: indexPath)?
+            .contentConfiguration as? UIListContentConfiguration else { return nil }
+        return displayedText(of: configuration)
+    }
+
+    override func tableView(
+        _: UITableView,
+        contextMenuConfigurationForRowAt indexPath: IndexPath,
+        point _: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        guard let item = dataSource.itemIdentifier(for: indexPath), let content else { return nil }
+        let elements: [UIMenuElement]
+        switch item {
+        case let .suspect(id):
+            guard let suspect = content.suspects.first(where: { $0.id == id }) else { return nil }
+            elements = suspectActions(suspect).map { action in
+                UIAction(title: action.title, image: UIImage(systemName: action.symbol)) { _ in action.run() }
+            }
+        case .panicText:
+            // A tap copies the panic string; the whole file is one screen away.
+            elements = [
+                UIAction(title: String(localized: "View Raw"), image: UIImage(systemName: "curlybraces")) {
+                    [weak self] _ in
+                    (self?.parent as? ReportDetailViewController)?.showRawSegment()
+                },
+            ]
+        default:
+            return nil
+        }
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in UIMenu(children: elements) }
+    }
+
+    // MARK: Suspects
+
+    /// One list of what a suspect row offers, so the tap, the card and the
+    /// context menu cannot come to different answers. Copy Path is always
+    /// there; the rest depend on what dpkg knows and which sibling apps are
+    /// installed.
+    private struct SuspectAction {
+        let title: String
+        let symbol: String
+        let run: () -> Void
+    }
+
+    private func suspectActions(_ suspect: Suspect) -> [SuspectAction] {
+        var actions = [SuspectAction]()
+        if let owner = suspect.owner, owner.maintainerAddress != nil {
+            actions.append(SuspectAction(title: String(localized: "Mail Maintainer"), symbol: "envelope") {
+                [weak self] in
+                guard let self, let report = content?.report,
+                      let stem = (parent as? ReportDetailViewController)?.shareStem else { return }
+                MaintainerMail.present(owner: owner, report: report, stem: stem, from: self)
+            })
+        }
+        if let owner = suspect.owner, let irisin = SiblingApps.packageInIrisin(identifier: owner.identifier) {
+            actions.append(SuspectAction(title: String(localized: "Show Package in Irisin"), symbol: "shippingbox") {
+                SiblingApps.open(irisin)
+            })
+        }
+        if let fila = SiblingApps.revealInFila(path: suspect.id) {
+            actions.append(SuspectAction(title: String(localized: "Reveal in Fila"), symbol: "folder") {
+                SiblingApps.open(fila)
+            })
+        }
+        actions.append(SuspectAction(title: String(localized: "Copy Path"), symbol: "doc.on.doc") {
+            UIPasteboard.general.string = suspect.id
+            Toast.show(String(localized: "Path Copied"))
+        })
+        return actions
+    }
+
+    /// The card of them. Alerts go through `AlertController` in this app, which
+    /// presents in the middle of the window and needs no popover anchor — an
+    /// action sheet without one raises on an iPad.
+    private func presentSuspectActions(_ suspect: Suspect, _ actions: [SuspectAction]) {
+        let alert = AlertViewController(title: suspect.imageName, message: suspect.id) { context in
+            for action in actions {
+                context.addAction(title: action.title) { context.dispose { action.run() } }
+            }
+            context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
+        }
+        present(alert, animated: true)
     }
 
     /// A child is inside the container's navigation stack, so pushing from

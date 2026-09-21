@@ -6,11 +6,35 @@ public struct PackageOwner: Codable, Hashable, Sendable {
     public var identifier: String
     public var name: String?
     public var version: String?
+    /// `Jane Doe <jane@example.com>`, as the status file spells it.
+    public var maintainer: String?
     public var installed: Date?
 
     public init(identifier: String) {
         self.identifier = identifier
     }
+
+    /// The address to write to, out of `Jane Doe <jane@example.com>`; the last
+    /// bracketed address wins, and a field without brackets is the address
+    /// itself. A status file is a file on disk, so the candidate is checked
+    /// rather than trusted: one address, no display name, and nothing that
+    /// could carry a second recipient or a header of its own.
+    public var maintainerAddress: String? {
+        guard let maintainer else { return nil }
+        let bracketed = maintainer.split(separator: "<").dropFirst().compactMap { part in
+            part.firstIndex(of: ">").map { String(part[..<$0]) }
+        }
+        let candidate = bracketed.last { $0.contains("@") }
+            ?? maintainer.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard candidate.contains("@"), candidate.rangeOfCharacter(from: Self.notInAnAddress) == nil else {
+            return nil
+        }
+        return candidate
+    }
+
+    private static let notInAnAddress = CharacterSet.whitespacesAndNewlines
+        .union(.controlCharacters)
+        .union(CharacterSet(charactersIn: ",;<>"))
 }
 
 /// Reads dpkg's database below the install root `hello` reported. World
@@ -38,6 +62,13 @@ public final class DpkgDatabase: @unchecked Sendable {
             return index.ownerByPackage[package] ?? PackageOwner(identifier: package)
         }
         return nil
+    }
+
+    /// Every package with a file list, so every installed one, in identifier
+    /// order — a report's package list is read beside another report's.
+    public func installedPackages() -> [PackageOwner] {
+        guard let index = loaded() else { return [] }
+        return index.ownerByPackage.values.sorted { $0.identifier < $1.identifier }
     }
 
     /// Built on the first query and never again: an unreadable database stays

@@ -81,6 +81,16 @@ extension ReportListViewController {
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
         guard let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        if let row = process(for: id) {
+            let deleteAll = UIContextualAction(
+                style: .destructive,
+                title: String(localized: "Delete")
+            ) { [weak self] _, _, completion in
+                self?.confirmDeleteProcess(row.name)
+                completion(false)
+            }
+            return UISwipeActionsConfiguration(actions: [deleteAll])
+        }
         let delete = UIContextualAction(
             style: .destructive,
             title: String(localized: "Delete")
@@ -96,10 +106,22 @@ extension ReportListViewController {
         _: UITableView,
         leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
+        guard let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        if let row = process(for: id) {
+            let hide = UIContextualAction(
+                style: .normal,
+                title: String(localized: "Hide")
+            ) { [weak self] _, _, completion in
+                self?.hideProcess(row.name)
+                completion(true)
+            }
+            hide.image = UIImage(systemName: "eye.slash")
+            hide.backgroundColor = .systemBlue
+            return UISwipeActionsConfiguration(actions: [hide])
+        }
         // ponytail: read-only, because `ReportLibrary` has no way back to
         // unread. Add Mark Unread here the day it grows one.
-        guard let id = dataSource.itemIdentifier(for: indexPath),
-              library.unreadIDs.value.contains(id) else { return nil }
+        guard library.unreadIDs.value.contains(id) else { return nil }
         let markRead = UIContextualAction(
             style: .normal,
             title: String(localized: "Mark Read")
@@ -119,8 +141,13 @@ extension ReportListViewController {
         contextMenuConfigurationForRowAt indexPath: IndexPath,
         point _: CGPoint
     ) -> UIContextMenuConfiguration? {
-        guard !isEditing, let id = dataSource.itemIdentifier(for: indexPath),
-              let summary = summary(for: id) else { return nil }
+        guard !isEditing, let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        if let row = process(for: id) {
+            return UIContextMenuConfiguration(identifier: id as NSString, previewProvider: nil) { [weak self] _ in
+                self?.processMenu(row)
+            }
+        }
+        guard let summary = summary(for: id) else { return nil }
         let cell = tableView.cellForRow(at: indexPath)
         return UIContextMenuConfiguration(identifier: id as NSString, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
@@ -141,6 +168,14 @@ extension ReportListViewController {
                 ) { _ in
                     self.presentReportCrash(for: id)
                 },
+                // Not on a process page: hiding its one process empties it.
+                UIAction(
+                    title: String(localized: "Hide Process"),
+                    image: UIImage(systemName: "eye.slash"),
+                    attributes: self.lockedProcessName == nil ? [] : .hidden
+                ) { _ in
+                    self.hideProcess(summary.processName)
+                },
                 UIMenu(options: .displayInline, children: [
                     UIAction(
                         title: String(localized: "Delete"),
@@ -154,6 +189,49 @@ extension ReportListViewController {
         }
     }
 
+    /// An inbox row's menu. Fila's folder is offered only when Fila is there
+    /// to open it, and only for a report that names an app.
+    private func processMenu(_ row: ProcessInboxRow) -> UIMenu {
+        var children: [UIMenuElement] = [
+            UIAction(title: String(localized: "Open"), image: UIImage(systemName: "doc.text")) { [weak self] _ in
+                self?.openProcess(row.name)
+            },
+            UIAction(
+                title: String(localized: "Hide Process"),
+                image: UIImage(systemName: "eye.slash")
+            ) { [weak self] _ in
+                self?.hideProcess(row.name)
+            },
+        ]
+        if let bundleID = row.latest.bundleID, let url = SiblingApps.appInFila(bundleID: bundleID) {
+            children.append(
+                UIAction(
+                    title: String(localized: "Show App in Fila"),
+                    image: UIImage(systemName: "folder")
+                ) { _ in
+                    SiblingApps.open(url)
+                }
+            )
+        }
+        children.append(UIMenu(options: .displayInline, children: [
+            UIAction(
+                title: String(localized: "Delete All Reports"),
+                image: UIImage(systemName: "trash"),
+                attributes: .destructive
+            ) { [weak self] _ in
+                self?.confirmDeleteProcess(row.name)
+            },
+        ]))
+        return UIMenu(children: children)
+    }
+
+    /// A view filter and nothing more: the reports stay on disk, and Settings
+    /// is where a name comes back off the list.
+    func hideProcess(_ name: String) {
+        settings.changeFilter { $0.hiddenProcessNames.insert(name) }
+        Toast.show(String(localized: "Process Hidden"))
+    }
+
     // MARK: Edit mode
 
     func renderSelectionItems() {
@@ -162,9 +240,19 @@ extension ReportListViewController {
             return
         }
         let ids = (tableView.indexPathsForSelectedRows ?? []).compactMap(dataSource.itemIdentifier(for:))
-        // Nothing chosen yet: the one useful thing is choosing everything.
-        // The verbs take its place as soon as there is something to act on.
+        // Nothing chosen yet: the two useful things are choosing everything
+        // and being rid of everything. The verbs take their place as soon as
+        // there is something to act on.
         guard !ids.isEmpty else {
+            let deleteAll = UIBarButtonItem(
+                title: String(localized: "Delete All"),
+                primaryAction: UIAction { [weak self] _ in
+                    guard let self else { return }
+                    confirmDelete(shownReportIDs)
+                }
+            )
+            deleteAll.tintColor = .systemRed
+            deleteAll.isEnabled = dataSource.snapshot().numberOfItems > 0
             let selectAll = UIBarButtonItem(
                 title: String(localized: "Select All"),
                 primaryAction: UIAction { [weak self] _ in
@@ -182,7 +270,7 @@ extension ReportListViewController {
                 }
             )
             selectAll.isEnabled = dataSource.snapshot().numberOfItems > 0
-            toolbarItems = [.flexibleSpace(), selectAll, .flexibleSpace()]
+            toolbarItems = [deleteAll, .flexibleSpace(), selectAll]
             return
         }
         let delete = UIBarButtonItem(
@@ -232,6 +320,33 @@ extension ReportListViewController {
         }
     }
 
+    /// Every report filed under one process name — the inbox's swipe and menu,
+    /// and the process page's trash. The search field is not part of it: the
+    /// row counted the whole process, so this removes the whole process.
+    func confirmDeleteProcess(_ name: String) {
+        let ids = ReportListArrangement.admitted(for: input)
+            .filter { $0.summary.processName == name }
+            .map(\.summary.id)
+        guard !ids.isEmpty else {
+            return presentMessage(
+                String.LocalizationValue("Nothing to Delete"),
+                message: String.LocalizationValue("There are no reports to delete.")
+            )
+        }
+        let alert = AlertViewController(
+            title: String.LocalizationValue("Delete \(ids.count) reports from \(name)?"),
+            message: String.LocalizationValue(
+                "The report files are removed. This cannot be undone."
+            )
+        ) { [weak self] context in
+            context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
+            context.addAction(title: String.LocalizationValue("Delete All"), attribute: .accent) {
+                context.dispose { await self?.delete(ids) }
+            }
+        }
+        present(alert, animated: true)
+    }
+
     private func confirmDelete(_ ids: [String]) {
         guard !ids.isEmpty else { return }
         let title: String.LocalizationValue = ids.count == 1
@@ -242,10 +357,10 @@ extension ReportListViewController {
             message: String.LocalizationValue(
                 "The report files are removed. This cannot be undone."
             )
-        ) { context in
+        ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete"), attribute: .accent) {
-                context.dispose { [weak self] in await self?.delete(ids) }
+                context.dispose { await self?.delete(ids) }
             }
         }
         present(alert, animated: true)

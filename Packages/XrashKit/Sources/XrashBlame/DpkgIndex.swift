@@ -51,28 +51,34 @@ struct DpkgIndex {
             let description = described[package]
             owner.name = description?.name
             owner.version = description?.version
+            owner.maintainer = description?.maintainer
             owner.installed = date
             ownerByPackage[package] = owner
         }
         return DpkgIndex(packageByPath: packageByPath, ownerByPackage: ownerByPackage)
     }
 
-    /// `status` is RFC-822 paragraphs. Only `Package`, `Name` and `Version`
-    /// matter here; continuation lines start with a space and are skipped.
-    private static func describe(statusAt path: String) -> [String: (name: String?, version: String?)] {
+    private typealias Description = (name: String?, version: String?, maintainer: String?)
+
+    /// `status` is RFC-822 paragraphs. Only `Package`, `Name`, `Version` and
+    /// `Maintainer` matter here; continuation lines start with a space and
+    /// are skipped.
+    private static func describe(statusAt path: String) -> [String: Description] {
         guard let data = FileManager.default.contents(atPath: path), data.count <= statusBudget else { return [:] }
 
-        var described = [String: (name: String?, version: String?)]()
+        var described = [String: Description]()
         var package: String?
         var name: String?
         var version: String?
+        var maintainer: String?
         func endParagraph() {
             if let package, !package.isEmpty {
-                described[package] = (name, version)
+                described[package] = (name, version, maintainer)
             }
             package = nil
             name = nil
             version = nil
+            maintainer = nil
         }
 
         for line in String(decoding: data, as: UTF8.self).split(separator: "\n", omittingEmptySubsequences: false) {
@@ -87,6 +93,7 @@ struct DpkgIndex {
             case "Package": package = value
             case "Name": name = value
             case "Version": version = value
+            case "Maintainer": maintainer = value
             default: break
             }
         }

@@ -59,6 +59,15 @@ enum DetailItem: Hashable {
     case jetsamProcess(Int)
     case panicText
     case viewContents
+
+    /// The rows a tap copies, the way the incident id always has: the value
+    /// the row is showing, whole. An empty one is left inert.
+    var isCopyable: Bool {
+        switch self {
+        case .explanation, .exception, .termination, .incident, .applicationInfo, .panicText: true
+        default: false
+        }
+    }
 }
 
 struct DetailContent {

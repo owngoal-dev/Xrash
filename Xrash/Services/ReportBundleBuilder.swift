@@ -5,6 +5,7 @@ import XrashBundle
 import XrashClient
 import XrashReport
 import XrashSymbols
+import XrashSystemState
 
 /// Turns a primary report and the crashes linked to it into one
 /// `.xrashreport`, straight into `SavedBundleStore`'s directory.
@@ -28,6 +29,10 @@ enum ReportBundleBuilder {
         var options = BundleOptions()
         /// Ship the dSYMs that match an image in the primary crash.
         var includesDSYMs = false
+        /// Already collected and already reviewed, on disk where the form left
+        /// them. Collected here instead and what ships would not be what the
+        /// person was shown.
+        var systemFiles = [SystemStateFile]()
     }
 
     enum Failure: LocalizedError {
@@ -142,6 +147,24 @@ enum ReportBundleBuilder {
                 manifest.pdfPath = Layout.pdf
                 files.append(pdf)
             }
+        }
+
+        // After the PDF, so the summary is drawn from a manifest that has never
+        // heard of system state: a one-page summary of a crash is not the place
+        // to print what is installed.
+        if request.options.includesSystemState, !request.systemFiles.isEmpty {
+            try Task.checkCancellation()
+            progress(0.82, String(localized: "Adding system state"))
+            manifest.systemFiles = request.systemFiles.map {
+                BundleManifest.SystemFile(
+                    name: $0.name,
+                    archivePath: BundleLayout.systemFile(name: $0.name),
+                    byteCount: $0.byteCount
+                )
+            }
+            files.append(contentsOf: request.systemFiles.map {
+                BundleFile(source: $0.url, archivePath: BundleLayout.systemFile(name: $0.name))
+            })
         }
 
         try Task.checkCancellation()

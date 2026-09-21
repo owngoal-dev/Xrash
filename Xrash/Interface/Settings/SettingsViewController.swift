@@ -13,12 +13,15 @@ final class SettingsViewController: UITableViewController {
         case defaultView
         case formatJSON
         case showAnalytics
+        case hiddenProcesses
+        case crashNotifications
         case retention
         case deleteAll
         case storage
         case version
         case source
         case licenses
+        case welcome
     }
 
     private struct Section {
@@ -51,7 +54,14 @@ final class SettingsViewController: UITableViewController {
                 footer: String(
                     localized: "Most of what the system writes is analytics and logs, not crashes."
                 ),
-                rows: [.symbolicateOnOpen, .defaultView, .formatJSON, .showAnalytics]
+                rows: [.symbolicateOnOpen, .defaultView, .formatJSON, .showAnalytics, .hiddenProcesses]
+            ),
+            Section(
+                title: String(localized: "Notifications"),
+                footer: String(
+                    localized: "A new report is noticed only while Xrash is running."
+                ),
+                rows: [.crashNotifications]
             ),
             Section(
                 title: String(localized: "Cleanup"),
@@ -60,7 +70,11 @@ final class SettingsViewController: UITableViewController {
                 ),
                 rows: [.retention, .deleteAll, .storage]
             ),
-            Section(title: String(localized: "About"), footer: nil, rows: [.version, .source, .licenses]),
+            Section(
+                title: String(localized: "About"),
+                footer: nil,
+                rows: [.version, .source, .licenses, .welcome]
+            ),
         ]
     }
 
@@ -180,6 +194,18 @@ final class SettingsViewController: UITableViewController {
                 isOn: settings.filter.value.showsAnalytics,
                 action: #selector(toggleAnalytics)
             )
+        case .hiddenProcesses:
+            configuration.text = String(localized: "Hidden Processes")
+            let hidden = settings.filter.value.hiddenProcessNames.count
+            configuration.secondaryText = hidden == 0 ? String(localized: "None") : hidden.formatted()
+            cell.accessoryType = .disclosureIndicator
+            cell.selectionStyle = .default
+        case .crashNotifications:
+            configuration.text = String(localized: "Crash Notifications")
+            cell.accessoryView = toggle(
+                isOn: settings.preferences.value.notifiesOnNewReports,
+                action: #selector(toggleNotifications)
+            )
         case .retention:
             configuration.text = String(localized: "Auto-Delete Reports")
             configuration.secondaryText = retentionLabel(settings.preferences.value.retentionDays)
@@ -206,6 +232,10 @@ final class SettingsViewController: UITableViewController {
             configuration.text = String(localized: "Licenses")
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
+        case .welcome:
+            configuration.text = String(localized: "Show Welcome Screen")
+            configuration.textProperties.color = view.tintColor ?? .tintColor
+            cell.selectionStyle = .default
         }
         cell.contentConfiguration = configuration
         return cell
@@ -220,6 +250,8 @@ final class SettingsViewController: UITableViewController {
             }
         case .defaultView:
             navigationController?.pushViewController(defaultViewChooser(), animated: true)
+        case .hiddenProcesses:
+            navigationController?.pushViewController(HiddenProcessesViewController(), animated: true)
         case .retention:
             navigationController?.pushViewController(retentionChooser(), animated: true)
         case .deleteAll:
@@ -228,6 +260,8 @@ final class SettingsViewController: UITableViewController {
             URL(string: "https://github.com/owngoal-dev/Xrash").map { UIApplication.shared.open($0) }
         case .licenses:
             navigationController?.pushViewController(LicensesViewController(), animated: true)
+        case .welcome:
+            WelcomeController.present(from: self)
         default:
             break
         }
@@ -252,6 +286,39 @@ final class SettingsViewController: UITableViewController {
 
     @objc private func toggleAnalytics(_ control: UISwitch) {
         settings.changeFilter { $0.showsAnalytics = control.isOn }
+    }
+
+    /// Turning it on is where the OS is asked. A refusal is not a state the
+    /// app can hold: the switch goes back and says where to change it.
+    @objc private func toggleNotifications(_ control: UISwitch) {
+        guard control.isOn else {
+            return settings.changePreferences { $0.notifiesOnNewReports = false }
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            guard await CrashNotice.shared.requestAuthorization() else {
+                control.setOn(false, animated: true)
+                return presentNotificationsRefused()
+            }
+            settings.changePreferences { $0.notifiesOnNewReports = true }
+        }
+    }
+
+    private func presentNotificationsRefused() {
+        let alert = AlertViewController(
+            title: String.LocalizationValue("Notifications Are Turned Off"),
+            message: String.LocalizationValue(
+                "Allow notifications for Xrash in Settings to be told when a report arrives."
+            )
+        ) { context in
+            context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
+            context.addAction(title: String.LocalizationValue("Open Settings"), attribute: .accent) {
+                context.dispose {
+                    URL(string: UIApplication.openSettingsURLString).map { UIApplication.shared.open($0) }
+                }
+            }
+        }
+        present(alert, animated: true)
     }
 
     private var statusTitle: String {
@@ -373,18 +440,18 @@ final class SettingsViewController: UITableViewController {
             message: String.LocalizationValue(
                 "Every report file is removed. This cannot be undone."
             )
-        ) { context in
+        ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete All"), attribute: .accent) {
-                context.dispose { [weak self] in
+                context.dispose {
                     guard let self else { return }
-                    guard let failed = await ReportDeletion.delete(ids, from: self, library: library) else {
+                    guard let failed = await ReportDeletion.delete(ids, from: self, library: self.library) else {
                         return
                     }
                     if failed.isEmpty {
                         Toast.show(String(localized: "Reports Deleted"))
                     } else {
-                        presentMessage(
+                        self.presentMessage(
                             String.LocalizationValue("Some Reports Remain"),
                             message: String.LocalizationValue("\(failed.count) of them could not be deleted.")
                         )

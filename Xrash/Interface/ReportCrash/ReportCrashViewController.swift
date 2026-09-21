@@ -1,9 +1,11 @@
 import Combine
 import Then
 import UIKit
+import XrashBlame
 import XrashBundle
 import XrashReport
 import XrashSymbols
+import XrashSystemState
 
 /// The "Report Crash" form: a primary report, the crashes linked to it, notes
 /// and what to include — one `.xrashreport` out. Presented as a form sheet
@@ -25,10 +27,11 @@ final class ReportCrashViewController: UITableViewController {
         case title
         case notes
         case include(Include)
+        case reviewSystemState
     }
 
     private enum Include: Hashable, CaseIterable {
-        case rawReports, crashText, json, pdf, binaries, dsyms
+        case rawReports, crashText, json, pdf, binaries, dsyms, systemState
     }
 
     private let primaryID: String
@@ -44,6 +47,12 @@ final class ReportCrashViewController: UITableViewController {
     private var includesDSYMs = false
     private var hasMatchingDSYM = false
     private var binaryByteCount: UInt64 = 0
+    /// Collected once, on the first need, and kept for the life of the form:
+    /// what the Review screen showed is what the archive ships.
+    private var systemFiles: [SystemStateFile]?
+    private let systemStateDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("SystemState", isDirectory: true)
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
 
     private var isBuilding = false
 
@@ -59,6 +68,12 @@ final class ReportCrashViewController: UITableViewController {
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) is unavailable")
+    }
+
+    /// The collection outlives the archive write and nothing else; the form
+    /// closing is the last thing that could want it.
+    deinit {
+        try? FileManager.default.removeItem(at: systemStateDirectory)
     }
 
     override func viewDidLoad() {
@@ -150,10 +165,15 @@ final class ReportCrashViewController: UITableViewController {
         snapshot.appendItems([.title, .notes], toSection: .details)
 
         snapshot.appendSections([.include])
-        snapshot.appendItems(
-            Include.allCases.filter { $0 != .dsyms || hasMatchingDSYM }.map { Row.include($0) },
-            toSection: .include
-        )
+        // A switch nothing on this machine could answer is not offered at all.
+        var includes = Include.allCases
+            .filter { $0 != .dsyms || hasMatchingDSYM }
+            .filter { $0 != .systemState || SystemState.isAvailable }
+            .map { Row.include($0) }
+        if options.includesSystemState, SystemState.isAvailable {
+            includes.append(.reviewSystemState)
+        }
+        snapshot.appendItems(includes, toSection: .include)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -252,6 +272,20 @@ final class ReportCrashViewController: UITableViewController {
             )
             cell.onChange = { [weak self] isOn in self?.set(include, to: isOn) }
             return cell
+
+        case .reviewSystemState:
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            var content = cell.defaultContentConfiguration()
+            content.text = String(localized: "Review Collected Files")
+            content.textProperties.color = view.tintColor
+            content.image = UIImage(systemName: "list.bullet.rectangle")
+            content.imageProperties.tintColor = view.tintColor
+            content.secondaryText = systemFiles.map { ReportFormat.byteCount(collectedByteCount($0)) }
+            content.prefersSideBySideTextAndSecondaryText = true
+            content.secondaryTextProperties.color = .secondaryLabel
+            cell.contentConfiguration = content
+            cell.accessoryType = .disclosureIndicator
+            return cell
         }
     }
 
@@ -270,13 +304,28 @@ final class ReportCrashViewController: UITableViewController {
         case .suggestions:
             String(localized: "Crashes that look like part of the same incident.")
         case .include:
-            String(localized: """
-            Binaries add the crashed executable and the third-party libraries on the crashing stack. \
-            They can be large and may not be yours to share.
-            """) + "\n\n" + String(localized: "Estimated size: \(estimatedSizeText)")
+            includeFooter
         default:
             nil
         }
+    }
+
+    /// Two warnings and a running total. System State is the one switch whose
+    /// contents are about the machine rather than the crash, so the footer says
+    /// what it names and leaves the decision where it belongs.
+    private var includeFooter: String {
+        var paragraphs = [String(localized: """
+        Binaries add the crashed executable and the third-party libraries on the crashing stack. \
+        They can be large and may not be yours to share.
+        """)]
+        if SystemState.isAvailable {
+            paragraphs.append(String(localized: """
+            System State names every app, package, tweak, process and service installed and running. \
+            Review the files and decide for yourself what to send.
+            """))
+        }
+        paragraphs.append(String(localized: "Estimated size: \(estimatedSizeText)"))
+        return paragraphs.joined(separator: "\n\n")
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -288,6 +337,8 @@ final class ReportCrashViewController: UITableViewController {
             render()
         case .addOther:
             presentPicker()
+        case .reviewSystemState:
+            Task { await reviewSystemState() }
         default:
             break
         }
@@ -327,6 +378,61 @@ final class ReportCrashViewController: UITableViewController {
         navigationController?.pushViewController(picker, animated: true)
     }
 
+    /// Pushes the list of what was collected, collecting first if the switch
+    /// was turned on and nothing has needed the files yet.
+    private func reviewSystemState() async {
+        guard let files = await collectedSystemFiles() else { return }
+        navigationController?.pushViewController(
+            SystemStateViewController(files: files),
+            animated: true
+        )
+    }
+
+    /// The one collection, made on the first need and kept. Nil when the person
+    /// cancelled it, which turns the switch back off: a switch left on with
+    /// nothing behind it would ship a bundle nobody reviewed.
+    private func collectedSystemFiles() async -> [SystemStateFile]? {
+        if let systemFiles {
+            return systemFiles
+        }
+        let directory = systemStateDirectory
+        let packages = environment.packages
+        do {
+            let collected = try await ProgressCard.run(
+                from: self,
+                title: String(localized: "Collecting System State")
+            ) { report in
+                await Self.collect(into: directory, packages: packages) { name in
+                    Task { @MainActor in report(nil, name) }
+                }
+            }
+            systemFiles = collected
+            render()
+            reconfigure([.include(.systemState), .reviewSystemState])
+            refreshIncludeFooter()
+            return collected
+        } catch {
+            options.includesSystemState = false
+            render()
+            refreshIncludeFooter()
+            return nil
+        }
+    }
+
+    /// `SystemState.collect` is synchronous and reads files, so it runs off the
+    /// main actor; the line naming the file it is on comes back to it.
+    @concurrent private nonisolated static func collect(
+        into directory: URL,
+        packages: DpkgDatabase?,
+        progress: @escaping @Sendable (String) -> Void
+    ) async -> [SystemStateFile] {
+        SystemState.collect(into: directory, packages: packages, progress: progress)
+    }
+
+    private func collectedByteCount(_ files: [SystemStateFile]) -> UInt64 {
+        files.reduce(0) { $0 + $1.byteCount }
+    }
+
     private func create() {
         guard !isBuilding else { return }
         isBuilding = true
@@ -334,14 +440,6 @@ final class ReportCrashViewController: UITableViewController {
         isModalInPresentation = true
         navigationItem.rightBarButtonItem?.isEnabled = false
 
-        let request = ReportBundleBuilder.Request(
-            primaryID: primaryID,
-            linked: linked,
-            title: bundleTitle,
-            notes: notes,
-            options: options,
-            includesDSYMs: includesDSYMs && hasMatchingDSYM
-        )
         Task { [weak self] in
             guard let self else { return }
             defer {
@@ -349,6 +447,19 @@ final class ReportCrashViewController: UITableViewController {
                 isModalInPresentation = false
                 navigationItem.rightBarButtonItem?.isEnabled = true
             }
+            // The same collection the Review screen showed, collected now if
+            // nothing has asked for it yet. A cancelled collection turns the
+            // switch off, and the bundle is built without it.
+            let collected = options.includesSystemState ? await collectedSystemFiles() ?? [] : []
+            let request = ReportBundleBuilder.Request(
+                primaryID: primaryID,
+                linked: linked,
+                title: bundleTitle,
+                notes: notes,
+                options: options,
+                includesDSYMs: includesDSYMs && hasMatchingDSYM,
+                systemFiles: collected
+            )
             do {
                 let bundle = try await ProgressCard.run(
                     from: self,
@@ -372,7 +483,7 @@ final class ReportCrashViewController: UITableViewController {
         dismiss(animated: true) {
             Toast.show(String(localized: "Report Created"))
             guard let presenter else { return }
-            ReportShare.present([bundle.url], from: presenter, source: nil)
+            ReportShare.present(bundle, from: presenter, source: nil)
         }
     }
 
@@ -386,12 +497,20 @@ final class ReportCrashViewController: UITableViewController {
         case .pdf: String(localized: "PDF Summary")
         case .binaries: String(localized: "Binaries")
         case .dsyms: String(localized: "Matching dSYMs")
+        case .systemState: String(localized: "System State")
         }
     }
 
     private func detail(for include: Include) -> String? {
-        guard include == .binaries, options.includesBinaries, binaryByteCount > 0 else { return nil }
-        return ReportFormat.byteCount(binaryByteCount)
+        switch include {
+        case .binaries:
+            guard options.includesBinaries, binaryByteCount > 0 else { return nil }
+            return ReportFormat.byteCount(binaryByteCount)
+        case .systemState:
+            return String(localized: "Services, apps, packages, tweaks and processes")
+        default:
+            return nil
+        }
     }
 
     private func isOn(_ include: Include) -> Bool {
@@ -402,6 +521,7 @@ final class ReportCrashViewController: UITableViewController {
         case .pdf: options.includesPDF
         case .binaries: options.includesBinaries
         case .dsyms: includesDSYMs
+        case .systemState: options.includesSystemState
         }
     }
 
@@ -413,15 +533,29 @@ final class ReportCrashViewController: UITableViewController {
         case .pdf: options.includesPDF = isOn
         case .binaries: options.includesBinaries = isOn
         case .dsyms: includesDSYMs = isOn
+        case .systemState: options.includesSystemState = isOn
         }
-        reconfigure([.include(include)])
-        // The footer carries the running estimate, and nothing redraws a
-        // section's footer on its own.
-        if let section = dataSource.snapshot().indexOfSection(.include) {
-            let view = tableView.footerView(forSection: section)
-            view?.textLabel?.text = footer(for: .include)
-            view?.sizeToFit()
+        if include == .systemState {
+            // The Review row comes and goes with the switch, and turning it on
+            // is the first need: collect now rather than at the Create button,
+            // so the files can be read before the bundle exists.
+            render()
+            if isOn {
+                Task { _ = await collectedSystemFiles() }
+            }
+        } else {
+            reconfigure([.include(include)])
         }
+        refreshIncludeFooter()
+    }
+
+    /// The footer carries the running estimate, and nothing redraws a section's
+    /// footer on its own.
+    private func refreshIncludeFooter() {
+        guard let section = dataSource.snapshot().indexOfSection(.include) else { return }
+        let view = tableView.footerView(forSection: section)
+        view?.textLabel?.text = footer(for: .include)
+        view?.sizeToFit()
     }
 
     // MARK: Text
@@ -445,6 +579,9 @@ final class ReportCrashViewController: UITableViewController {
         }
         if options.includesBinaries {
             bytes += binaryByteCount
+        }
+        if options.includesSystemState, let systemFiles {
+            bytes += collectedByteCount(systemFiles)
         }
         return ReportFormat.byteCount(bytes)
     }

@@ -23,18 +23,26 @@ extension ReportDetailViewController {
         if let symbolicateAction {
             elements.append(UIMenu(options: .displayInline, children: [symbolicateAction]))
         }
-        elements.append(
-            UIMenu(options: .displayInline, children: [
-                UIAction(title: String(localized: "Report Crash…"), image: UIImage(systemName: "paperplane")) {
-                    [weak self] _ in
-                    guard let self else { return }
-                    presentAsFormSheet(
-                        UINavigationController(rootViewController: ReportCrashViewController(primaryID: reportID))
-                    )
-                },
-                share,
-            ])
-        )
+        var group: [UIMenuElement] = [
+            UIAction(title: String(localized: "Report Crash…"), image: UIImage(systemName: "paperplane")) {
+                [weak self] _ in
+                guard let self else { return }
+                presentAsFormSheet(
+                    UINavigationController(rootViewController: ReportCrashViewController(primaryID: reportID))
+                )
+            },
+            share,
+        ]
+        // The report id is its path, so Fila — where it is installed — can show
+        // the file itself.
+        if let fila = SiblingApps.revealInFila(path: reportID) {
+            group.append(
+                UIAction(title: String(localized: "Reveal in Fila"), image: UIImage(systemName: "folder")) { _ in
+                    SiblingApps.open(fila)
+                }
+            )
+        }
+        elements.append(UIMenu(options: .displayInline, children: group))
         // Its own group: a rule between the thing that cannot be undone and
         // the things beside it.
         elements.append(
@@ -120,16 +128,17 @@ extension ReportDetailViewController {
             message: String.LocalizationValue(
                 "The report file is removed. This cannot be undone."
             )
-        ) { context in
+        ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete"), attribute: .accent) {
-                context.dispose { [weak self] in
+                context.dispose {
                     await AppEnvironment.shared.library.delete([reportID])
                     guard let self else { return }
-                    if let reports = splitViewController as? ReportsSplitViewController, !reports.isCollapsed {
+                    if let reports = self.splitViewController as? ReportsSplitViewController,
+                       !reports.isCollapsed {
                         reports.showPlaceholder()
                     } else {
-                        navigationController?.popViewController(animated: true)
+                        self.navigationController?.popViewController(animated: true)
                     }
                 }
             }

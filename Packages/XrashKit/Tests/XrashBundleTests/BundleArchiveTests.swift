@@ -26,6 +26,67 @@ final class BundleArchiveTests: XCTestCase {
         XCTAssertEqual(try PropertyListDecoder().decode(BundleManifest.self, from: data), manifest())
     }
 
+    /// `systemFiles` is optional so that a bundle written before it existed
+    /// still decodes, and one written with it comes back with the field.
+    func testAManifestWithoutSystemFilesStillDecodes() throws {
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .xml
+
+        let old = try encoder.encode(manifest())
+        XCTAssertFalse(
+            String(decoding: old, as: UTF8.self).contains("systemFiles"),
+            "nil must not be written at all, or an old reader would meet a key it has no type for"
+        )
+        XCTAssertNil(try PropertyListDecoder().decode(BundleManifest.self, from: old).systemFiles)
+
+        var withState = manifest()
+        withState.systemFiles = [
+            BundleManifest.SystemFile(
+                name: "launchd-services.json",
+                archivePath: BundleLayout.systemFile(name: "launchd-services.json"),
+                byteCount: 2_915_842
+            ),
+        ]
+        let decoded = try PropertyListDecoder().decode(
+            BundleManifest.self, from: try encoder.encode(withState)
+        )
+        XCTAssertEqual(decoded, withState)
+        XCTAssertEqual(decoded.systemFiles?.first?.archivePath, "system/launchd-services.json")
+    }
+
+    /// The archive stores a collected file exactly where the manifest says it
+    /// is, because that path is all a reader has to go on.
+    func testSystemFilesLandWhereTheManifestSaysTheyAre() throws {
+        let source = directory.appendingPathComponent("device.json")
+        let contents = Data(#"{"model": "iPhone14,2"}"#.utf8)
+        try contents.write(to: source)
+
+        let archivePath = BundleLayout.systemFile(name: "device.json")
+        var manifest = manifest()
+        manifest.systemFiles = [
+            BundleManifest.SystemFile(
+                name: "device.json",
+                archivePath: archivePath,
+                byteCount: UInt64(contents.count)
+            ),
+        ]
+        let destination = directory.appendingPathComponent("System.xrashreport")
+        try BundleArchive.write(
+            manifest,
+            files: [BundleFile(source: source, archivePath: archivePath)],
+            to: destination
+        )
+
+        let unpacked = directory.appendingPathComponent("unpacked-system")
+        let read = try BundleArchive.read(destination, extractingInto: unpacked)
+        let declared = try XCTUnwrap(read.systemFiles?.first)
+        XCTAssertEqual(
+            try Data(contentsOf: unpacked.appendingPathComponent(declared.archivePath)),
+            contents
+        )
+        XCTAssertEqual(try headers(of: destination).map(\.name), [BundleLayout.manifest, archivePath])
+    }
+
     func testWriteAndReadRoundTripALargeFile() throws {
         let payload = Data((0 ..< (5 << 20)).map { _ in UInt8.random(in: .min ... .max) })
         let source = directory.appendingPathComponent("Fila")

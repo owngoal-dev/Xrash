@@ -57,6 +57,21 @@ public struct BundleManifest: Codable, Hashable, Sendable {
         }
     }
 
+    /// One file of collected system state: services, registered apps,
+    /// installed packages, tweaks, processes, jetsam configuration.
+    public struct SystemFile: Codable, Hashable, Sendable {
+        /// `launchd-services.json`.
+        public var name: String
+        public var archivePath: String
+        public var byteCount: UInt64
+
+        public init(name: String, archivePath: String, byteCount: UInt64) {
+            self.name = name
+            self.archivePath = archivePath
+            self.byteCount = byteCount
+        }
+    }
+
     public var schemaVersion = BundleManifest.currentSchemaVersion
     public var id: String
     public var created: Date
@@ -70,6 +85,10 @@ public struct BundleManifest: Codable, Hashable, Sendable {
     public var linked: [Member]
     public var binaries: [IncludedBinary]
     public var pdfPath: String?
+    /// Nil in a bundle made without system state, and in every bundle made
+    /// before it existed; optional so both still decode. A bundle that has
+    /// any names what is installed and running, and sharing it says so first.
+    public var systemFiles: [SystemFile]?
 
     public init(id: String, created: Date, title: String, notes: String, generator: String, primary: Member) {
         self.id = id
@@ -91,6 +110,9 @@ public struct BundleOptions: Codable, Hashable, Sendable {
     public var includesPDF = true
     /// Off by default: binaries are large and may not be the user's to share.
     public var includesBinaries = false
+    /// Off by default: it names everything installed and running on the
+    /// machine, which is the person's business and not a default.
+    public var includesSystemState = false
 
     public init() {}
 }

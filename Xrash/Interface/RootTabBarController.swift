@@ -13,6 +13,12 @@ final class RootTabBarController: UITabBarController {
                 animated: true
             )
         }
+        reports.openProcess = { [weak reports] name in
+            reports?.navigationController?.pushViewController(
+                ReportListViewController.processPage(for: name),
+                animated: true
+            )
+        }
         viewControllers = [
             Self.page(reports, title: String(localized: "Reports"), symbol: "exclamationmark.triangle"),
             Self.page(SavedReportsViewController(), title: String(localized: "Saved"), symbol: "heart.text.square"),

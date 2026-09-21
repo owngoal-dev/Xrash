@@ -1,5 +1,7 @@
+import AlertController
 import SPIndicator
 import UIKit
+import XrashBundle
 
 /// One line of feedback, nothing to press.
 ///
@@ -28,6 +30,67 @@ enum ReportShare {
 
     static func file(named name: String, text: String) throws -> URL {
         try file(named: name, contents: Data(text.utf8))
+    }
+
+    /// A saved bundle, under its title rather than the id it is stored as.
+    /// Every screen that shares one comes through here.
+    ///
+    /// A bundle carrying system state says so before it leaves: the archive
+    /// names every app, package and tweak on the machine, and the person who
+    /// made it a week ago should not have to remember that on the way out.
+    static func present(
+        _ bundle: SavedBundleStore.SavedBundle,
+        from controller: UIViewController,
+        source: UIView?
+    ) {
+        guard let systemFiles = bundle.manifest.systemFiles, !systemFiles.isEmpty else {
+            return share(bundle, from: controller, source: source)
+        }
+        let alert = AlertViewController(
+            title: String.LocalizationValue("This Report Includes System State"),
+            message: String.LocalizationValue("""
+            Installed apps, packages, tweaks, running processes and services are included. \
+            Review them before sharing.
+            """)
+        ) { [weak controller] context in
+            context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
+            context.addAction(title: String.LocalizationValue("Review Files")) {
+                context.dispose {
+                    guard let controller else { return }
+                    Self.review(bundle, from: controller)
+                }
+            }
+            context.addAction(title: String.LocalizationValue("Share"), attribute: .accent) {
+                context.dispose {
+                    guard let controller else { return }
+                    Self.share(bundle, from: controller, source: source)
+                }
+            }
+        }
+        controller.present(alert, animated: true)
+    }
+
+    private static func share(
+        _ bundle: SavedBundleStore.SavedBundle,
+        from controller: UIViewController,
+        source: UIView?
+    ) {
+        present([AppEnvironment.shared.savedBundles.shareURL(for: bundle)], from: controller, source: source)
+    }
+
+    /// The collected files out of the archive, as a sheet: whoever was about to
+    /// share is not on the screen that lists them.
+    private static func review(_ bundle: SavedBundleStore.SavedBundle, from controller: UIViewController) {
+        let store = AppEnvironment.shared.savedBundles
+        do {
+            let directory = try store.extract(bundle)
+            let files = BundleDetailViewController.systemFiles(of: bundle.manifest, in: directory)
+            controller.presentAsFormSheet(UINavigationController(
+                rootViewController: SystemStateViewController(files: files, removing: directory)
+            ))
+        } catch {
+            controller.presentFailure("Could Not Open the Report", error)
+        }
     }
 
     /// The only place a share sheet is made, so the only place it is anchored:

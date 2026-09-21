@@ -2,7 +2,7 @@ import Foundation
 import ObjectiveC.runtime
 import UIKit
 
-/// Ported from CocoaInspector, where the same question is asked of a running
+/// Ported from Inspector, where the same question is asked of a running
 /// process rather than of a report.
 enum ApplicationBundleLocator {
     /// An executable path inside `Host.app/PlugIns/Extension.appex` belongs to

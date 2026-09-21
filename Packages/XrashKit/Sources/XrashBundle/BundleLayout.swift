@@ -10,6 +10,7 @@ import Foundation
 /// reports/<memberID>/report.json            the decoded model as JSON
 /// binaries/<UUID>/<name>                    a binary kept for later symbolication
 /// dsyms/<UUID>.dwarf                        its DWARF, when one was found
+/// system/<name>.json                        collected system state, when it was asked for
 /// ```
 ///
 /// Spelled once here so that no caller builds these strings itself and no two
@@ -38,6 +39,11 @@ public enum BundleLayout {
 
     public static func dsym(uuid: String) -> String {
         "dsyms/\(uuid).dwarf"
+    }
+
+    /// One collected system-state file, under its own name.
+    public static func systemFile(name: String) -> String {
+        "system/\(name)"
     }
 
     /// The one form of an archive name that may be joined onto a directory.

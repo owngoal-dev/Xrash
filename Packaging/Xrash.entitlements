@@ -15,6 +15,26 @@
 
 	There is no App Group: Xrash embeds no extension that shares a container.
 
+	The five system-state keys are what the "System State" switch in Report
+	Crash reads with, and nothing else in the app asks for them. None of them
+	grants root, and a key being present is not proof a platform will honour it:
+
+	  per-user-lookup        launchd's per-user domain, where iOS keeps the real
+	                         pids of proxied daemons. Without it the service
+	                         list is the system domain only.
+	  canmaplsdatabase, lsaw the LaunchServices database, for the registered
+	                         applications. Without them the collector falls back
+	                         to scanning the application directories.
+	  proc_info-allow        another process's executable path. The pid and the
+	                         name come from sysctl without it.
+	  memorystatus           the jetsam priority list, which `memorystatus_control`
+	                         refuses an ordinary process. Without it — or root —
+	                         `jetsam.json` carries `priorities_error` and the
+	                         properties and memory figures come back anyway.
+
+	They belong to the custom firmware wrappers only. The Catalyst app is signed
+	with no entitlements at all, and a sideload `.ipa` must not carry these.
+
 	`platform-application` is the default. It attests "signed as platform",
 	not "this client". If it is unused on the app, drop it from the app *and*
 	from the authenticator together.
@@ -47,6 +67,16 @@
 	<key>com.apple.private.security.no-sandbox</key>
 	<true/>
 	<key>platform-application</key>
+	<true/>
+	<key>com.apple.private.xpc.launchd.per-user-lookup</key>
+	<true/>
+	<key>com.apple.private.coreservices.canmaplsdatabase</key>
+	<true/>
+	<key>com.apple.private.coreservices.lsaw</key>
+	<true/>
+	<key>proc_info-allow</key>
+	<true/>
+	<key>com.apple.private.memorystatus</key>
 	<true/>
 </dict>
 </plist>

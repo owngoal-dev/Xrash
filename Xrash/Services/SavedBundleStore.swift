@@ -133,6 +133,29 @@ final class SavedBundleStore {
         return try adopt(manifest, at: archive)
     }
 
+    /// The archive under the name a person gave it. On disk an archive is
+    /// named by its id, which is what AirDrop and Files would otherwise show.
+    /// A hard link where the volume allows one, a copy where it does not, and
+    /// the archive itself if neither works: sharing an ugly name beats not
+    /// sharing.
+    func shareURL(for bundle: SavedBundle) -> URL {
+        let title = bundle.manifest.title
+            .components(separatedBy: CharacterSet(charactersIn: "/:\0").union(.newlines))
+            .joined(separator: "-")
+            .trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty, title != ".", title != ".." else { return bundle.url }
+        let named = temporaryDirectory()
+            .appendingPathComponent(String(title.prefix(120)))
+            .appendingPathExtension(Self.archiveExtension)
+        let files = FileManager.default
+        if (try? files.linkItem(at: bundle.url, to: named)) != nil
+            || (try? files.copyItem(at: bundle.url, to: named)) != nil
+        {
+            return named
+        }
+        return bundle.url
+    }
+
     private func temporaryDirectory() -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("Bundles", isDirectory: true)

@@ -19,15 +19,24 @@ extension UIViewController {
         presentMessage(title, message: String.LocalizationValue(error.localizedDescription))
     }
 
-    /// Every sheet this app presents, at one size, so one replacing another
-    /// does not step. The *window's* width class decides, not the presenter's:
-    /// a screen inside a split view's primary column is compact on an iPad
-    /// whose window is not, and a sheet sized for that came out twice as wide
-    /// as the one beside it.
-    func presentAsFormSheet(_ viewController: UIViewController) {
+    /// Every sheet this app presents, sized here and nowhere else, so one
+    /// replacing another does not step. The *window's* width class decides, not
+    /// the presenter's: a screen inside a split view's primary column is
+    /// compact on an iPad whose window is not, and a sheet sized for that came
+    /// out twice as wide as the one beside it.
+    ///
+    /// The pages take the default size. The welcome passes the size its own
+    /// original was drawn at and turns the detents off, which is what leaves it
+    /// a plain page sheet on a phone — with no grabber, since it does not
+    /// dismiss by hand until its work is done.
+    func presentAsFormSheet(
+        _ viewController: UIViewController,
+        size: CGSize = CGSize(width: 555, height: 555),
+        usesDetents: Bool = true
+    ) {
         viewController.modalPresentationStyle = .formSheet
         let window = viewIfLoaded?.window?.traitCollection ?? traitCollection
-        if window.horizontalSizeClass == .compact {
+        if window.horizontalSizeClass == .compact, usesDetents {
             viewController.sheetPresentationController?.do {
                 $0.detents = [.large()]
                 $0.prefersGrabberVisible = true
@@ -39,7 +48,7 @@ extension UIViewController {
             // Fila's and Irisin's card. Set on what is presented — the
             // navigation controller — and only here: a page that sized itself
             // would resize the sheet on every push and pop.
-            viewController.preferredContentSize = CGSize(width: 555, height: 555)
+            viewController.preferredContentSize = size
         }
         present(viewController, animated: true)
     }

@@ -4,7 +4,7 @@ import UIKit
 import XrashReport
 
 /// A report row: the app's icon, what died, why, and when. Shaped after
-/// CocoaInspector's process row, which is the same question about a process
+/// Inspector's process row, which is the same question about a process
 /// that is still alive.
 final class ReportRowCell: UITableViewCell {
     static let reuseIdentifier = "report"

@@ -13,6 +13,9 @@ final class ReportLibrary {
     /// Newest first.
     let summaries = CurrentValueSubject<[ReportSummary], Never>([])
     let isLoading = CurrentValueSubject<Bool, Never>(false)
+    /// How far the header pass has got, while one is running: the welcome page
+    /// shows it, and nothing else needs more than `isLoading`.
+    let listingProgress = CurrentValueSubject<(read: Int, total: Int)?, Never>(nil)
     /// Reports never opened on this device.
     let unreadIDs = CurrentValueSubject<Set<String>, Never>([])
 
@@ -58,7 +61,10 @@ final class ReportLibrary {
 
     private func listAndPublish() async {
         isLoading.send(true)
-        defer { isLoading.send(false) }
+        defer {
+            isLoading.send(false)
+            listingProgress.send(nil)
+        }
 
         let entries = await((try? backend.listReports()) ?? []) + importedEntries()
         var rows = entries.map {
@@ -67,7 +73,9 @@ final class ReportLibrary {
 
         // ponytail: headers are re-read on every refresh; persist them keyed
         // by (path, mtime) if a device with thousands of reports feels it.
+        listingProgress.send((read: 0, total: rows.count))
         for index in rows.indices {
+            defer { listingProgress.send((read: index + 1, total: rows.count)) }
             guard let header = await header(of: rows[index].id) else { continue }
             rows[index] = ReportDecoder.enrich(rows[index], header: header, executablePath: nil)
         }

@@ -151,7 +151,7 @@ handshake.
 - `make vphone` — rootless package installed on the vphone over `iproxy 2222 22`
   (`sudo dpkg -i` as `mobile`; root login is refused there).
 
-The build scripts and Makefile started from CocoaInspector's (smallest
+The build scripts and Makefile started from Inspector's (smallest
 on-demand daemon) with the CLI removed; `sign-frameworks.sh` is Fila's.
 
 Give every parallel worker its own `DERIVED_DATA=/private/tmp/<name>` — spelled
@@ -211,7 +211,9 @@ Report which of those actually ran.
 Wide: `ReportsSplitViewController` — the report list beside the open report,
 two columns and never three; Saved, Symbols and Settings are 555×555 form
 sheets off the list's ••• menu (`presentAsFormSheet`, the only place a sheet
-is sized). Narrow: the same controller's `.compact` column is
+is sized — the welcome passes Irisin's own 520×620 and turns the detents off,
+which leaves it a plain page sheet on a phone). Narrow: the same controller's
+`.compact` column is
 `RootTabBarController`, four tabs. A report's Summary / Details / Raw switch
 is the first group of its ••• menu; the bar title is the process name.
 `LoadBudget` holds a screen back for its first data (1 s at launch, 200 ms per

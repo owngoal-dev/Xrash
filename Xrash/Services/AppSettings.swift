@@ -23,6 +23,30 @@ struct ReportFilter: Codable, Equatable, Sendable {
     var kinds: Set<ReportKind> = [.crash, .hang, .resource, .jetsam, .panic]
     var grouping = Grouping.category
     var order = Order.newest
+    /// Case-sensitive, matched against `ReportSummary.processName`. A view
+    /// filter: the reports stay on disk and nothing stops being written.
+    var hiddenProcessNames = Set<String>()
+
+    init() {}
+
+    /// Every field is optional on the way in, for the reason
+    /// `ReportPreferences` gives: one new field must not reset the others.
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        unreadOnly = try values.decodeIfPresent(Bool.self, forKey: .unreadOnly) ?? unreadOnly
+        kinds = try values.decodeIfPresent(Set<ReportKind>.self, forKey: .kinds) ?? kinds
+        grouping = try values.decodeIfPresent(Grouping.self, forKey: .grouping) ?? grouping
+        order = try values.decodeIfPresent(Order.self, forKey: .order) ?? order
+        hiddenProcessNames = try values.decodeIfPresent(Set<String>.self, forKey: .hiddenProcessNames)
+            ?? hiddenProcessNames
+    }
+
+    /// Whether a report is shown at all, before unread-only and search. The
+    /// list, the icon badge and the crash notification all ask this, so a
+    /// hidden process is hidden from every one of them.
+    func admits(_ summary: ReportSummary) -> Bool {
+        kinds.contains(summary.kind) && !hiddenProcessNames.contains(summary.processName)
+    }
 
     var showsAnalytics: Bool {
         get { !kinds.isDisjoint(with: Self.analyticsKinds) }
@@ -57,6 +81,9 @@ struct ReportPreferences: Codable, Equatable, Sendable {
     var textScale = 1.0
     /// The Raw view opens indented rather than as the two long lines on disk.
     var formatsJSON = true
+    /// A notification for a report that arrives while the app is running.
+    /// Nothing is injected anywhere, so that is the whole of what it can see.
+    var notifiesOnNewReports = true
 
     init() {}
 
@@ -71,6 +98,8 @@ struct ReportPreferences: Codable, Equatable, Sendable {
         wrapsLines = try values.decodeIfPresent(Bool.self, forKey: .wrapsLines) ?? wrapsLines
         textScale = try values.decodeIfPresent(Double.self, forKey: .textScale) ?? textScale
         formatsJSON = try values.decodeIfPresent(Bool.self, forKey: .formatsJSON) ?? formatsJSON
+        notifiesOnNewReports = try values.decodeIfPresent(Bool.self, forKey: .notifiesOnNewReports)
+            ?? notifiesOnNewReports
     }
 }
 

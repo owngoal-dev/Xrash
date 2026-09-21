@@ -19,6 +19,14 @@ final class ReportsSplitViewController: UISplitViewController {
                 for: .secondary
             )
         }
+        // The process page is the secondary column's own stack, so a report
+        // opened from it pushes on top and Back is the process again.
+        list.openProcess = { [weak self] name in
+            self?.setViewController(
+                UINavigationController(rootViewController: ReportListViewController.processPage(for: name)),
+                for: .secondary
+            )
+        }
         list.navigationItem.leftBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
             menu: UIMenu(children: [
@@ -68,8 +76,29 @@ final class ReportsSplitViewController: UISplitViewController {
         view.addInteraction(UIDropInteraction(delegate: self))
     }
 
-    /// Back to "Select a Report" — what a deleted detail leaves behind.
+    /// A report brought up from outside the list — a tapped notification. The
+    /// compact column keeps a list of its own, so which stack the report joins
+    /// is whichever one is on screen.
+    func showReport(id: String) {
+        // A form sheet over the window would otherwise hide what was tapped.
+        presentedViewController?.dismiss(animated: false)
+        let detail = ReportDetailViewController(reportID: id)
+        guard isCollapsed, let tabs = viewController(for: .compact) as? UITabBarController else {
+            return setViewController(UINavigationController(rootViewController: detail), for: .secondary)
+        }
+        tabs.selectedIndex = 0
+        (tabs.selectedViewController as? UINavigationController)?.pushViewController(detail, animated: true)
+    }
+
+    /// Back to "Select a Report" — what a deleted detail leaves behind. A
+    /// detail opened from a process page goes back to that page instead: the
+    /// column still has a list to show, and it is the one that was in use.
     func showPlaceholder() {
+        if let navigation = viewController(for: .secondary) as? UINavigationController,
+           navigation.viewControllers.count > 1 {
+            navigation.popViewController(animated: true)
+            return
+        }
         setViewController(placeholder(), for: .secondary)
     }
 

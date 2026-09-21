@@ -189,7 +189,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
     }
 
     private func share(_ bundle: SavedBundleStore.SavedBundle, from source: UIView?) {
-        ReportShare.present([bundle.url], from: self, source: source)
+        ReportShare.present(bundle, from: self, source: source)
     }
 
     private func openPDF(_ bundle: SavedBundleStore.SavedBundle) {
@@ -251,10 +251,16 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         let count = 1 + bundle.manifest.linked.count
         let attributes = try? FileManager.default.attributesOfItem(atPath: bundle.url.path)
         let size = (attributes?[.size] as? NSNumber)?.uint64Value ?? 0
-        return [
+        var parts = [
             String(inflecting: "^[\(count) report](inflect: true)"),
             ReportFormat.byteCount(size),
             ReportFormat.date(bundle.manifest.created),
-        ].joined(separator: " · ")
+        ]
+        // Said on the row, not only inside: this is the one thing about a saved
+        // bundle worth knowing before it is opened or shared.
+        if bundle.manifest.systemFiles?.isEmpty == false {
+            parts.append(String(localized: "System State"))
+        }
+        return parts.joined(separator: " · ")
     }
 }
