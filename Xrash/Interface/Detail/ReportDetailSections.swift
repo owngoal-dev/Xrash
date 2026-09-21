@@ -20,7 +20,8 @@ enum DetailSection: Hashable {
 
     var title: String? {
         switch self {
-        case .summary: nil
+        // Titled like the sections under it, now that the icon sits above it.
+        case .summary: String(localized: "Details")
         case .applicationInfo: String(localized: "Application Information")
         case .suspects: String(localized: "Suspects")
         case .crashedThread: String(localized: "Crashed Thread")

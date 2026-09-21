@@ -28,6 +28,8 @@ actor ApplicationIconProvider {
     static let shared = ApplicationIconProvider()
 
     private static let listRowFormat: Int32 = 1
+    private static let homeScreenFormat: Int32 = 2
+    private static let largestDisplayScale: CGFloat = 3
     /// No app has ever had this identifier, so whatever IconServices answers
     /// for it is the generic placeholder and nothing else.
     private static let unknownBundleIdentifier = "wiki.qaq.xrash.unknown-application"
@@ -126,11 +128,16 @@ actor ApplicationIconProvider {
             method_getImplementation(method),
             to: ApplicationIconImplementation.self
         )
+        // No display has a scale above three, so a larger one is a caller
+        // drawing the icon large — the top of a report — and the small
+        // variant multiplied up is a smudge. The home screen variant is drawn
+        // from the large artwork.
+        let format = scale > largestDisplayScale ? homeScreenFormat : listRowFormat
         return implementation(
             UIImage.self,
             selector,
             bundleIdentifier as NSString,
-            listRowFormat,
+            format,
             scale
         )?.takeUnretainedValue()
     }

@@ -72,6 +72,7 @@ final class ReportSummaryViewController: UITableViewController {
 
     func showFailure() {
         loadViewIfNeeded()
+        tableView.tableHeaderView = nil
         tableView.setEmptyState(.message(
             symbolName: "exclamationmark.triangle",
             title: String(localized: "Unable to Read This Report"),
