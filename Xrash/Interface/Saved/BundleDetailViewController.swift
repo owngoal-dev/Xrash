@@ -176,7 +176,8 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
 
         case let .member(id):
             let cell = table.dequeueReusableCell(
-                withIdentifier: BundleReportCell.reuseIdentifier, for: indexPath
+                withIdentifier: BundleReportCell.reuseIdentifier,
+                for: indexPath
             ) as! BundleReportCell
             if let member = members.first(where: { $0.id == id }) {
                 let detail = member.relation.map(RelationText.label) ?? String(localized: "Primary")
@@ -281,8 +282,10 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             openSystemFile(named: name)
         case .pdf, .exportPDF:
             tableView.deselectRow(at: indexPath, animated: true)
-            openPDF(exporting: item == .exportPDF,
-                    from: tableView.cellForRow(at: indexPath))
+            openPDF(
+                exporting: item == .exportPDF,
+                from: tableView.cellForRow(at: indexPath)
+            )
         case .share:
             tableView.deselectRow(at: indexPath, animated: true)
             ReportShare.present(bundle, from: self, source: tableView.cellForRow(at: indexPath))

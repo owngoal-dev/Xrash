@@ -80,7 +80,12 @@ final class PathGuardTests: XCTestCase {
     }
 
     func testPayloadRoundTrip() throws {
-        let entry = ReportEntry(path: "/x/a.ips", byteCount: 2, modified: Date(timeIntervalSince1970: 1), ownerUserID: 0)
+        let entry = ReportEntry(
+            path: "/x/a.ips",
+            byteCount: 2,
+            modified: Date(timeIntervalSince1970: 1),
+            ownerUserID: 0
+        )
         XCTAssertEqual(try XrashWire.decode([ReportEntry].self, from: XrashWire.encode([entry])), [entry])
     }
 }

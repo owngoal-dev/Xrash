@@ -239,9 +239,15 @@ enum ReportPDFRenderer {
         }
     }
 
-    private static func facts(of member: BundleManifest.Member, crash: CrashReport) -> [(label: String, value: String)] {
+    private static func facts(
+        of member: BundleManifest.Member,
+        crash: CrashReport
+    ) -> [(label: String, value: String)] {
         var rows = [(label: String, value: String)]()
-        rows.append((String(localized: "Process"), "\(crash.process.name) [\(crash.process.pid.map(String.init) ?? "–")]"))
+        rows.append((
+            String(localized: "Process"),
+            "\(crash.process.name) [\(crash.process.pid.map(String.init) ?? "–")]"
+        ))
         if let bundleID = crash.process.bundleID {
             rows.append((String(localized: "Bundle ID"), bundleID))
         }
@@ -254,7 +260,10 @@ enum ReportPDFRenderer {
         }
         if let exception = crash.exception {
             let detail = [exception.signal, exception.subtype].compactMap(\.self).joined(separator: " · ")
-            rows.append((String(localized: "Exception"), detail.isEmpty ? exception.type : "\(exception.type) · \(detail)"))
+            rows.append((
+                String(localized: "Exception"),
+                detail.isEmpty ? exception.type : "\(exception.type) · \(detail)"
+            ))
         }
         if let termination = crash.termination {
             let byProcess = termination.byProcess.map { String(localized: "by \($0)") }

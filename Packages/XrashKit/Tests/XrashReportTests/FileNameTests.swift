@@ -49,9 +49,13 @@ final class FileNameTests: XCTestCase {
     }
 
     func testGroupBeforeTheFileIsOpened() {
-        XCTAssertEqual(ReportDecoder.summary(path: "/a/Fila-2026-09-08-191717.ips", byteCount: 1, modified: .now).group,
-                       .service)
-        XCTAssertEqual(ReportDecoder.summary(path: "/a/JetsamEvent-2026-09-10-101010.ips", byteCount: 1,
-                                             modified: .now).group, .jetsam)
+        XCTAssertEqual(
+            ReportDecoder.summary(path: "/a/Fila-2026-09-08-191717.ips", byteCount: 1, modified: .now).group,
+            .service
+        )
+        XCTAssertEqual(
+            ReportDecoder.summary(path: "/a/JetsamEvent-2026-09-10-101010.ips", byteCount: 1, modified: .now).group,
+            .jetsam
+        )
     }
 }

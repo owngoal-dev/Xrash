@@ -24,7 +24,9 @@ final class CrashCorrelationTests: XCTestCase {
 
         let candidate = summary("SpringBoard", at: moment.addingTimeInterval(4000))
         let suggestion = CrashCorrelation.suggestions(
-            for: summary("Fila", at: moment), primaryCrash: crash, among: [candidate]
+            for: summary("Fila", at: moment),
+            primaryCrash: crash,
+            among: [candidate]
         ).first
         XCTAssertEqual(suggestion?.relation, .terminator)
         XCTAssertEqual(suggestion?.score, 80)
@@ -39,7 +41,9 @@ final class CrashCorrelationTests: XCTestCase {
         for name in ["launchd", "SpringBoard", "Xrash"] {
             let candidate = summary(name, at: moment.addingTimeInterval(4000))
             let suggestion = CrashCorrelation.suggestions(
-                for: summary("Fila", at: moment), primaryCrash: crash, among: [candidate]
+                for: summary("Fila", at: moment),
+                primaryCrash: crash,
+                among: [candidate]
             ).first
             XCTAssertEqual(suggestion?.relation, .relatedProcess, name)
             XCTAssertEqual(suggestion?.score, 60, name)
@@ -95,7 +99,9 @@ final class CrashCorrelationTests: XCTestCase {
         // Both the terminator (80) and three seconds away (50) describe it.
         let candidate = summary("SpringBoard", at: moment.addingTimeInterval(3))
         let suggestions = CrashCorrelation.suggestions(
-            for: primary, primaryCrash: crash, among: [primary, candidate]
+            for: primary,
+            primaryCrash: crash,
+            among: [primary, candidate]
         )
         XCTAssertEqual(suggestions.count, 1)
         XCTAssertEqual(suggestions.first?.relation, .terminator)

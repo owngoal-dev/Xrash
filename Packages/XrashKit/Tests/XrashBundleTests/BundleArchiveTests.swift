@@ -48,7 +48,8 @@ final class BundleArchiveTests: XCTestCase {
             ),
         ]
         let decoded = try PropertyListDecoder().decode(
-            BundleManifest.self, from: encoder.encode(withState)
+            BundleManifest.self,
+            from: encoder.encode(withState)
         )
         XCTAssertEqual(decoded, withState)
         XCTAssertEqual(decoded.systemFiles?.first?.archivePath, "system/launchd-services.json")
@@ -222,7 +223,9 @@ final class BundleArchiveTests: XCTestCase {
         for path in ["/etc/passwd", "../escaped", ""] {
             XCTAssertThrowsError(
                 try BundleArchive.write(
-                    manifest(), files: [BundleFile(source: source, archivePath: path)], to: destination
+                    manifest(),
+                    files: [BundleFile(source: source, archivePath: path)],
+                    to: destination
                 ),
                 path
             )

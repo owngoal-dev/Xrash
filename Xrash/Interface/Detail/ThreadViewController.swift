@@ -197,7 +197,8 @@ private final class RegisterCell: UITableViewCell {
             Toast.show(String(localized: "Copied"))
         }]
         if let note = noteLabel.text {
-            actions.append(UIAction(title: String(localized: "Copy Note"), image: UIImage(systemName: "text.quote")) { _ in
+            actions.append(UIAction(title: String(localized: "Copy Note"), image: UIImage(systemName: "text.quote")) {
+                _ in
                 UIPasteboard.general.string = note
                 Toast.show(String(localized: "Copied"))
             })

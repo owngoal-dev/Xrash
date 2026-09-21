@@ -162,7 +162,9 @@ final class SystemSymbolStoreTests: XCTestCase {
         let seedDirectory = Fixture.temporaryDirectory(self)
         let seed = SystemSymbolStore(directory: seedDirectory)
         let seeded = try await seed.extractCurrentSystem(
-            openImage: open, maximumImages: 2, progress: { _, _ in }
+            openImage: open,
+            maximumImages: 2,
+            progress: { _, _ in }
         )
         let names = try FileManager.default
             .contentsOfDirectory(atPath: seedDirectory.appendingPathComponent(seeded.id).path)

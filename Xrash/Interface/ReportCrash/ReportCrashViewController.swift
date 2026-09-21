@@ -189,7 +189,8 @@ final class ReportCrashViewController: UITableViewController {
         switch row {
         case .primary:
             let cell = table.dequeueReusableCell(
-                withIdentifier: BundleReportCell.reuseIdentifier, for: indexPath
+                withIdentifier: BundleReportCell.reuseIdentifier,
+                for: indexPath
             ) as! BundleReportCell
             if let primarySummary {
                 let reason = primaryReport.flatMap(ReportFormat.reason)
@@ -204,7 +205,8 @@ final class ReportCrashViewController: UITableViewController {
 
         case let .linked(id):
             let cell = table.dequeueReusableCell(
-                withIdentifier: BundleReportCell.reuseIdentifier, for: indexPath
+                withIdentifier: BundleReportCell.reuseIdentifier,
+                for: indexPath
             ) as! BundleReportCell
             let relation = linked.first { $0.id == id }?.relation ?? .manual
             if let summary = summary(for: id) {
@@ -216,7 +218,8 @@ final class ReportCrashViewController: UITableViewController {
 
         case let .suggestion(id):
             let cell = table.dequeueReusableCell(
-                withIdentifier: BundleReportCell.reuseIdentifier, for: indexPath
+                withIdentifier: BundleReportCell.reuseIdentifier,
+                for: indexPath
             ) as! BundleReportCell
             let suggestion = suggestions.first { $0.id == id }
             if let suggestion {
@@ -244,7 +247,8 @@ final class ReportCrashViewController: UITableViewController {
 
         case .title:
             let cell = table.dequeueReusableCell(
-                withIdentifier: FormTextFieldCell.reuseIdentifier, for: indexPath
+                withIdentifier: FormTextFieldCell.reuseIdentifier,
+                for: indexPath
             ) as! FormTextFieldCell
             cell.textField.text = bundleTitle
             cell.textField.placeholder = String(localized: "Title")
@@ -254,7 +258,8 @@ final class ReportCrashViewController: UITableViewController {
 
         case .notes:
             let cell = table.dequeueReusableCell(
-                withIdentifier: FormTextViewCell.reuseIdentifier, for: indexPath
+                withIdentifier: FormTextViewCell.reuseIdentifier,
+                for: indexPath
             ) as! FormTextViewCell
             cell.configure(
                 text: notes,
@@ -271,7 +276,8 @@ final class ReportCrashViewController: UITableViewController {
 
         case let .include(include):
             let cell = table.dequeueReusableCell(
-                withIdentifier: FormSwitchCell.reuseIdentifier, for: indexPath
+                withIdentifier: FormSwitchCell.reuseIdentifier,
+                for: indexPath
             ) as! FormSwitchCell
             cell.configure(
                 title: title(for: include),

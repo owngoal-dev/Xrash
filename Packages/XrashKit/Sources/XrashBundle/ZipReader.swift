@@ -67,7 +67,8 @@ enum ZipReader {
     private static func write(_ handle: OpaquePointer, to destination: URL, budget: Int64) throws -> Int64 {
         do {
             try FileManager.default.createDirectory(
-                at: destination.deletingLastPathComponent(), withIntermediateDirectories: true
+                at: destination.deletingLastPathComponent(),
+                withIntermediateDirectories: true
             )
         } catch {
             throw BundleArchiveError.cannotRead

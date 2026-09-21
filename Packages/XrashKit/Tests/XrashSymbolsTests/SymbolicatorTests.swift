@@ -16,11 +16,15 @@ final class SymbolicatorTests: XCTestCase {
         )]
         var thread = ReportThread(index: 0)
         thread.frames = [Frame(
-            imageIndex: 0, imageOffset: Fixture.insideBeta, address: base + Fixture.insideBeta
+            imageIndex: 0,
+            imageOffset: Fixture.insideBeta,
+            address: base + Fixture.insideBeta
         )]
         crash.threads = [thread]
         crash.lastExceptionBacktrace = [Frame(
-            imageIndex: 0, imageOffset: Fixture.insideAlpha, address: base + Fixture.insideAlpha
+            imageIndex: 0,
+            imageOffset: Fixture.insideAlpha,
+            address: base + Fixture.insideAlpha
         )]
         return crash
     }
@@ -114,7 +118,8 @@ final class SymbolicatorTests: XCTestCase {
         let build = "99A99"
         let uuid = UUID()
         try FileManager.default.createDirectory(
-            at: directory.appendingPathComponent(build), withIntermediateDirectories: true
+            at: directory.appendingPathComponent(build),
+            withIntermediateDirectories: true
         )
         let table = SymbolTable(entries: [
             SymbolTable.Entry(offset: 0x100, name: "$s4main3fooyyF"),
@@ -127,8 +132,11 @@ final class SymbolicatorTests: XCTestCase {
         var crash = CrashReport()
         crash.device.osBuild = build
         crash.images = [BinaryImage(
-            name: "Nowhere.dylib", path: "/nowhere/Nowhere.dylib",
-            uuid: uuid.uuidString, base: 0x1_0000_0000, size: 0x4000
+            name: "Nowhere.dylib",
+            path: "/nowhere/Nowhere.dylib",
+            uuid: uuid.uuidString,
+            base: 0x1_0000_0000,
+            size: 0x4000
         )]
         var thread = ReportThread(index: 0)
         thread.frames = [Frame(imageIndex: 0, imageOffset: 0x140, address: 0x1_0000_0140)]

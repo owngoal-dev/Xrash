@@ -346,7 +346,8 @@ public final class SystemSymbolStore: @unchecked Sendable {
     /// extraction still reports what the build's set holds.
     private static func extractedSet(build: String, in destination: URL) -> SystemSymbolSet {
         let files = (try? FileManager.default.contentsOfDirectory(
-            at: destination, includingPropertiesForKeys: [.fileSizeKey]
+            at: destination,
+            includingPropertiesForKeys: [.fileSizeKey]
         )) ?? []
         let tables = files.filter { $0.pathExtension == "symbols" }
         return SystemSymbolSet(

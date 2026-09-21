@@ -12,8 +12,10 @@ final class DpkgDatabaseTests: XCTestCase {
         let info = root.appendingPathComponent("var/lib/dpkg/info")
         try FileManager.default.createDirectory(at: info, withIntermediateDirectories: true)
 
-        try write("/usr/lib/relative.dylib\n/Library/MobileSubstrate/DynamicLibraries/Relative.dylib\n",
-                  to: info.appendingPathComponent("com.example.relative.list"))
+        try write(
+            "/usr/lib/relative.dylib\n/Library/MobileSubstrate/DynamicLibraries/Relative.dylib\n",
+            to: info.appendingPathComponent("com.example.relative.list")
+        )
         try write("/var/jb/usr/lib/prefixed.dylib\n", to: info.appendingPathComponent("com.example.prefixed.list"))
         try write("/var/mobile/Documents/thing\n", to: info.appendingPathComponent("com.example.private.list"))
         try write(

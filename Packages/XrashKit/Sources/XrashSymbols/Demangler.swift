@@ -52,11 +52,17 @@ public enum Demangler {
     private static let swiftPrefixes = ["$s", "_$s", "$S", "_$S", "_T0"]
 
     private typealias SwiftDemangle = @convention(c) (
-        UnsafePointer<CChar>?, Int, UnsafeMutablePointer<CChar>?, UnsafeMutablePointer<Int>?, UInt32
+        UnsafePointer<CChar>?,
+        Int,
+        UnsafeMutablePointer<CChar>?,
+        UnsafeMutablePointer<Int>?,
+        UInt32
     ) -> UnsafeMutablePointer<CChar>?
 
     private typealias CXXDemangle = @convention(c) (
-        UnsafePointer<CChar>?, UnsafeMutablePointer<CChar>?, UnsafeMutablePointer<Int>?,
+        UnsafePointer<CChar>?,
+        UnsafeMutablePointer<CChar>?,
+        UnsafeMutablePointer<Int>?,
         UnsafeMutablePointer<Int32>?
     ) -> UnsafeMutablePointer<CChar>?
 

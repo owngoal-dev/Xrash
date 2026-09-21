@@ -56,7 +56,8 @@ final class HiddenProcessesViewController: UITableViewController, UITextFieldDel
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(
-            withIdentifier: FormTextFieldCell.reuseIdentifier, for: indexPath
+            withIdentifier: FormTextFieldCell.reuseIdentifier,
+            for: indexPath
         ) as! FormTextFieldCell
         cell.textField.text = names[indexPath.row]
         cell.textField.placeholder = String(localized: "Process name (case-sensitive)")
