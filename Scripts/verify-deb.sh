@@ -70,6 +70,9 @@ expect "LaunchDaemon label" "$(/usr/libexec/PlistBuddy -c 'Print :Label' "$insta
 expect "LaunchDaemon program" \
     "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$installed_plist")" \
     "$install_prefix/usr/libexec/xrashd"
+expect "LaunchDaemon user" \
+    "$(/usr/libexec/PlistBuddy -c 'Print :UserName' "$installed_plist")" \
+    "root"
 # On-demand is the contract: no KeepAlive, no RunAtLoad.
 for key in KeepAlive RunAtLoad; do
     if /usr/libexec/PlistBuddy -c "Print :$key" "$installed_plist" >/dev/null 2>&1; then

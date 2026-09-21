@@ -23,6 +23,9 @@
     /// a quiet spell so the on-demand daemon can exit, and reconnects on the next.
     public actor DaemonClient {
         private static let quietSpellBeforeGoodbye: UInt64 = 10 * NSEC_PER_SEC
+        /// How long a hello may go unanswered. Generous: after a userspace
+        /// reboot a cold daemon can take many seconds to reach its listener.
+        private static let helloPatience: UInt64 = 15 * NSEC_PER_SEC
 
         private struct Reply {
             var code: XrashReplyCode
@@ -76,6 +79,16 @@
                 Task { await self?.disconnect(generation: connectedGeneration) }
             }
             xpc_connection_activate(connection)
+
+            // A registered service whose daemon never checks in (killed at
+            // exec, wedged) queues the hello with no reply and no error.
+            // Cancelling the connection answers it, as one more miss for
+            // `ReportBackend`'s grace period to count.
+            let unanswered = Task {
+                try await Task.sleep(nanoseconds: Self.helloPatience)
+                disconnect(generation: connectedGeneration)
+            }
+            defer { unanswered.cancel() }
 
             do {
                 let reply = try await send(.hello)
