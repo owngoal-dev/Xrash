@@ -512,14 +512,33 @@ public final class SystemSymbolStore: @unchecked Sendable {
         return SymbolTable(entries: entries)
     }
 
-    /// Where the running system keeps its cache. The Cryptex paths are where
-    /// iOS 16 and later put it; the Preboot one is a Mac, which is where the
+    /// The cache this process is running out of, as dyld names it. The
+    /// function is in libdyld on every OS this app runs on but in no public
+    /// header, hence the lookup by name.
+    private static func loadedSharedCachePath() -> String? {
+        typealias FilePath = @convention(c) () -> UnsafePointer<CChar>?
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "dyld_shared_cache_file_path"),
+              let path = unsafeBitCast(symbol, to: FilePath.self)()
+        else { return nil }
+        return String(cString: path)
+    }
+
+    /// Where the running system keeps its cache. dyld is asked first, because
+    /// the directory has moved with the OS more than once; the list is for a
+    /// process dyld gives no answer to. The Cryptex paths are where iOS 16 and
+    /// later put it — under `Caches/com.apple.dyld` on an iPad running 18.5
+    /// (seen 2026-09-21) — and the Preboot one is a Mac, which is where the
     /// tests run.
     static func sharedCacheURL() -> URL? {
+        if let path = loadedSharedCachePath(), FileManager.default.fileExists(atPath: path) {
+            return URL(fileURLWithPath: path)
+        }
         let directories = [
             "/System/Library/Caches/com.apple.dyld",
             "/System/Library/dyld",
+            "/private/preboot/Cryptexes/OS/System/Library/Caches/com.apple.dyld",
             "/private/preboot/Cryptexes/OS/System/Library/dyld",
+            "/System/Cryptexes/OS/System/Library/Caches/com.apple.dyld",
             "/System/Cryptexes/OS/System/Library/dyld",
             "/System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld",
         ]

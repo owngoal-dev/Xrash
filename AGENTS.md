@@ -296,5 +296,13 @@ language, checking placeholders; the English value is a copy of the key.
   `panic-full-*` report sat in the same directory.
 - The dyld shared cache is split: `/System/Library/Caches/com.apple.dyld/
   dyld_shared_cache_arm64e` plus `.01`, `.02`, … subcaches, all `root 0755`.
+- The cache directory is not one place. dyld's own
+  `dyld_shared_cache_file_path()` said
+  `/System/Cryptexes/OS/System/Library/Caches/com.apple.dyld/` on the vphone
+  and `/private/preboot/Cryptexes/OS/System/Library/Caches/com.apple.dyld/` on
+  a roothide iPad8,9 running 18.5 (22F76), where none of the other spellings
+  exist. `SystemSymbolStore.sharedCacheURL` asks dyld first; the directory
+  lists are the fallback and the daemon's allow-list. `mobile` opens the
+  files directly on both.
 - `xrashd` bootstraps into `system/` and sits `state = not running` until a
   Mach lookup; the app launches from `/var/jb/Applications/Xrash.app`.

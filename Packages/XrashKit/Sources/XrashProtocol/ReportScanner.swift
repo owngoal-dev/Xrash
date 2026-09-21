@@ -84,7 +84,9 @@ public enum ImageRoots {
     public static let sharedCacheDirectories = [
         "/System/Library/Caches/com.apple.dyld",
         "/System/Library/dyld",
+        "/private/preboot/Cryptexes/OS/System/Library/Caches/com.apple.dyld",
         "/private/preboot/Cryptexes/OS/System/Library/dyld",
+        "/System/Cryptexes/OS/System/Library/Caches/com.apple.dyld",
         "/System/Cryptexes/OS/System/Library/dyld",
     ]
 
