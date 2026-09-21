@@ -39,18 +39,17 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         navigationItem.hidesSearchBarWhenScrolling = true
         definesPresentationContext = true
 
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "bundle")
+        tableView.register(SavedBundleCell.self, forCellReuseIdentifier: SavedBundleCell.reuseIdentifier)
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] table, indexPath, id in
-            let cell = table.dequeueReusableCell(withIdentifier: "bundle", for: indexPath)
+            let cell = table.dequeueReusableCell(withIdentifier: SavedBundleCell.reuseIdentifier, for: indexPath)
             guard let bundle = self?.shown[id] else { return cell }
-            var content = cell.defaultContentConfiguration()
-            content.text = bundle.manifest.title
-            content.secondaryText = Self.subtitle(of: bundle)
-            content.secondaryTextProperties.color = .secondaryLabel
-            content.image = UIImage(systemName: "heart.text.square.fill")
-            content.imageProperties.tintColor = .systemRed
-            cell.contentConfiguration = content
-            cell.accessoryType = .disclosureIndicator
+            let primary = bundle.manifest.primary
+            (cell as? SavedBundleCell)?.configure(
+                icon: primary.summary,
+                executablePath: primary.report.crash?.process.path,
+                title: bundle.manifest.title,
+                subtitle: Self.subtitle(of: bundle)
+            )
             return cell
         }
         dataSource.isEditable = true

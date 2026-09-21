@@ -135,6 +135,16 @@ final class ReportSummaryViewController: UITableViewController {
         configuration.textProperties.numberOfLines = 0
         configuration.secondaryTextProperties.numberOfLines = 0
         configuration.secondaryTextProperties.color = .secondaryLabel
+        // One size a row, decided here: a field's name in bold, a machine's
+        // line monospaced, everything else body.
+        configuration.textProperties.font = if item.namesAField {
+            DetailTypography.name
+        } else if item.isMachineText {
+            DetailTypography.mono()
+        } else {
+            DetailTypography.value
+        }
+        configuration.secondaryTextProperties.font = DetailTypography.value
         cell.accessoryType = .none
         cell.accessoryView = nil
         cell.selectionStyle = .none
@@ -152,9 +162,6 @@ final class ReportSummaryViewController: UITableViewController {
                 report.crash?.exception?.subtype,
                 report.crash?.exception?.message,
             ].compactMap(\.self).filter { !$0.isEmpty }.joined(separator: "\n")
-            configuration.secondaryTextProperties.font = .monospacedSystemFont(
-                ofSize: UIFont.smallSystemFontSize, weight: .regular
-            )
         case .termination:
             configuration.text = String(localized: "Termination")
             let termination = report.crash?.termination
@@ -179,14 +186,8 @@ final class ReportSummaryViewController: UITableViewController {
         case .incident:
             configuration.text = String(localized: "Incident")
             configuration.secondaryText = report.header.incidentID
-            configuration.secondaryTextProperties.font = .monospacedSystemFont(
-                ofSize: UIFont.smallSystemFontSize, weight: .regular
-            )
         case let .applicationInfo(index):
             configuration.text = report.crash?.applicationInfo[index]
-            configuration.textProperties.font = .monospacedSystemFont(
-                ofSize: UIFont.smallSystemFontSize, weight: .regular
-            )
         case let .suspect(id):
             let suspect = content.suspects.first { $0.id == id }
             configuration.text = suspect?.imageName
@@ -238,9 +239,6 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.secondaryTextProperties.color = process?.reason == nil ? .secondaryLabel : .systemOrange
         case .panicText:
             configuration.text = report.panic?.panicString
-            configuration.textProperties.font = .monospacedSystemFont(
-                ofSize: UIFont.smallSystemFontSize, weight: .regular
-            )
         case .viewContents:
             configuration.text = String(localized: "View Contents")
             configuration.textProperties.color = .tintColor

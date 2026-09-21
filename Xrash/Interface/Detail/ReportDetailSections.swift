@@ -60,6 +60,24 @@ enum DetailItem: Hashable {
     case panicText
     case viewContents
 
+    /// The rows whose first line names a field rather than being one. They
+    /// are the page's bold; every other line is body or monospaced footnote.
+    var namesAField: Bool {
+        switch self {
+        case .explanation, .exception, .termination, .date, .system, .incident: true
+        default: false
+        }
+    }
+
+    /// The lines a machine wrote, which are read down a column: application
+    /// information and a panic, as the frames beside them already are.
+    var isMachineText: Bool {
+        switch self {
+        case .applicationInfo, .panicText: true
+        default: false
+        }
+    }
+
     /// The rows a tap copies, the way the incident id always has: the value
     /// the row is showing, whole. An empty one is left inert.
     var isCopyable: Bool {

@@ -15,11 +15,13 @@ final class ReportHeaderCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         nameLabel.do {
-            $0.font = UIFont.preferredFont(forTextStyle: .title3).withWeight(.semibold)
+            // The card's own field name: the same bold body as the rows
+            // under it, because the icon beside it is the prominence.
+            $0.font = DetailTypography.name
             $0.numberOfLines = 2
         }
         detailLabel.do {
-            $0.font = .preferredFont(forTextStyle: .subheadline)
+            $0.font = DetailTypography.value
             $0.textColor = .secondaryLabel
             $0.numberOfLines = 2
         }
@@ -112,28 +114,28 @@ final class FrameCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
+        // One monospaced footnote for all three, so the index sits on the
+        // symbol's own baseline and the addresses line up down the column.
+        // What the eye sorts them by is colour.
         indexLabel.do {
-            $0.font = .monospacedDigitSystemFont(ofSize: UIFont.smallSystemFontSize, weight: .regular)
+            $0.font = DetailTypography.mono()
             $0.textColor = .secondaryLabel
             $0.textAlignment = .right
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
             $0.setContentHuggingPriority(.required, for: .horizontal)
         }
         symbolLabel.do {
-            $0.font = UIFontMetrics(forTextStyle: .footnote)
-                .scaledFont(for: .monospacedSystemFont(ofSize: 12, weight: .regular))
+            $0.font = DetailTypography.mono()
             $0.numberOfLines = 2
             $0.lineBreakMode = .byTruncatingMiddle
         }
         originLabel.do {
-            // Addresses line up down the column only in a fixed pitch.
-            $0.font = UIFontMetrics(forTextStyle: .caption1)
-                .scaledFont(for: .monospacedSystemFont(ofSize: 11, weight: .regular))
+            $0.font = DetailTypography.mono()
             $0.textColor = .secondaryLabel
             $0.numberOfLines = 1
             $0.lineBreakMode = .byTruncatingMiddle
         }
-        for label in [symbolLabel, originLabel] {
+        for label in [indexLabel, symbolLabel, originLabel] {
             label.adjustsFontForContentSizeCategory = true
         }
 
@@ -199,9 +201,7 @@ final class FrameCell: UITableViewCell {
             frame.symbolLocation.map { "\(symbol) + \($0)" } ?? symbol
         } ?? ReportFormat.address(frame.address)
         symbolLabel.textColor = emphasis == .suspect ? .tintColor : .label
-        symbolLabel.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(
-            for: .monospacedSystemFont(ofSize: 12, weight: emphasis == .ordinary ? .regular : .semibold)
-        )
+        symbolLabel.font = DetailTypography.mono(emphasis == .ordinary ? .regular : .semibold)
 
         var origin = [image?.name ?? String(localized: "Unknown image")]
         if let file = frame.sourceFile {

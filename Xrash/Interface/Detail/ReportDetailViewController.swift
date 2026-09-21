@@ -198,7 +198,14 @@ final class ReportDetailViewController: UIViewController {
     // MARK: Loading
 
     private func load() {
-        guard let reportID, let library else { return summarise() }
+        guard let reportID, let library else {
+            // A bundle member arrives decoded, so the only work left is the
+            // summary it has no library row for — and handing it down, which
+            // `viewDidLoad` did before there was one to hand.
+            summarise()
+            refreshChildren()
+            return
+        }
         summary = library.summaries.value.first { $0.id == reportID }
         title = summary?.processName ?? String(localized: "Report")
         loadTask = Task { [weak self] in
