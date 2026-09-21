@@ -94,9 +94,6 @@ struct DetailContent {
     var suspects = [Suspect]()
     /// Other reports of the same bug, once the background pass has found them.
     var similar = [ReportSummary]()
-    var linkedCount: Int {
-        similar.count
-    }
 
     /// The stacks the reader asked to see in full.
     var expanded = Set<DetailFrameList>()
@@ -150,7 +147,7 @@ enum DetailLayout {
         if content.report.crash == nil, content.report.jetsam == nil, content.report.panic == nil {
             sections.append((.contents, [.viewContents]))
         }
-        if content.linkedCount > 0 {
+        if !content.similar.isEmpty {
             sections.append((.linked, [.linkedReports]))
         }
         return sections

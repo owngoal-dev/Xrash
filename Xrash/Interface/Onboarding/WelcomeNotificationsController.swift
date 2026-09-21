@@ -88,11 +88,8 @@ final class WelcomeNotificationsController: UIViewController {
             $0.minimumScaleFactor = 0.7
         }
         let intro = UILabel().then {
-            // Who announces is the backend's answer, so the sentence is too —
-            // the same two Settings words its footer with.
-            $0.text = CrashNotice.shared.daemonAnnounces.value
-                ? String(localized: "You are notified of new reports even when Xrash is not running.")
-                : String(localized: "You are notified of new reports only while Xrash is running.")
+            // The same sentence Settings words its footer with.
+            $0.text = ReportFormat.announcementSummary
             $0.font = WelcomeStyle.subtitleFont
             $0.adjustsFontForContentSizeCategory = true
             $0.textColor = WelcomeStyle.detailColor

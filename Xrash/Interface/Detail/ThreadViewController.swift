@@ -53,7 +53,12 @@ final class ThreadViewController: UITableViewController, UISearchResultsUpdating
             case let .frame(index):
                 let frame = thread.frames[index]
                 let cell = tableView.dequeueReusableCell(withIdentifier: FrameCell.reuseIdentifier, for: indexPath)
-                (cell as? FrameCell)?.configure(with: frame, index: index, in: crash, emphasis: emphasis(of: frame))
+                (cell as? FrameCell)?.configure(
+                    with: frame,
+                    index: index,
+                    in: crash,
+                    emphasis: FrameCell.emphasis(of: frame, in: crash)
+                )
                 (cell as? FrameCell)?.menuProvider = { [weak self] in
                     guard let self else { return [] }
                     return frameMenu(frame, in: crash)
@@ -112,15 +117,6 @@ final class ThreadViewController: UITableViewController, UISearchResultsUpdating
         return [frame.symbol, image?.name, ReportFormat.address(frame.address)]
             .compactMap(\.self)
             .contains { $0.matches(needle) }
-    }
-
-    private func emphasis(of frame: Frame) -> FrameCell.Emphasis {
-        guard let index = frame.imageIndex, crash.images.indices.contains(index) else { return .ordinary }
-        let image = crash.images[index]
-        if image.path == crash.process.path {
-            return .own
-        }
-        return FrameCell.isSystem(image) ? .ordinary : .own
     }
 }
 

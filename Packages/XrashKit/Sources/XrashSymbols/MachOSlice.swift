@@ -1,14 +1,12 @@
 import Foundation
 
-/// Why a Mach-O could not be read. A dSYM that cannot be read is a dSYM that
-/// cannot be imported, so nothing acts on the difference yet; it is here
-/// because a reader that cannot say which of the two it met is a reader that
-/// guessed.
+/// A file this reader will not parse: the magic is not a Mach-O's or a fat
+/// file's, or a length, an offset or a load command points outside the file.
+/// One case, because a dSYM that cannot be read is a dSYM that cannot be
+/// imported and no caller acts on the difference; the guard that refused says
+/// which check it was.
 public enum MachOReadFailure: Error, Equatable {
-    /// The magic is not a Mach-O's or a fat file's.
-    case notMachO
-    /// A length, an offset or a load command points outside the file.
-    case malformed
+    case unreadable
 }
 
 /// One Mach-O — a thin file, or one architecture of a fat one — read straight
@@ -86,7 +84,7 @@ public struct MachOSlice: Sendable {
         case fatMagic, fat64Magic:
             return try fatSlices(data, is64: magic == fat64Magic)
         default:
-            throw MachOReadFailure.notMachO
+            throw MachOReadFailure.unreadable
         }
     }
 
@@ -102,7 +100,7 @@ public struct MachOSlice: Sendable {
         // `lipo` refuses more than a handful. A Java class file opens with the
         // same four bytes, and its next field is a version, so a large count is
         // most likely not a fat header at all.
-        guard count > 0, count <= 32 else { throw MachOReadFailure.notMachO }
+        guard count > 0, count <= 32 else { throw MachOReadFailure.unreadable }
 
         var slices = [MachOSlice]()
         for index in 0 ..< Int(count) {
@@ -118,7 +116,7 @@ public struct MachOSlice: Sendable {
                 size = try UInt64(arch.bigEndianInteger(UInt32.self))
             }
             guard offset <= UInt64(data.count), size <= UInt64(data.count) - offset else {
-                throw MachOReadFailure.malformed
+                throw MachOReadFailure.unreadable
             }
             let start = Int(offset)
             let range = start ..< start + Int(size)
@@ -136,12 +134,12 @@ public struct MachOSlice: Sendable {
     /// believed. This is the only place that decides a file is sound; every
     /// accessor below reads within what this recorded.
     private init(_ data: Data, _ range: Range<Int>) throws {
-        guard range.count >= headerSize else { throw MachOReadFailure.malformed }
+        guard range.count >= headerSize else { throw MachOReadFailure.unreadable }
         self.data = data
         self.range = range
 
         var header = try ByteReader(data, start: range.lowerBound, count: range.count)
-        guard try header.integer(UInt32.self) == machO64Magic else { throw MachOReadFailure.malformed }
+        guard try header.integer(UInt32.self) == machO64Magic else { throw MachOReadFailure.unreadable }
         let cpuType = try Int32(bitPattern: header.integer(UInt32.self))
         let cpuSubtype = try Int32(bitPattern: header.integer(UInt32.self))
         arch = architectureName(cpuType: cpuType, cpuSubtype: cpuSubtype)
@@ -150,7 +148,7 @@ public struct MachOSlice: Sendable {
         let commandsSize = try Int(header.integer(UInt32.self))
         guard commandsSize <= range.count - headerSize,
               commandCount <= 16384, Int(commandCount) * 8 <= commandsSize
-        else { throw MachOReadFailure.malformed }
+        else { throw MachOReadFailure.unreadable }
 
         var uuid: UUID?
         var textVMAddress: UInt64 = 0
@@ -162,18 +160,18 @@ public struct MachOSlice: Sendable {
         var commands = try ByteReader(data, start: range.lowerBound + headerSize, count: commandsSize)
         for _ in 0 ..< commandCount {
             let commandStart = commands.offset
-            guard commands.remaining >= 8 else { throw MachOReadFailure.malformed }
+            guard commands.remaining >= 8 else { throw MachOReadFailure.unreadable }
             let kind = try commands.integer(UInt32.self)
             let size = try Int(commands.integer(UInt32.self))
             guard size >= 8, size % 8 == 0, size <= commandsSize - commandStart else {
-                throw MachOReadFailure.malformed
+                throw MachOReadFailure.unreadable
             }
             var body = try ByteReader(data, start: range.lowerBound + headerSize + commandStart, count: size)
             try body.skip(8)
 
             switch kind {
             case loadCommandUUID:
-                guard size >= 24 else { throw MachOReadFailure.malformed }
+                guard size >= 24 else { throw MachOReadFailure.unreadable }
                 let field = try body.bytes(16)
                 uuid = UUID(uuid: (
                     field[0], field[1], field[2], field[3], field[4], field[5], field[6], field[7],
@@ -181,18 +179,18 @@ public struct MachOSlice: Sendable {
                 ))
 
             case loadCommandSegment64:
-                guard size >= 72 else { throw MachOReadFailure.malformed }
+                guard size >= 72 else { throw MachOReadFailure.unreadable }
                 let name = try body.paddedName(16)
                 let vmAddress = try body.integer(UInt64.self)
                 let vmSize = try body.integer(UInt64.self)
                 let fileOffset = try body.integer(UInt64.self)
                 let fileSize = try body.integer(UInt64.self)
                 guard fileOffset <= UInt64(range.count), fileSize <= UInt64(range.count) - fileOffset else {
-                    throw MachOReadFailure.malformed
+                    throw MachOReadFailure.unreadable
                 }
                 try body.skip(8) // maxprot, initprot
                 let sectionCount = try Int(body.integer(UInt32.self))
-                guard sectionCount <= (size - 72) / sectionSize else { throw MachOReadFailure.malformed }
+                guard sectionCount <= (size - 72) / sectionSize else { throw MachOReadFailure.unreadable }
                 if name == "__TEXT" {
                     textVMAddress = vmAddress
                     textVMSize = vmSize
@@ -201,7 +199,7 @@ public struct MachOSlice: Sendable {
                 try sections.append(contentsOf: Self.readSections(&body, count: sectionCount))
 
             case loadCommandSymbolTable:
-                guard size >= 24 else { throw MachOReadFailure.malformed }
+                guard size >= 24 else { throw MachOReadFailure.unreadable }
                 symbolTableCommand = try SymbolTableCommand(
                     symbolOffset: body.integer(),
                     symbolCount: body.integer(),
@@ -210,7 +208,7 @@ public struct MachOSlice: Sendable {
                 )
 
             case loadCommandFunctionStarts:
-                guard size >= 16 else { throw MachOReadFailure.malformed }
+                guard size >= 16 else { throw MachOReadFailure.unreadable }
                 functionStartsCommand = try LinkEditCommand(offset: body.integer(), size: body.integer())
 
             default:

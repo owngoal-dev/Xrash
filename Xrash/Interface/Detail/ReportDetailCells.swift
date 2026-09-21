@@ -246,6 +246,23 @@ final class FrameCell: UITableViewCell {
         image.source == "S" || image.path.hasPrefix("/System/") || image.path.hasPrefix("/usr/lib/")
     }
 
+    /// Only the frames worth looking at first are marked. Everything else
+    /// stays at full contrast — a stack nobody can read is not a stack.
+    ///
+    /// The suspects are the summary's: a thread on its own page has none, and
+    /// passes nothing.
+    static func emphasis(of frame: Frame, in crash: CrashReport, suspectPaths: Set<String> = []) -> Emphasis {
+        guard let index = frame.imageIndex, crash.images.indices.contains(index) else { return .ordinary }
+        let image = crash.images[index]
+        if suspectPaths.contains(image.path) {
+            return .suspect
+        }
+        if image.path == crash.process.path {
+            return .own
+        }
+        return isSystem(image) ? .ordinary : .own
+    }
+
     func configure(with frame: Frame, index: Int, in crash: CrashReport, emphasis: Emphasis) {
         let image = frame.imageIndex.flatMap { crash.images.indices.contains($0) ? crash.images[$0] : nil }
         indexLabel.text = String(index)

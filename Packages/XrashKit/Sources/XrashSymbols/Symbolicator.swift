@@ -56,7 +56,7 @@ public actor Symbolicator {
         progress: (@Sendable (SymbolicationProgress) -> Void)? = nil
     ) async -> CrashReport {
         let revisions = (dsyms: dsyms.revision, system: systemSymbols.revision)
-        if (storeRevisions ?? revisions) != revisions {
+        if let previous = storeRevisions, previous != revisions {
             resolvers.removeAll()
             order.removeAll()
         }

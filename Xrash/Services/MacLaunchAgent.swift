@@ -115,12 +115,6 @@ final class MacLaunchAgent {
             }
         }
 
-        /// Opens System Settings on Login Items, for the approval step.
-        func openLoginItemsSettings() {
-            guard #available(macCatalyst 16.0, *) else { return }
-            SMAppService.openSystemSettingsLoginItems()
-        }
-
         // MARK: Registering
 
         /// The plain register: a first launch, or the helper turned back on.
@@ -312,7 +306,6 @@ final class MacLaunchAgent {
 
         func activate() {}
         func refresh() {}
-        func openLoginItemsSettings() {}
 
     #endif
 }

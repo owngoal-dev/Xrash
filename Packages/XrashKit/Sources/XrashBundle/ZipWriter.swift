@@ -20,7 +20,7 @@ enum ZipWriter {
         // open in any text editor.
         encoder.outputFormat = .xml
         guard let manifestData = try? encoder.encode(manifest) else {
-            throw BundleArchiveError.cannotWrite("the manifest could not be encoded")
+            throw BundleArchiveError.cannotWrite
         }
 
         let members = try planned(files)
@@ -35,15 +35,12 @@ enum ZipWriter {
         let partial = URL(fileURLWithPath: destination.path + ".partial")
         try? FileManager.default.removeItem(at: partial)
         guard let handle = archive_write_new() else {
-            throw BundleArchiveError.cannotWrite("the archive writer could not be created")
+            throw BundleArchiveError.cannotWrite
         }
         do {
-            try Zip.checkWrite(handle, archive_write_set_format_zip(handle))
-            try Zip.checkWrite(
-                handle,
-                archive_write_set_options(handle, "zip:compression=deflate,zip:compression-level=6")
-            )
-            try Zip.checkWrite(handle, archive_write_open_filename(handle, partial.path))
+            try Zip.checkWrite(archive_write_set_format_zip(handle))
+            try Zip.checkWrite(archive_write_set_options(handle, "zip:compression=deflate,zip:compression-level=6"))
+            try Zip.checkWrite(archive_write_open_filename(handle, partial.path))
 
             // First, so a reader can answer "what is this?" from the front of
             // the stream instead of the central directory.
@@ -53,7 +50,7 @@ enum ZipWriter {
             for member in members {
                 try addFile(handle, member: member, report: report)
             }
-            try Zip.checkWrite(handle, archive_write_close(handle))
+            try Zip.checkWrite(archive_write_close(handle))
         } catch {
             archive_write_free(handle)
             try? FileManager.default.removeItem(at: partial)
@@ -68,7 +65,7 @@ enum ZipWriter {
             try FileManager.default.moveItem(at: partial, to: destination)
         } catch {
             try? FileManager.default.removeItem(at: partial)
-            throw BundleArchiveError.cannotWrite("\(destination.lastPathComponent) could not be saved")
+            throw BundleArchiveError.cannotWrite
         }
         progress?(1)
     }
@@ -94,7 +91,7 @@ enum ZipWriter {
             guard let attributes = try? FileManager.default.attributesOfItem(atPath: file.source.path),
                   let size = attributes[.size] as? Int64
             else {
-                throw BundleArchiveError.cannotWrite("\(file.source.lastPathComponent) could not be read")
+                throw BundleArchiveError.cannotWrite
             }
             return Member(
                 path: path,
@@ -113,7 +110,7 @@ enum ZipWriter {
     ) throws {
         try header(handle, path: path, byteCount: Int64(data.count), modified: modified)
         try data.withUnsafeBytes { try writeBytes(handle, $0) }
-        try Zip.checkWrite(handle, archive_write_finish_entry(handle))
+        try Zip.checkWrite(archive_write_finish_entry(handle))
     }
 
     private static func addFile(
@@ -122,7 +119,7 @@ enum ZipWriter {
         report: (Int64) -> Void
     ) throws {
         guard let reader = try? FileHandle(forReadingFrom: member.source) else {
-            throw BundleArchiveError.cannotWrite("\(member.source.lastPathComponent) could not be opened")
+            throw BundleArchiveError.cannotWrite
         }
         defer { try? reader.close() }
 
@@ -137,9 +134,9 @@ enum ZipWriter {
         // take it back, so a file that changed size mid-write loses the archive
         // rather than producing one that opens and lies.
         guard written == member.byteCount else {
-            throw BundleArchiveError.cannotWrite("\(member.source.lastPathComponent) changed while it was written")
+            throw BundleArchiveError.cannotWrite
         }
-        try Zip.checkWrite(handle, archive_write_finish_entry(handle))
+        try Zip.checkWrite(archive_write_finish_entry(handle))
     }
 
     private static func header(
@@ -149,7 +146,7 @@ enum ZipWriter {
         modified: Date
     ) throws {
         guard let entry = archive_entry_new() else {
-            throw BundleArchiveError.cannotWrite("the archive entry could not be created")
+            throw BundleArchiveError.cannotWrite
         }
         defer { archive_entry_free(entry) }
         archive_entry_set_pathname_utf8(entry, path)
@@ -160,7 +157,7 @@ enum ZipWriter {
         archive_entry_set_size(entry, byteCount)
         archive_entry_set_mtime(entry, Zip.unixTime(modified), 0)
         try Zip.withUTF8Locale {
-            try Zip.checkWrite(handle, archive_write_header(handle, entry))
+            try Zip.checkWrite(archive_write_header(handle, entry))
         }
     }
 
@@ -169,7 +166,7 @@ enum ZipWriter {
         var sent = 0
         while sent < buffer.count {
             let put = archive_write_data(handle, base.advanced(by: sent), buffer.count - sent)
-            guard put > 0 else { throw BundleArchiveError.cannotWrite(Zip.message(handle)) }
+            guard put > 0 else { throw BundleArchiveError.cannotWrite }
             sent += put
         }
     }

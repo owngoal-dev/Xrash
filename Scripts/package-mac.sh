@@ -130,8 +130,8 @@ normalized_entitlements() {
         || die "$source is not a readable property list"
     echo "$destination"
 }
-app_entitlements="$(normalized_entitlements "$app_entitlements")"
-daemon_entitlements="$(normalized_entitlements "$daemon_entitlements")"
+normalized_app_entitlements="$(normalized_entitlements "$app_entitlements")"
+normalized_daemon_entitlements="$(normalized_entitlements "$daemon_entitlements")"
 
 echo "==> signing as ${sign_identity} (hardened runtime)"
 # Ad-hoc signatures cannot be timestamped; a real identity should be, because a
@@ -159,8 +159,8 @@ done < <(find "$staged_app/Contents" \
 # The helper carries its own entitlements: it is a separate Mach-O with a
 # separate designated requirement, and the macOS branch of PeerAuthenticator
 # admits the app sitting beside it in this same directory.
-sign "$staged_app/Contents/MacOS/xrashd" --entitlements "$daemon_entitlements"
-sign "$staged_app" --entitlements "$app_entitlements"
+sign "$staged_app/Contents/MacOS/xrashd" --entitlements "$normalized_daemon_entitlements"
+sign "$staged_app" --entitlements "$normalized_app_entitlements"
 
 echo "==> verifying"
 codesign --verify --deep --strict --verbose=2 "$staged_app"

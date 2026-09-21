@@ -66,12 +66,10 @@ app_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$
     exit 65
 }
 
-output_name="$(basename "$output_deb")"
 mkdir -p "$(dirname "$output_deb")"
-output_directory="$(cd "$(dirname "$output_deb")" && pwd -P)"
-output_deb="$output_directory/$output_name"
+output_deb="$(cd "$(dirname "$output_deb")" && pwd -P)/$(basename "$output_deb")"
 staging="$(mktemp -d "${TMPDIR:-/tmp}/xrash-deb.XXXXXX")"
-temporary_deb="$output_directory/.$output_name.tmp.$$"
+temporary_deb="$(dirname "$output_deb")/.$(basename "$output_deb").tmp.$$"
 app_signed_entitlements="$(mktemp "${TMPDIR:-/tmp}/xrash-app-entitlements.XXXXXX.plist")"
 daemon_signed_entitlements="$(mktemp "${TMPDIR:-/tmp}/xrash-daemon-entitlements.XXXXXX.plist")"
 trap 'rm -rf "$staging"; rm -f "$temporary_deb" "$app_signed_entitlements" "$daemon_signed_entitlements"' EXIT

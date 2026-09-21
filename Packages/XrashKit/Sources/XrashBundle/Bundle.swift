@@ -132,8 +132,8 @@ public struct BundleFile: Hashable, Sendable {
 }
 
 public enum BundleArchiveError: Error, Equatable, Sendable {
-    case cannotWrite(String)
-    case cannotRead(String)
+    case cannotWrite
+    case cannotRead
     case missingManifest
     case unsupportedSchema(Int)
     /// An entry tried to leave the extraction directory.

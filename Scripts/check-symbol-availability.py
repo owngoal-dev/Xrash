@@ -16,7 +16,6 @@ Usage: check-symbol-availability.py <floor> <source root> [<source root> …]
 
 import plistlib
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -43,20 +42,19 @@ def main() -> int:
         return 0
 
     symbols, releases = table["symbols"], table["year_to_release"]
-    found = subprocess.run(
-        ["grep", "-rn", "--include=*.swift", "-E",
-         "system(Name|Image|ImageName|SymbolName)", *roots],
-        capture_output=True, text=True,
-    ).stdout
 
     failures = 0
-    for line in found.splitlines():
-        location = ":".join(line.split(":", 2)[:2])
-        for name in USES.findall(line):
-            release = releases.get(symbols.get(name, ""), {}).get("iOS")
-            if release and version_key(release) > floor:
-                print(f"error: {location}: {name} needs iOS {release}", file=sys.stderr)
-                failures += 1
+    # A missing root yields nothing rather than raising, which is what a source
+    # tree that has not been checked out yet should do here.
+    for root in roots:
+        for path in sorted(Path(root).rglob("*.swift")):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for number, line in enumerate(text.splitlines(), 1):
+                for name in USES.findall(line):
+                    release = releases.get(symbols.get(name, ""), {}).get("iOS")
+                    if release and version_key(release) > floor:
+                        print(f"error: {path}:{number}: {name} needs iOS {release}", file=sys.stderr)
+                        failures += 1
 
     if failures:
         print(f"error: {failures} SF Symbol(s) draw nothing on iOS {sys.argv[1]}", file=sys.stderr)

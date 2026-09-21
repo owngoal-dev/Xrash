@@ -315,13 +315,13 @@ final class DecoderTests: XCTestCase {
 
     func testEmptyAndBinaryInputAreRefused() {
         XCTAssertThrowsError(try ReportDecoder.decode(Data(), fileName: "x.ips")) {
-            XCTAssertEqual($0 as? ReportDecodingError, .malformedBody)
+            XCTAssertEqual($0 as? ReportDecodingError, .unreadable)
         }
         XCTAssertThrowsError(try ReportDecoder.decode(Data("   \n\n ".utf8), fileName: "x.ips")) {
-            XCTAssertEqual($0 as? ReportDecodingError, .malformedBody)
+            XCTAssertEqual($0 as? ReportDecodingError, .unreadable)
         }
         XCTAssertThrowsError(try ReportDecoder.decode(Data([0, 1, 2, 3, 0, 0xFF]), fileName: "x.ips")) {
-            XCTAssertEqual($0 as? ReportDecodingError, .notText)
+            XCTAssertEqual($0 as? ReportDecodingError, .unreadable)
         }
     }
 

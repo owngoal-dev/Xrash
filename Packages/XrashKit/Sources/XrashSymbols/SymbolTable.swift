@@ -32,7 +32,9 @@ public struct SymbolTable: Sendable, Equatable {
 
     private static let noName = UInt32.max
 
-    public var count: Int {
+    /// How many entries survived the merge. Nothing outside this module asks;
+    /// the tests do, which is why it is not private.
+    var count: Int {
         offsets.count
     }
 

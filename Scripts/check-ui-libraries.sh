@@ -20,30 +20,31 @@ search() {
     grep -Rn --include='*.swift' -E "$pattern" "$@" 2>/dev/null || true
 }
 
-ui_roots=("$root/Xrash")
+# Not a pipeline: `error` has to run in this shell or the `fail` it sets is lost.
+forbid() {
+    local message="$1" hits="$2"
+    [[ -n "$hits" ]] || return 0
+    error "$message"
+    echo "$hits" >&2
+}
 
-layout_hits="$(search 'NSLayoutConstraint|translatesAutoresizingMaskIntoConstraints|[A-Za-z]+Anchor\.constraint\(' "${ui_roots[@]}")"
-if [[ -n "$layout_hits" ]]; then
-    error "layout must use SnapKit; found NSLayoutConstraint / autoresizing-mask / anchor.constraint:"
-    echo "$layout_hits" >&2
-fi
+ui_root="$root/Xrash"
 
-alert_hits="$(search 'UIAlertController|UIAlertAction' "${ui_roots[@]}")"
-if [[ -n "$alert_hits" ]]; then
-    error "alerts must use AlertController; found UIAlertController / UIAlertAction:"
-    echo "$alert_hits" >&2
-fi
+forbid "layout must use SnapKit; found NSLayoutConstraint / autoresizing-mask / anchor.constraint:" \
+    "$(search 'NSLayoutConstraint|translatesAutoresizingMaskIntoConstraints|[A-Za-z]+Anchor\.constraint\(' "$ui_root")"
+
+forbid "alerts must use AlertController; found UIAlertController / UIAlertAction:" \
+    "$(search 'UIAlertController|UIAlertAction' "$ui_root")"
 
 # A share sheet is a popover on an iPad and raises without an anchor.
 # `ReportShare.present` is the one place that makes and anchors one.
-share_hits="$(search 'UIActivityViewController\(' "${ui_roots[@]}" | grep -v 'Shared/ReportShare\.swift' || true)"
-if [[ -n "$share_hits" ]]; then
-    error "share sheets go through ReportShare.present, which anchors the popover:"
-    echo "$share_hits" >&2
-fi
+forbid "share sheets go through ReportShare.present, which anchors the popover:" \
+    "$(search 'UIActivityViewController\(' "$ui_root" | grep -v 'Shared/ReportShare\.swift' || true)"
 
 # Every alert card carries a message under its title. An empty or missing
 # `message:` is a bare title over a text field, which reads as unfinished.
+# Kept in a variable: this producer is the one that can fail, and `set -e` only
+# sees a command substitution's status when it stands as an assignment.
 alert_message_hits="$(perl -0777 -ne '
     while (/\bAlert(?:Input)?ViewController\(([^{]*?)\)\s*\{/sg) {
         my ($args, $offset) = ($1, $-[0]);
@@ -51,27 +52,17 @@ alert_message_hits="$(perl -0777 -ne '
         next if $args =~ /^contentViewController:/;
         my $line = 1 + (substr($_, 0, $offset) =~ tr/\n//);
         print "$ARGV:$line: $&\n";
-    }' $(find "${ui_roots[@]}" -name '*.swift'))"
-if [[ -n "$alert_message_hits" ]]; then
-    error "every AlertViewController / AlertInputViewController needs a non-empty message:"
-    echo "$alert_message_hits" >&2
-fi
+    }' $(find "$ui_root" -name '*.swift'))"
+forbid "every AlertViewController / AlertInputViewController needs a non-empty message:" "$alert_message_hits"
 
-delete_icon_hits="$(search '"trash\.slash"' "${ui_roots[@]}")"
-if [[ -n "$delete_icon_hits" ]]; then
-    error "deletion uses the standard trash symbol:"
-    echo "$delete_icon_hits" >&2
-fi
+forbid "deletion uses the standard trash symbol:" "$(search '"trash\.slash"' "$ui_root")"
 
 # Nothing third-party links into the daemon, and the wire layer it links stays
 # Foundation-only.
-daemon_hits="$(search '^import (SnapKit|Then|AlertController|SPIndicator|Runestone[A-Za-z]*|MachOKit|LibArchive)' \
-    "$root/xrashd" \
-    "$root/Packages/XrashKit/Sources/XrashProtocol")"
-if [[ -n "$daemon_hits" ]]; then
-    error "third-party modules must not link into xrashd or XrashProtocol:"
-    echo "$daemon_hits" >&2
-fi
+forbid "third-party modules must not link into xrashd or XrashProtocol:" \
+    "$(search '^import (SnapKit|Then|AlertController|SPIndicator|Runestone[A-Za-z]*|MachOKit|LibArchive)' \
+        "$root/xrashd" \
+        "$root/Packages/XrashKit/Sources/XrashProtocol")"
 
 if [[ "$fail" -ne 0 ]]; then
     exit 65

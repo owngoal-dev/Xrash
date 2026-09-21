@@ -47,9 +47,8 @@ def main(arguments):
     if verify_only:
         arguments = arguments[1:]
     keys = set(json.loads(pathlib.Path(arguments[0]).read_text(encoding="utf-8")))
-    catalogue = None if verify_only else pathlib.Path(arguments[1])
     tables, failed = {}, False
-    for name in arguments[1 if verify_only else 2:]:
+    for name in arguments[1:] if verify_only else arguments[2:]:
         path = pathlib.Path(name)
         tables[path.stem], found = problems(keys, path)
         for line in found:
@@ -59,7 +58,7 @@ def main(arguments):
             print(f"ok {path.stem} {len(keys)}")
     if failed:
         return 1
-    if catalogue is None:
+    if verify_only:
         return 0
 
     def unit(value):
@@ -74,6 +73,7 @@ def main(arguments):
     document = {"sourceLanguage": "en", "strings": strings, "version": "1.0"}
     # Xcode's own spelling: two spaces, " : " between key and value.
     text = json.dumps(document, ensure_ascii=False, indent=2, separators=(",", " : "))
+    catalogue = pathlib.Path(arguments[1])
     catalogue.write_text(text + "\n", encoding="utf-8")
     print(f"wrote {catalogue} ({len(strings)} keys, {len(tables) + 1} languages)")
     return 0

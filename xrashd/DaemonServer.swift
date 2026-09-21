@@ -15,6 +15,8 @@ final class DaemonServer {
         autoreleaseFrequency: .workItem
     )
     private let authenticator = PeerAuthenticator()
+    /// Held, never read: releasing the last reference to an activated listener
+    /// takes the service back off the bootstrap.
     private var listener: xpc_connection_t?
     private var announcer: ReportAnnouncer?
     private var sessions = [UUID: PeerSession]()
@@ -35,9 +37,10 @@ final class DaemonServer {
         // as for a lookup, and does not say which it was. Made before the
         // listener is live, so the first session already has it.
         queue.sync {
-            guard let installRoot = authenticator.installRoot else { return }
-            announcer = ReportAnnouncer(installRoot: installRoot, queue: queue)
-            announcer?.start()
+            guard let installRoot = authenticator.installRoot,
+                  let announcer = ReportAnnouncer(installRoot: installRoot, queue: queue) else { return }
+            self.announcer = announcer
+            announcer.start()
         }
         xpc_connection_activate(listener)
         // A launch nobody connects to still has to end.

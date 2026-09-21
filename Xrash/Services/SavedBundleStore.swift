@@ -78,7 +78,7 @@ final class SavedBundleStore {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let encoder = PropertyListEncoder()
         encoder.outputFormat = .binary
-        try encoder.encode(manifest).write(to: sidecarURL(for: manifest.id), options: .atomic)
+        try encoder.encode(manifest).write(to: sidecarURL(forArchive: url), options: .atomic)
 
         let bundle = SavedBundle(url: url, manifest: manifest)
         publish(bundles.value.filter { $0.id != bundle.id } + [bundle])
@@ -87,7 +87,7 @@ final class SavedBundleStore {
 
     func remove(_ bundle: SavedBundle) throws {
         try FileManager.default.removeItem(at: bundle.url)
-        try? FileManager.default.removeItem(at: sidecarURL(for: bundle.id))
+        try? FileManager.default.removeItem(at: sidecarURL(forArchive: bundle.url))
         publish(bundles.value.filter { $0.id != bundle.id })
     }
 
@@ -116,12 +116,14 @@ final class SavedBundleStore {
 
     // MARK: Plumbing
 
-    private func sidecarURL(for id: String) -> URL {
-        directory.appendingPathComponent(Self.component(id)).appendingPathExtension(Self.sidecarExtension)
+    /// The sidecar sits beside the archive under the same stem, derived from
+    /// the archive itself so that writing it and reading it cannot disagree.
+    private func sidecarURL(forArchive archive: URL) -> URL {
+        archive.deletingPathExtension().appendingPathExtension(Self.sidecarExtension)
     }
 
     private func cachedManifest(for archive: URL) -> BundleManifest? {
-        let sidecar = archive.deletingPathExtension().appendingPathExtension(Self.sidecarExtension)
+        let sidecar = sidecarURL(forArchive: archive)
         guard let data = try? Data(contentsOf: sidecar) else { return nil }
         return try? PropertyListDecoder().decode(BundleManifest.self, from: data)
     }

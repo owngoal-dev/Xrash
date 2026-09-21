@@ -9,8 +9,7 @@ public extension Report {
             return exception.typeAndSignal
         }
         if let termination = crash?.termination {
-            let namespace = termination.namespace.map { "\($0)" }
-            return [namespace, termination.indicator].compactMap(\.self).first
+            return termination.namespace ?? termination.indicator
         }
         if let panic {
             return panic.panicString.split(separator: "\n").first.map(String.init)

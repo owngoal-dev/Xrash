@@ -155,7 +155,8 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
                 title: String(localized: "Share"),
                 image: UIImage(systemName: "square.and.arrow.up")
             ) { [weak self] _ in
-                self?.share(bundle, from: tableView.cellForRow(at: indexPath))
+                guard let self else { return }
+                ReportShare.present(bundle, from: self, source: tableView.cellForRow(at: indexPath))
             })
             if bundle.manifest.pdfPath != nil {
                 actions.append(UIAction(
@@ -185,10 +186,6 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         } catch {
             presentFailure("Could Not Delete the Report", error)
         }
-    }
-
-    private func share(_ bundle: SavedBundleStore.SavedBundle, from source: UIView?) {
-        ReportShare.present(bundle, from: self, source: source)
     }
 
     private func openPDF(_ bundle: SavedBundleStore.SavedBundle) {

@@ -144,7 +144,7 @@ enum ReportBundleBuilder {
             // being reached from two places at once.
             let icon = ReportPDFRenderer.appIcon
             if let pdf = await renderPDF(manifest, packages: packages, icon: icon, into: working) {
-                manifest.pdfPath = Layout.pdf
+                manifest.pdfPath = BundleLayout.pdf
                 files.append(pdf)
             }
         }
@@ -255,27 +255,30 @@ enum ReportBundleBuilder {
         // means not even a directory to write it into.
         guard options.includesReports else { return result }
 
-        let directory = working.appendingPathComponent("reports/\(member.id)", isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-        func put(_ data: Data, named name: String, at archivePath: String) throws {
-            let url = directory.appendingPathComponent(name)
+        func put(_ data: Data, at archivePath: String) throws {
+            let url = working.appendingPathComponent(archivePath)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try data.write(to: url, options: .atomic)
             result.files.append(BundleFile(source: url, archivePath: archivePath))
         }
 
         if let raw {
-            let name = sanitised(member.summary.fileName)
-            try put(raw, named: name, at: Layout.raw(member: member.id, fileName: name))
-            result.rawPath = Layout.raw(member: member.id, fileName: name)
+            let path = BundleLayout.rawReport(member: member.id, fileName: sanitised(member.summary.fileName))
+            try put(raw, at: path)
+            result.rawPath = path
         }
         if let text = ReportRenderer.crashText(member.report).data(using: .utf8) {
-            try put(text, named: "report.crash", at: Layout.text(member: member.id))
-            result.textPath = Layout.text(member: member.id)
+            let path = BundleLayout.crashText(member: member.id)
+            try put(text, at: path)
+            result.textPath = path
         }
         if let json = try? ReportRenderer.modelJSON(member.report) {
-            try put(json, named: "report.json", at: Layout.json(member: member.id))
-            result.jsonPath = Layout.json(member: member.id)
+            let path = BundleLayout.reportJSON(member: member.id)
+            try put(json, at: path)
+            result.jsonPath = path
         }
         return result
     }
@@ -299,7 +302,7 @@ enum ReportBundleBuilder {
         for (offset, image) in images.enumerated() {
             guard !Task.isCancelled else { break }
             progress(Double(offset) / Double(max(images.count, 1)), image.name)
-            let archivePath = Layout.binary(uuid: image.uuid, name: sanitised(image.name))
+            let archivePath = BundleLayout.binary(uuid: image.uuid, name: sanitised(image.name))
             let destination = working.appendingPathComponent(archivePath)
             do {
                 try FileManager.default.createDirectory(
@@ -356,7 +359,7 @@ enum ReportBundleBuilder {
         var seen = Set<String>()
         return crash.images.compactMap { image in
             guard seen.insert(image.uuid).inserted, let url = store.url(forUUID: image.uuid) else { return nil }
-            return BundleFile(source: url, archivePath: Layout.dsym(uuid: image.uuid))
+            return BundleFile(source: url, archivePath: BundleLayout.dsym(uuid: image.uuid))
         }
     }
 
@@ -373,10 +376,10 @@ enum ReportBundleBuilder {
         icon: UIImage?,
         into working: URL
     ) async -> BundleFile? {
-        let url = working.appendingPathComponent(Layout.pdf)
+        let url = working.appendingPathComponent(BundleLayout.pdf)
         let data = ReportPDFRenderer.pdf(for: manifest, packages: packages, icon: icon)
         guard (try? data.write(to: url)) != nil else { return nil }
-        return BundleFile(source: url, archivePath: Layout.pdf)
+        return BundleFile(source: url, archivePath: BundleLayout.pdf)
     }
 
     @concurrent private nonisolated static func writeArchive(
@@ -394,33 +397,6 @@ enum ReportBundleBuilder {
     }
 
     // MARK: Paths
-
-    /// Where each kind of file sits inside the archive.
-    // ponytail: `BundleLayout` in XrashBundle is meant to own these; delete
-    // this enum and call it once it has landed.
-    private enum Layout {
-        static let pdf = "Report.pdf"
-
-        static func raw(member: String, fileName: String) -> String {
-            "reports/\(member)/\(fileName)"
-        }
-
-        static func text(member: String) -> String {
-            "reports/\(member)/report.crash"
-        }
-
-        static func json(member: String) -> String {
-            "reports/\(member)/report.json"
-        }
-
-        static func binary(uuid: String, name: String) -> String {
-            "binaries/\(uuid)/\(name)"
-        }
-
-        static func dsym(uuid: String) -> String {
-            "dsyms/\(uuid).dwarf"
-        }
-    }
 
     /// A name from a report can carry anything; an archive entry may not carry
     /// a separator, a NUL or a walk upwards.

@@ -2,8 +2,8 @@ import Darwin
 import Foundation
 import LibArchive
 
-/// The bits both ends of the zip need: libarchive's status convention, its
-/// error strings, and the locale it insists on converting names through.
+/// The bits both ends of the zip need: libarchive's status convention, and the
+/// locale it insists on converting names through.
 enum Zip {
     /// Big enough that a 200 MB binary is a few thousand reads, small enough
     /// that nothing here holds a whole file in memory.
@@ -23,22 +23,18 @@ enum Zip {
         return try body()
     }
 
-    static func message(_ handle: OpaquePointer) -> String {
-        archive_error_string(handle).map { String(cString: $0) } ?? "the archive could not be used"
-    }
-
     /// `ARCHIVE_WARN` means the call did what was asked and had a remark about
     /// it; anything else is a failure.
     private static func succeeded(_ status: Int32) -> Bool {
         status == ARCHIVE_OK || status == ARCHIVE_WARN
     }
 
-    static func checkWrite(_ handle: OpaquePointer, _ status: Int32) throws {
-        guard succeeded(status) else { throw BundleArchiveError.cannotWrite(message(handle)) }
+    static func checkWrite(_ status: Int32) throws {
+        guard succeeded(status) else { throw BundleArchiveError.cannotWrite }
     }
 
-    static func checkRead(_ handle: OpaquePointer, _ status: Int32) throws {
-        guard succeeded(status) else { throw BundleArchiveError.cannotRead(message(handle)) }
+    static func checkRead(_ status: Int32) throws {
+        guard succeeded(status) else { throw BundleArchiveError.cannotRead }
     }
 
     /// Seconds since 1970, clamped rather than trapped: `time_t(someDouble)`

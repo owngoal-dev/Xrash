@@ -18,13 +18,6 @@ import XrashProtocol
 ///   it has to be: a peer of that uid can already read every report this helper
 ///   would open for it.
 final class PeerAuthenticator {
-    private static let mobileUserID: UInt32 = 501
-    private static let requiredEntitlements = [
-        XrashService.clientEntitlement,
-        "platform-application",
-        "com.apple.private.security.no-sandbox",
-    ]
-
     /// Whatever precedes `/usr/libexec/xrashd` in this process's own path. No
     /// prefix is written in Swift; `hello` hands this one to the app.
     let installRoot: String?
@@ -74,6 +67,13 @@ final class PeerAuthenticator {
         }
 
     #else
+
+        private static let mobileUserID: UInt32 = 501
+        private static let requiredEntitlements = [
+            XrashService.clientEntitlement,
+            "platform-application",
+            "com.apple.private.security.no-sandbox",
+        ]
 
         init() {
             let suffix = XrashService.daemonPathSuffix

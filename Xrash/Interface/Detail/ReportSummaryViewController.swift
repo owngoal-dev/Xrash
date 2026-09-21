@@ -129,7 +129,11 @@ final class ReportSummaryViewController: UITableViewController {
                     with: frame,
                     index: index,
                     in: crash,
-                    emphasis: emphasis(of: frame, in: crash)
+                    emphasis: FrameCell.emphasis(
+                        of: frame,
+                        in: crash,
+                        suspectPaths: Set(content.suspects.map(\.id))
+                    )
                 )
                 (cell as? FrameCell)?.menuProvider = { [weak self] in self?.frameMenu(frame, in: crash) ?? [] }
             }
@@ -243,7 +247,7 @@ final class ReportSummaryViewController: UITableViewController {
             cell.selectionStyle = .default
         case .linkedReports:
             configuration.text = String(localized: "Similar Reports")
-            configuration.secondaryText = String(localized: "\(content.linkedCount) more of the same crash")
+            configuration.secondaryText = String(localized: "\(content.similar.count) more of the same crash")
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
         case let .jetsamProcess(index):
@@ -284,20 +288,6 @@ final class ReportSummaryViewController: UITableViewController {
     private func frame(_ list: DetailFrameList, _ index: Int, in crash: CrashReport) -> Frame? {
         let frames = list == .crashedThread ? (crash.faultingThread?.frames ?? []) : crash.lastExceptionBacktrace
         return frames.indices.contains(index) ? frames[index] : nil
-    }
-
-    /// Only the frames worth looking at first are marked. Everything else
-    /// stays at full contrast — a stack nobody can read is not a stack.
-    private func emphasis(of frame: Frame, in crash: CrashReport) -> FrameCell.Emphasis {
-        guard let index = frame.imageIndex, crash.images.indices.contains(index) else { return .ordinary }
-        let image = crash.images[index]
-        if content?.suspects.contains(where: { $0.id == image.path }) == true {
-            return .suspect
-        }
-        if image.path == crash.process.path {
-            return .own
-        }
-        return FrameCell.isSystem(image) ? .ordinary : .own
     }
 
     private func threadTitle(_ thread: ReportThread?) -> String? {

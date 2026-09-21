@@ -42,10 +42,7 @@ final class SettingsViewController: UITableViewController {
             ),
             Section(
                 title: String(localized: "Notifications"),
-                // Who announces is the backend's answer, so the sentence is too.
-                footer: CrashNotice.shared.daemonAnnounces.value
-                    ? String(localized: "You are notified of new reports even when Xrash is not running.")
-                    : String(localized: "You are notified of new reports only while Xrash is running."),
+                footer: ReportFormat.announcementSummary,
                 rows: [.crashNotifications]
             ),
             Section(
@@ -314,19 +311,16 @@ final class SettingsViewController: UITableViewController {
 private final class ChoiceViewController<Choice: Equatable>: UITableViewController {
     private let choices: [(title: String, value: Choice)]
     private var selected: Choice
-    private let footer: String?
     private let onChoose: (Choice) -> Void
 
     init(
         title: String,
         choices: [(String, Choice)],
         selected: Choice,
-        footer: String? = nil,
         onChoose: @escaping (Choice) -> Void
     ) {
         self.choices = choices.map { (title: $0.0, value: $0.1) }
         self.selected = selected
-        self.footer = footer
         self.onChoose = onChoose
         super.init(style: .insetGrouped)
         self.title = title
@@ -346,10 +340,6 @@ private final class ChoiceViewController<Choice: Equatable>: UITableViewControll
 
     override func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
         choices.count
-    }
-
-    override func tableView(_: UITableView, titleForFooterInSection _: Int) -> String? {
-        footer
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

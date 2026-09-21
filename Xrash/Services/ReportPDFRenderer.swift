@@ -27,7 +27,8 @@ enum ReportPDFRenderer {
             width: pageSize.width - margin * 2,
             height: pageSize.height - margin * 2 - chromeHeight * 2
         )
-        let pages = paginate(body, in: textRect.size)
+        let framesetter = CTFramesetterCreateWithAttributedString(body)
+        let pages = paginate(framesetter, length: body.length, in: textRect.size)
         let total = 1 + pages.count
 
         let format = UIGraphicsPDFRendererFormat()
@@ -37,7 +38,6 @@ enum ReportPDFRenderer {
             kCGPDFContextCreator as String: manifest.generator,
         ]
         let renderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: pageSize), format: format)
-        let framesetter = CTFramesetterCreateWithAttributedString(body)
 
         return renderer.pdfData { context in
             context.beginPage()
@@ -161,9 +161,8 @@ enum ReportPDFRenderer {
         packages: DpkgDatabase?,
         width: CGFloat
     ) {
-        let role = member.relation == nil
-            ? String(localized: "Primary")
-            : String(localized: "Linked · \(relationText(member.relation))")
+        let role = member.relation.map { String(localized: "Linked · \(RelationText.label(for: $0))") }
+            ?? String(localized: "Primary")
         text.append(attributed("\(member.summary.processName) — \(role)", style: .title))
 
         guard let crash = member.report.crash else {
@@ -280,13 +279,12 @@ enum ReportPDFRenderer {
 
     // MARK: Text flow
 
-    private static func paginate(_ text: NSAttributedString, in size: CGSize) -> [CFRange] {
-        guard text.length > 0 else { return [] }
-        let framesetter = CTFramesetterCreateWithAttributedString(text)
+    private static func paginate(_ framesetter: CTFramesetter, length: Int, in size: CGSize) -> [CFRange] {
+        guard length > 0 else { return [] }
         let path = CGPath(rect: CGRect(origin: .zero, size: size), transform: nil)
         var ranges = [CFRange]()
         var start = 0
-        while start < text.length {
+        while start < length {
             let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: start, length: 0), path, nil)
             let visible = CTFrameGetVisibleStringRange(frame)
             guard visible.length > 0 else { break }

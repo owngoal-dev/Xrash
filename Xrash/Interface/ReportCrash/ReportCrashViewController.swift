@@ -58,8 +58,6 @@ final class ReportCrashViewController: UITableViewController {
         .appendingPathComponent("SystemState", isDirectory: true)
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
 
-    private var isBuilding = false
-
     private var dataSource: SectionedTableDataSource<Section, Row>!
 
     /// `primaryID` is the `ReportSummary.id` of a report in the library.
@@ -466,9 +464,9 @@ final class ReportCrashViewController: UITableViewController {
         files.reduce(0) { $0 + $1.byteCount }
     }
 
+    /// The disabled Create button is what says a build is in flight; nothing
+    /// else reaches this.
     private func create() {
-        guard !isBuilding else { return }
-        isBuilding = true
         view.endEditing(true)
         isModalInPresentation = true
         navigationItem.rightBarButtonItem?.isEnabled = false
@@ -476,7 +474,6 @@ final class ReportCrashViewController: UITableViewController {
         Task { [weak self] in
             guard let self else { return }
             defer {
-                isBuilding = false
                 isModalInPresentation = false
                 navigationItem.rightBarButtonItem?.isEnabled = true
             }
@@ -490,7 +487,7 @@ final class ReportCrashViewController: UITableViewController {
                 title: bundleTitle,
                 notes: notes,
                 options: options,
-                includesDSYMs: includesDSYMs && hasMatchingDSYM,
+                includesDSYMs: includesDSYMs,
                 systemFiles: collected
             )
             do {

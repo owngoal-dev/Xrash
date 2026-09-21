@@ -20,15 +20,13 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     private let backend: ReportBackend
     private(set) var dataSource: SectionedTableDataSource<ReportSection, String>!
     private var groups = [ReportListGroup]()
-    /// Non-empty only while the inbox is what the list shows.
-    private var processes = [ProcessInboxRow]()
     /// What each row currently draws, so a refresh reconfigures the rows that
     /// changed rather than every row it republished.
     private var shown = [String: ReportRowState]()
+    /// Non-empty only while the inbox is what the list shows.
     private var shownProcesses = [String: ProcessInboxRow]()
     /// Where the sandboxed footer hangs, whichever arrangement is up.
     private var lastSection: ReportSection?
-    private var status = BackendStatus.connecting
     private var observers = Set<AnyCancellable>()
 
     private let searchText = CurrentValueSubject<String, Never>("")
@@ -208,10 +206,10 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             .store(in: &observers)
 
         backend.status
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] status in
-                guard let self, status != self.status else { return }
-                self.status = status
+            .sink { [weak self] _ in
+                guard let self else { return }
                 renderEmptyState()
                 // The sandboxed footer hangs off the last section, and only a
                 // fresh layout asks for footer titles again. This fires at
@@ -231,7 +229,6 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
 
     private func apply(groups: [ReportListGroup]) {
         self.groups = groups
-        processes = []
         shownProcesses = [:]
         let states = Dictionary(
             groups.flatMap(\.rows).map { ($0.summary.id, $0) },
@@ -255,7 +252,6 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     private func apply(processes rows: [ProcessInboxRow]) {
         groups = []
         shown = [:]
-        processes = rows
         let states = Dictionary(rows.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
         var snapshot = NSDiffableDataSourceSnapshot<ReportSection, String>()
         snapshot.appendSections([.inbox])
@@ -316,8 +312,8 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     /// Every report the list is showing: the rows under the headers, or every
     /// report of every process the inbox has a row for.
     var shownReportIDs: [String] {
-        guard processes.isEmpty else {
-            let names = Set(processes.map(\.name))
+        guard shownProcesses.isEmpty else {
+            let names = Set(shownProcesses.keys)
             return ReportListArrangement.admitted(for: input)
                 .filter { names.contains($0.summary.processName) }
                 .map(\.summary.id)
@@ -373,8 +369,8 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     // MARK: Empty and unavailable states
 
     private func renderEmptyState() {
-        guard groups.isEmpty, processes.isEmpty else { return tableView.setEmptyState(nil) }
-        if status == .connecting, library.summaries.value.isEmpty {
+        guard groups.isEmpty, shownProcesses.isEmpty else { return tableView.setEmptyState(nil) }
+        if backend.status.value == .connecting, library.summaries.value.isEmpty {
             return tableView.setEmptyState(.loading(String(localized: "Connecting…")))
         }
         let needle = searchText.value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -419,7 +415,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     /// Said once, under the last section, and only when the daemon never
     /// arrived: it explains a short list instead of leaving it a mystery.
     private func footerTitle(for section: ReportSection) -> String? {
-        guard status == .sandboxed, lastSection == section else { return nil }
+        guard backend.status.value == .sandboxed, lastSection == section else { return nil }
         return String(localized: "Showing only the reports this app can read.")
     }
 

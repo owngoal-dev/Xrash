@@ -46,16 +46,13 @@ done
 # Nothing may ship outside the prefix: on rootless every path lives under
 # /var/jb, and a stray rootful path would install onto the sealed system.
 if [[ -n "$install_prefix" ]]; then
-    allowed=("./")
-    walked="./"
-    while IFS= read -r component; do
-        walked="$walked$component/"
-        allowed+=("$walked")
-    done < <(tr '/' '\n' <<<"${install_prefix#/}")
     while IFS= read -r path; do
         [[ -n "$path" ]] || continue
         [[ "$path" == ".$install_prefix/"* ]] && continue
-        printf '%s\n' "${allowed[@]}" | grep -Fxq "$path" || {
+        # What is left may only be a directory on the way to the prefix. The
+        # trailing slash is what makes this a component match: without it
+        # './var/j' would pass as a prefix of './var/jb/'.
+        [[ "$path" == */ && ".$install_prefix/" == "$path"* ]] || {
             echo "error: package ships '$path' outside $install_prefix" >&2
             exit 65
         }

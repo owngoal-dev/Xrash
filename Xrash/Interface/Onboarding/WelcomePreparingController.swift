@@ -29,7 +29,16 @@ final class WelcomePreparingController: UIViewController {
     private var observers = Set<AnyCancellable>()
 
     private var helperStatus = BackendStatus.connecting
-    private var helperState = WelcomeStageRow.State.running
+    /// A miss is not a failure: the helper is on demand, and past its grace
+    /// period the app reads what it can on its own.
+    private var helperState: WelcomeStageRow.State {
+        switch helperStatus {
+        case .connecting: .running
+        case .privileged: .done
+        case .sandboxed: .skipped
+        }
+    }
+
     private var reportsState = WelcomeStageRow.State.running
     private var reportsProgress: (read: Int, total: Int)?
     private var reportsCount = 0
@@ -249,13 +258,6 @@ final class WelcomePreparingController: UIViewController {
             .sink { [weak self] status in
                 guard let self else { return }
                 helperStatus = status
-                // A miss is not a failure: the helper is on demand, and past
-                // its grace period the app reads what it can on its own.
-                switch status {
-                case .connecting: helperState = .running
-                case .privileged: helperState = .done
-                case .sandboxed: helperState = .skipped
-                }
                 render()
             }
             .store(in: &observers)

@@ -10,6 +10,20 @@ final class ReportRowCell: UITableViewCell {
     static let reuseIdentifier = "report"
     private static let unreadDotSize: CGFloat = 8
 
+    /// In a split view's primary column the system fills a selected row with
+    /// the accent colour, and this app's accent is red: a selected report
+    /// looked like an error. The ordinary grey, everywhere — and named
+    /// outright in both states, or the column's own material shows through the
+    /// row, accent tint and all. Every row of that column is drawn this way,
+    /// so the decision is made once, here.
+    static let groupedBackgroundHandler: UITableViewCell.ConfigurationUpdateHandler = { cell, state in
+        var background = UIBackgroundConfiguration.listGroupedCell().updated(for: state)
+        background.backgroundColor = state.isSelected || state.isHighlighted
+            ? .systemGray4
+            : .secondarySystemGroupedBackground
+        cell.backgroundConfiguration = background
+    }
+
     private let iconView = ReportIconView()
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
@@ -19,18 +33,7 @@ final class ReportRowCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         accessoryType = .disclosureIndicator
-        // In a split view's primary column the system fills a selected row
-        // with the accent colour, and this app's accent is red: a selected
-        // report looked like an error. The ordinary grey, everywhere.
-        configurationUpdateHandler = { cell, state in
-            var background = UIBackgroundConfiguration.listGroupedCell().updated(for: state)
-            // Named outright in both states: the column's own material would
-            // otherwise show through the row, accent tint and all.
-            background.backgroundColor = state.isSelected || state.isHighlighted
-                ? .systemGray4
-                : .secondarySystemGroupedBackground
-            cell.backgroundConfiguration = background
-        }
+        configurationUpdateHandler = Self.groupedBackgroundHandler
 
         titleLabel.do {
             $0.font = .preferredFont(forTextStyle: .body)

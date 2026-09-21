@@ -73,7 +73,7 @@ let layers: [Layer] = (group["layers"] as? [[String: Any]] ?? []).compactMap { i
 guard !layers.isEmpty else { fail("icon.json has no image layer") }
 
 /// One square PNG for `appearance` ("light" or "dark").
-func render(side: Int, appearance: String) -> Data? {
+func render(side: Int, appearance: String) -> Data {
     guard let bitmap = NSBitmapImageRep(
         bitmapDataPlanes: nil,
         pixelsWide: side,
@@ -85,7 +85,7 @@ func render(side: Int, appearance: String) -> Data? {
         colorSpaceName: .deviceRGB,
         bytesPerRow: 0,
         bitsPerPixel: 0
-    ) else { return nil }
+    ) else { fail("render failed") }
     NSGraphicsContext.saveGraphicsState()
     defer { NSGraphicsContext.restoreGraphicsState() }
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
@@ -104,7 +104,8 @@ func render(side: Int, appearance: String) -> Data? {
         let frame = NSRect(x: inset + offset.x, y: inset + offset.y, width: s * layer.scale, height: s * layer.scale)
         layer.image.draw(in: frame, from: .zero, operation: .sourceOver, fraction: 1)
     }
-    return bitmap.representation(using: .png, properties: [:])
+    guard let data = bitmap.representation(using: .png, properties: [:]) else { fail("render failed") }
+    return data
 }
 
 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -113,7 +114,7 @@ var manifest: [[String: Any]] = []
 for appearance in ["light", "dark"] {
     for scale in [1, 2, 3] {
         let file = "mark-\(appearance)@\(scale)x.png"
-        guard let data = render(side: 64 * scale, appearance: appearance) else { fail("render failed") }
+        let data = render(side: 64 * scale, appearance: appearance)
         try data.write(to: output.appendingPathComponent(file))
         var entry: [String: Any] = ["idiom": "universal", "scale": "\(scale)x", "filename": file]
         if appearance == "dark" {

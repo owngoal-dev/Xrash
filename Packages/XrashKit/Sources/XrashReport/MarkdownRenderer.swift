@@ -24,7 +24,7 @@ enum MarkdownRenderer {
     }
 
     private static func title(_ report: Report) -> String {
-        let name = report.crash.map(\.process.name).flatMap { $0.isEmpty ? nil : $0 }
+        let name = report.crash.flatMap { $0.process.name.isEmpty ? nil : $0.process.name }
             ?? report.header.appName ?? report.header.name
         if let exception = report.crash?.exception {
             return "## \(name ?? "A process") crashed — \(exception.typeAndSignal)"

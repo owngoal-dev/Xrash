@@ -5,7 +5,7 @@ import UserNotifications
 final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _: UIApplication,
-        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil
+        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         UpdateNotice.shared.startWatching()
         // The delegate has to be in place before this method returns, or a
@@ -27,10 +27,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         configurationForConnecting connectingSceneSession: UISceneSession,
         options _: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
-        let configuration = UISceneConfiguration(
-            name: nil,
-            sessionRole: connectingSceneSession.role
-        )
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
         configuration.delegateClass = SceneDelegate.self
         return configuration
     }

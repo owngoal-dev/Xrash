@@ -83,12 +83,12 @@ final class ReportAnnouncer {
     }
 
     private func pass() {
+        let roots = ReportRoots.current()
         let before = ledger
-        let notices = ledger.take(ReportScanner().scan(), now: Date())
+        let notices = ledger.take(ReportScanner(roots: roots).scan(), now: Date())
         if ledger != before {
             _ = save()
         }
-        let roots = ReportRoots.current()
         for notice in notices {
             pendingPosts += 1
             // What the report says about itself, read by a child that is not
@@ -104,9 +104,14 @@ final class ReportAnnouncer {
 
     // MARK: The ledger on disk
 
+    /// Where the ledger lives, for the one that reads it and the one that
+    /// writes it.
+    private static func ledgerPath(in directory: String) -> String {
+        "\(directory)/\(XrashService.noticeLedgerFileName)"
+    }
+
     private static func load(from directory: String) -> NoticeLedger? {
-        let path = "\(directory)/\(XrashService.noticeLedgerFileName)"
-        guard let data = FileManager.default.contents(atPath: path) else { return nil }
+        guard let data = FileManager.default.contents(atPath: ledgerPath(in: directory)) else { return nil }
         return try? XrashWire.decode(NoticeLedger.self, from: data)
     }
 
@@ -116,7 +121,7 @@ final class ReportAnnouncer {
             // The ledger names hidden processes and is nobody else's.
             try FileManager.default.createDirectory(atPath: ledgerDirectory, withIntermediateDirectories: true)
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: ledgerDirectory)
-            let url = URL(fileURLWithPath: ledgerDirectory).appendingPathComponent(XrashService.noticeLedgerFileName)
+            let url = URL(fileURLWithPath: Self.ledgerPath(in: ledgerDirectory))
             try data.write(to: url, options: .atomic)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
             return true

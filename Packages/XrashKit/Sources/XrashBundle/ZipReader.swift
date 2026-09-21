@@ -15,17 +15,17 @@ enum ZipReader {
 
     static func extract(_ archive: URL, into directory: URL) throws {
         guard let handle = archive_read_new() else {
-            throw BundleArchiveError.cannotRead("the archive reader could not be created")
+            throw BundleArchiveError.cannotRead
         }
         defer { archive_read_free(handle) }
         archive_read_support_format_zip(handle)
         archive_read_support_filter_none(handle)
-        try Zip.checkRead(handle, archive_read_open_filename(handle, archive.path, Zip.chunkByteCount))
+        try Zip.checkRead(archive_read_open_filename(handle, archive.path, Zip.chunkByteCount))
 
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         } catch {
-            throw BundleArchiveError.cannotRead("\(directory.lastPathComponent) could not be created")
+            throw BundleArchiveError.cannotRead
         }
         let root = directory.standardizedFileURL.resolvingSymlinksInPath()
 
@@ -38,11 +38,11 @@ enum ZipReader {
                 break
             }
             guard status == ARCHIVE_OK || status == ARCHIVE_WARN, let entry else {
-                throw BundleArchiveError.cannotRead(Zip.message(handle))
+                throw BundleArchiveError.cannotRead
             }
             entryCount += 1
             guard entryCount <= maximumEntryCount else {
-                throw BundleArchiveError.cannotRead("the archive holds more files than a report bundle can")
+                throw BundleArchiveError.cannotRead
             }
 
             let declared = pathname(of: entry)
@@ -70,12 +70,12 @@ enum ZipReader {
                 at: destination.deletingLastPathComponent(), withIntermediateDirectories: true
             )
         } catch {
-            throw BundleArchiveError.cannotRead("\(destination.lastPathComponent) could not be created")
+            throw BundleArchiveError.cannotRead
         }
         guard FileManager.default.createFile(atPath: destination.path, contents: nil),
               let writer = try? FileHandle(forWritingTo: destination)
         else {
-            throw BundleArchiveError.cannotRead("\(destination.lastPathComponent) could not be written")
+            throw BundleArchiveError.cannotRead
         }
         defer { try? writer.close() }
 
@@ -86,15 +86,15 @@ enum ZipReader {
             if read == 0 {
                 break
             }
-            guard read > 0 else { throw BundleArchiveError.cannotRead(Zip.message(handle)) }
+            guard read > 0 else { throw BundleArchiveError.cannotRead }
             written += Int64(read)
             guard written <= budget else {
-                throw BundleArchiveError.cannotRead("the archive unpacks to more than a report bundle can hold")
+                throw BundleArchiveError.cannotRead
             }
             do {
                 try writer.write(contentsOf: Data(buffer[0 ..< read]))
             } catch {
-                throw BundleArchiveError.cannotRead("\(destination.lastPathComponent) could not be written")
+                throw BundleArchiveError.cannotRead
             }
         }
         return written
@@ -116,7 +116,7 @@ enum ZipReader {
             throw BundleArchiveError.unsupportedSchema(probe.schemaVersion)
         }
         guard let manifest = try? decoder.decode(BundleManifest.self, from: data) else {
-            throw BundleArchiveError.cannotRead("\(BundleLayout.manifest) could not be read")
+            throw BundleArchiveError.cannotRead
         }
         return manifest
     }

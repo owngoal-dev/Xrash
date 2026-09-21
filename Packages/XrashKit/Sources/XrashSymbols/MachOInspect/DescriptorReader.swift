@@ -67,7 +67,7 @@ struct DescriptorReader: Sendable {
 ///
 /// Separate from `MachOReadFailure`, which is what the symbolicator's own
 /// `Data`-backed slice reader throws: this one carries a sentence, because the
-/// inspector is a screen a person reads and "malformed" is not one.
+/// inspector is a screen a person reads and "unreadable" is not one.
 public enum FormatFailure: Error, Sendable, Hashable {
     /// The magic is not what this reader parses. Not a corruption: it is the
     /// answer to "is this a Mach-O", and callers use it to say so plainly.

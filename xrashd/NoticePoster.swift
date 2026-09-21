@@ -12,7 +12,9 @@ import XrashReport
             nil
         }
 
-        func post(_: Notice, detail _: NoticeDetail?, completion _: @escaping () -> Void) {}
+        func post(_: Notice, detail _: NoticeDetail?, completion: @escaping () -> Void) {
+            completion()
+        }
     }
 
 #else

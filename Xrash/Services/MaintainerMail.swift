@@ -14,7 +14,7 @@ import XrashReport
 enum MaintainerMail {
     /// The composer, ready to present. Nil when the maintainer field holds no
     /// address worth writing to.
-    static func compose(
+    private static func compose(
         owner: PackageOwner,
         report: Report,
         stem: String

@@ -21,16 +21,8 @@ final class ProcessInboxCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         accessoryType = .disclosureIndicator
-        // The primary column fills a selected row with the accent colour, and
-        // this app's accent is red: `ReportRowCell` names the grey for the
-        // same reason, and these rows sit in the same column.
-        configurationUpdateHandler = { cell, state in
-            var background = UIBackgroundConfiguration.listGroupedCell().updated(for: state)
-            background.backgroundColor = state.isSelected || state.isHighlighted
-                ? .systemGray4
-                : .secondarySystemGroupedBackground
-            cell.backgroundConfiguration = background
-        }
+        // These rows sit in the same column as a report's, drawn the same way.
+        configurationUpdateHandler = ReportRowCell.groupedBackgroundHandler
 
         titleLabel.do {
             $0.font = .preferredFont(forTextStyle: .body)

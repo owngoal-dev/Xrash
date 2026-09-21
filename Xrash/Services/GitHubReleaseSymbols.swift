@@ -176,7 +176,6 @@ enum GitHubReleaseSymbols {
 
         private let destination: URL
         private let progress: @Sendable (Double?, Int64) -> Void
-        private var isFinished = false
 
         init(destination: URL, progress: @escaping @Sendable (Double?, Int64) -> Void) {
             self.destination = destination
@@ -219,12 +218,12 @@ enum GitHubReleaseSymbols {
         }
 
         /// `didFinishDownloadingTo` and `didCompleteWithError` both arrive for
-        /// one task; whichever is first is the answer.
+        /// one task; whichever is first is the answer. The slot is emptied
+        /// before the resume, so a one-shot continuation is resumed once.
         private func finish(_ result: Result<Void, Error>) {
-            guard !isFinished else { return }
-            isFinished = true
-            continuation?.resume(with: result)
-            continuation = nil
+            guard let continuation else { return }
+            self.continuation = nil
+            continuation.resume(with: result)
         }
     }
 

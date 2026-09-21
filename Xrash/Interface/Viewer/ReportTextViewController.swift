@@ -28,6 +28,8 @@ final class ReportTextViewController: UIViewController {
     /// Set by the owner; the menu offers "Format JSON" only when it is.
     var formattedText: (() -> String)?
     private var isFormatted = false
+    /// The file's own lines, taken once before the first indenting, so the
+    /// menu has something to go back to.
     private var unformattedText: String?
 
     let textView = RunestoneEditorView.new()
@@ -239,7 +241,6 @@ final class ReportTextViewController: UIViewController {
         guard let formattedText else { return }
         isFormatted.toggle()
         if isFormatted {
-            unformattedText = text
             replaceText(formattedText())
         } else if let unformattedText {
             replaceText(unformattedText)

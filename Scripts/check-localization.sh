@@ -18,6 +18,17 @@ error() {
     fail=1
 }
 
+# One hit per line on stdin, each reported under the same advice. Not a
+# pipeline: `error` has to run in this shell or the `fail` it sets is lost.
+report_hits() {
+    local advice="$1"
+    while IFS= read -r hit; do
+        [ -n "$hit" ] || continue
+        error "$hit
+    $advice"
+    done
+}
+
 if [ ! -f "$catalogue" ]; then
     echo "error: Xrash/Resources/Localizable.xcstrings is missing" >&2
     exit 66
@@ -34,35 +45,23 @@ fi
 # AlertController's localized parameters; a literal written straight at one is
 # converted implicitly and the extractor records nothing.
 labels='title|message|placeholder|cancelButtonText|doneButtonText'
-while IFS= read -r hit; do
-    [ -n "$hit" ] || continue
-    error "$hit
-    A bare literal here is invisible to Xcode's string extractor.
+report_hits "A bare literal here is invisible to Xcode's string extractor.
     Write String.LocalizationValue(\"...\") for an AlertController argument,
-    or String(localized: \"...\") for a plain String one."
-done < <(
+    or String(localized: \"...\") for a plain String one." < <(
     grep -rlE --include='*.swift' '^import AlertController' "$root/Xrash" 2>/dev/null |
         xargs grep -nE "(^|[( ])($labels): \"[^\"]" 2>/dev/null |
         sed "s|^$root/||" || true
 )
 
 # 3. One spelling for localized text, and keys are English sentences.
-while IFS= read -r hit; do
-    [ -n "$hit" ] || continue
-    error "$hit
-    Use String(localized:) with the English sentence as the key."
-done < <(
+report_hits "Use String(localized:) with the English sentence as the key." < <(
     grep -rnE --include='*.swift' 'NSLocalizedString|String\(localized: "[A-Z][A-Z0-9]*(_[A-Z0-9]+)+"' \
         "$root/Xrash" "$root/Packages/XrashKit/Sources" 2>/dev/null | sed "s|^$root/||" || true
 )
 
 # 3b. Inflection markup is read by AttributedString only; String(localized:)
 #     puts `^[1 item](inflect: true)` on screen as written.
-while IFS= read -r hit; do
-    [ -n "$hit" ] || continue
-    error "$hit
-    Use String(inflecting:) for a phrase carrying inflection markup."
-done < <(
+report_hits "Use String(inflecting:) for a phrase carrying inflection markup." < <(
     grep -rn --include='*.swift' -B1 'inflect: true' "$root/Xrash" 2>/dev/null |
         grep -E 'localized: ' | sed "s|^$root/||" || true
 )

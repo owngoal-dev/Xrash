@@ -1,8 +1,9 @@
 import Foundation
 
+/// Bytes that are not text, and text with nothing in it, are the same answer to
+/// the one caller that asks — there is no report here — so they are one case.
 public enum ReportDecodingError: Error, Equatable, Sendable {
-    case notText
-    case malformedBody
+    case unreadable
 }
 
 /// `.ips` (a header JSON line, then a body JSON object), the legacy text
@@ -54,8 +55,9 @@ public enum ReportDecoder {
     }
 
     public static func decode(_ data: Data, fileName: String) throws -> Report {
-        guard let text = ReportText.decode(data) else { throw ReportDecodingError.notText }
-        guard text.contains(where: { !$0.isWhitespace }) else { throw ReportDecodingError.malformedBody }
+        guard let text = ReportText.decode(data), text.contains(where: { !$0.isWhitespace }) else {
+            throw ReportDecodingError.unreadable
+        }
         if let report = IPSDecoder.decode(text: text) {
             return report
         }

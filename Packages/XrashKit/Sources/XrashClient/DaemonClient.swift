@@ -15,8 +15,11 @@
         /// No daemon answered. Never shown to the user as an error: launchd may
         /// simply not have started it yet.
         case unavailable
-        case rejected(XrashReplyCode, errorNumber: Int32)
-        case malformedReply
+        /// The daemon answered and the answer is not usable: it refused the
+        /// request, or the reply does not parse. Only `unavailable` changes
+        /// what a caller does, so the rest are one case; the reply code and its
+        /// errno stay on the wire and are not read here.
+        case failed
     }
 
     /// The XPC side of the app. Connects on the first request, says goodbye after
@@ -29,7 +32,6 @@
 
         private struct Reply {
             var code: XrashReplyCode
-            var errorNumber: Int32
             var payload: Data?
             /// Owned by whoever receives the reply; -1 when none was sent.
             var descriptor: Int32
@@ -95,7 +97,7 @@
                 guard let payload = reply.payload,
                       let hello = try? XrashWire.decode(HelloReply.self, from: payload)
                 else {
-                    throw XrashClientError.malformedReply
+                    throw XrashClientError.failed
                 }
                 self.hello = hello
                 return hello
@@ -131,8 +133,8 @@
             })
         }
 
-        /// Throws `rejected` when this daemon does not announce: `refused` from
-        /// one that cannot post for the app, `invalidRequest` from an older one.
+        /// Throws when this daemon does not announce: it answers `refused` when
+        /// it cannot post for the app, `invalidRequest` when it is an older one.
         public func setNoticePolicy(_ policy: NoticePolicy) async throws {
             let payload = try XrashWire.encode(policy)
             _ = try await request(.setNoticePolicy) { message in
@@ -161,7 +163,7 @@
                 if reply.descriptor >= 0 {
                     close(reply.descriptor)
                 }
-                throw XrashClientError.rejected(reply.code, errorNumber: reply.errorNumber)
+                throw XrashClientError.failed
             }
             scheduleGoodbye()
             return reply
@@ -190,7 +192,7 @@
             guard xpc_dictionary_get_uint64(object, XrashWireKey.version) == XrashWire.version,
                   let code = XrashReplyCode(rawValue: xpc_dictionary_get_int64(object, XrashWireKey.code))
             else {
-                return .failure(XrashClientError.malformedReply)
+                return .failure(XrashClientError.failed)
             }
             var count = 0
             let payload = xpc_dictionary_get_data(object, XrashWireKey.payload, &count).flatMap {
@@ -198,7 +200,6 @@
             }
             return .success(Reply(
                 code: code,
-                errorNumber: Int32(truncatingIfNeeded: xpc_dictionary_get_int64(object, XrashWireKey.errorNumber)),
                 payload: payload,
                 descriptor: xpc_dictionary_dup_fd(object, XrashWireKey.descriptor)
             ))
@@ -208,13 +209,13 @@
             guard let payload = reply.payload,
                   let value = try? XrashWire.decode(Value.self, from: payload)
             else {
-                throw XrashClientError.malformedReply
+                throw XrashClientError.failed
             }
             return value
         }
 
         private func descriptor(of reply: Reply) throws -> FileHandle {
-            guard reply.descriptor >= 0 else { throw XrashClientError.malformedReply }
+            guard reply.descriptor >= 0 else { throw XrashClientError.failed }
             return FileHandle(fileDescriptor: reply.descriptor, closeOnDealloc: true)
         }
 

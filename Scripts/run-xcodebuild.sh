@@ -22,15 +22,14 @@ else
 fi
 
 error_pattern='(^|[[:space:]])error:|^\*\* (BUILD|TEST|ARCHIVE|CLEAN|ANALYZE) FAILED \*\*|^Testing failed:|^Failing tests:'
+error_lines="$(grep -En "$error_pattern" "$log" || true)"
 errors_in_log=0
-if grep -En "$error_pattern" "$log" >/dev/null 2>&1; then
-    errors_in_log=1
-fi
+[[ -n "$error_lines" ]] && errors_in_log=1
 
 if [[ "$xcode_status" -ne 0 || "$errors_in_log" -ne 0 ]]; then
     echo "error: [$label] xcodebuild failed (exit=$xcode_status, errors_in_log=$errors_in_log)" >&2
     if [[ "$errors_in_log" -ne 0 ]]; then
-        grep -En "$error_pattern" "$log" | head -40 >&2 || true
+        head -40 <<<"$error_lines" >&2
     fi
     # A compiler killed by the system, or a crashed swift-frontend, prints no
     # `error:` line at all, and the build log is gone once this script exits.

@@ -98,21 +98,41 @@ public enum SystemState {
         return collected
     }
 
-    /// The files, in the order they are collected and shown. Named here once so
-    /// that the review screen and the archive cannot disagree about either.
+    /// The files, in the order they are collected and shown. One list per
+    /// build, so the review screen and the archive cannot disagree about
+    /// either; both lists carry the same names in the same order, because a
+    /// snapshot taken off a device should still have a device's shape.
     private static func collectors(packages: DpkgDatabase?) -> [Collector] {
-        [
-            Collector("device.json") { try device() },
-            Collector("launchd-services.json") { try services() },
-            Collector("launchd-disabled.json") { try disabledServices() },
-            Collector("launchd-environment.json") { try environment() },
-            Collector("apps.json") { try apps() },
-            Collector("packages.json") { try SystemState.packages(packages) },
-            Collector("tweaks.json") { try tweaks(packages) },
-            Collector("processes.json") { try processes() },
-            Collector("jetsam.json") { try jetsam() },
-            Collector("jetsam-properties.json") { try jetsamProperties() },
-        ]
+        #if canImport(IcliSystem)
+            return [
+                Collector("device.json") { try deviceSnapshot() },
+                Collector("launchd-services.json") { try servicesDump() },
+                Collector("launchd-disabled.json") { try disabledServiceOverrides() },
+                Collector("launchd-environment.json") { try environment() },
+                Collector("apps.json") { try listApps() },
+                Collector("packages.json") { try SystemState.packages(packages) },
+                Collector("tweaks.json") { try tweaks(packages) },
+                Collector("processes.json") { try listProcesses(filter: nil) },
+                Collector("jetsam.json") { try jetsam() },
+                Collector("jetsam-properties.json") { try jetsamProperties() },
+            ]
+        #else
+            // The dpkg database is a file, so it reads anywhere; everything
+            // else here is launchd, LaunchServices or the kernel, and each of
+            // those files says so instead of being missing.
+            return [
+                Collector("device.json") { throw off },
+                Collector("launchd-services.json") { throw off },
+                Collector("launchd-disabled.json") { throw off },
+                Collector("launchd-environment.json") { throw off },
+                Collector("apps.json") { throw off },
+                Collector("packages.json") { try SystemState.packages(packages) },
+                Collector("tweaks.json") { throw off },
+                Collector("processes.json") { throw off },
+                Collector("jetsam.json") { throw off },
+                Collector("jetsam-properties.json") { throw off },
+            ]
+        #endif
     }
 
     private struct Collector {
@@ -181,18 +201,6 @@ public enum SystemState {
     // MARK: The device's own answers
 
     #if canImport(IcliSystem)
-        private static func device() throws -> [String: Any] {
-            try deviceSnapshot()
-        }
-
-        private static func services() throws -> [String: Any] {
-            try servicesDump()
-        }
-
-        private static func disabledServices() throws -> [String: Any] {
-            try disabledServiceOverrides()
-        }
-
         /// One call per key, each failing on its own: a variable launchd will
         /// not answer for must not cost the others.
         private static func environment() throws -> [String: Any] {
@@ -205,10 +213,6 @@ public enum SystemState {
                 }
             }
             return ["environment": values]
-        }
-
-        private static func apps() throws -> [String: Any] {
-            try listApps()
         }
 
         /// The injected dylibs, each with the package that installed it — the
@@ -224,10 +228,6 @@ public enum SystemState {
                 return row
             }
             return ["tweaks": rows, "count": rows.count]
-        }
-
-        private static func processes() throws -> [String: Any] {
-            try listProcesses(filter: nil)
         }
 
         /// The bands and the memory pressure. The property lists are a file of
@@ -246,42 +246,6 @@ public enum SystemState {
         private static let off = SystemStateFailure(
             reason: "system state can only be collected on the device"
         )
-
-        private static func device() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func services() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func disabledServices() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func environment() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func apps() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func tweaks(_: DpkgDatabase?) throws -> [String: Any] {
-            throw off
-        }
-
-        private static func processes() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func jetsam() throws -> [String: Any] {
-            throw off
-        }
-
-        private static func jetsamProperties() throws -> [String: Any] {
-            throw off
-        }
     #endif
 }
 

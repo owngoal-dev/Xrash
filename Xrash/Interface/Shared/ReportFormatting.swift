@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Then
 import UIKit
@@ -73,6 +74,18 @@ enum ReportFormat {
         [reason ?? kindLabel(summary.kind), summary.appVersion]
             .compactMap(\.self)
             .joined(separator: " · ")
+    }
+
+    // MARK: Notifications
+
+    /// Who announces a new report is the backend's answer, so the sentence is
+    /// too. Settings words its footer with it and the welcome its subtitle, so
+    /// it is decided here rather than in both.
+    @MainActor
+    static var announcementSummary: String {
+        CrashNotice.shared.daemonAnnounces.value
+            ? String(localized: "You are notified of new reports even when Xrash is not running.")
+            : String(localized: "You are notified of new reports only while Xrash is running.")
     }
 
     // MARK: Values
