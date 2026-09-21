@@ -53,6 +53,7 @@ final class ReportCrashViewController: UITableViewController {
     /// Collected once, on the first need, and kept for the life of the form:
     /// what the Review screen showed is what the archive ships.
     private var systemFiles: [SystemStateFile]?
+    private var openingCollection: Task<Void, Never>?
     private let systemStateDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("SystemState", isDirectory: true)
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -112,6 +113,7 @@ final class ReportCrashViewController: UITableViewController {
         dataSource.isEditable = true
         render()
         Task { await load() }
+        collectSystemStateOnOpening()
     }
 
     // MARK: Loading
@@ -400,6 +402,11 @@ final class ReportCrashViewController: UITableViewController {
     /// cancelled it, which turns the switch back off: a switch left on with
     /// nothing behind it would ship a bundle nobody reviewed.
     private func collectedSystemFiles() async -> [SystemStateFile]? {
+        // The collection the sheet started on its own may still be running;
+        // a second one would write the same files under it.
+        if let openingCollection {
+            await openingCollection.value
+        }
         if let systemFiles {
             return systemFiles
         }
@@ -424,6 +431,24 @@ final class ReportCrashViewController: UITableViewController {
             render()
             refreshIncludeFooter()
             return nil
+        }
+    }
+
+    /// The switch is on when the sheet opens, and a switch that is on has
+    /// files behind it: the size beside Review and the estimate under the
+    /// section are wrong until they exist. Collected once, without the card —
+    /// nobody asked for anything yet, so nothing is put in front of them.
+    private func collectSystemStateOnOpening() {
+        guard openingCollection == nil, systemFiles == nil,
+              options.includesSystemState, SystemState.isAvailable else { return }
+        let directory = systemStateDirectory
+        let packages = environment.packages
+        openingCollection = Task { [weak self] in
+            let collected = await Self.collect(into: directory, packages: packages) { _ in }
+            guard let self else { return }
+            systemFiles = collected
+            reconfigure([.include(.systemState), .reviewSystemState])
+            refreshIncludeFooter()
         }
     }
 
