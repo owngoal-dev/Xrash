@@ -95,6 +95,9 @@ final class ReportCrashViewController: UITableViewController {
         tableView.register(FormTextFieldCell.self, forCellReuseIdentifier: FormTextFieldCell.reuseIdentifier)
         tableView.register(FormTextViewCell.self, forCellReuseIdentifier: FormTextViewCell.reuseIdentifier)
         tableView.register(FormSwitchCell.self, forCellReuseIdentifier: FormSwitchCell.reuseIdentifier)
+        // Every row is dequeued: reconfiguring a row whose provider answers
+        // with a cell the table did not hand out raises in UIKit.
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.actionCellIdentifier)
         tableView.keyboardDismissMode = .interactive
 
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] table, indexPath, row in
@@ -177,6 +180,8 @@ final class ReportCrashViewController: UITableViewController {
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
+    private static let actionCellIdentifier = "action"
+
     private func cell(for row: Row, at indexPath: IndexPath, in table: UITableView) -> UITableViewCell {
         switch row {
         case .primary:
@@ -224,7 +229,7 @@ final class ReportCrashViewController: UITableViewController {
             return cell
 
         case .addOther:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = table.dequeueReusableCell(withIdentifier: Self.actionCellIdentifier, for: indexPath)
             var content = cell.defaultContentConfiguration()
             content.text = String(localized: "Add Other Report…")
             content.textProperties.color = view.tintColor
@@ -274,7 +279,7 @@ final class ReportCrashViewController: UITableViewController {
             return cell
 
         case .reviewSystemState:
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            let cell = table.dequeueReusableCell(withIdentifier: Self.actionCellIdentifier, for: indexPath)
             var content = cell.defaultContentConfiguration()
             content.text = String(localized: "Review Collected Files")
             content.textProperties.color = view.tintColor
