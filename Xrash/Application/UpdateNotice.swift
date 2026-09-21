@@ -35,7 +35,7 @@ final class UpdateNotice {
                 context.dispose()
             }
             context.addAction(title: String.LocalizationValue("Quit"), attribute: .accent) {
-                context.dispose { exit(EXIT_SUCCESS) }
+                context.dispose { QuietExit.run() }
             }
         }
         presenter.present(alert, animated: true)

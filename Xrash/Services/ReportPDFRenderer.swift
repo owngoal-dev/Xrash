@@ -449,18 +449,13 @@ enum ReportPDFRenderer {
     /// read at 8 pt.
     private static let captionColor = UIColor(white: 0.32, alpha: 1)
 
-    /// The cover's icon, looked up where UIKit allows it to be.
+    /// The cover's icon: the mark, an ordinary image set. Never `AppIcon` or a
+    /// name out of `CFBundleIconFiles`: the icon is an Icon Composer `.icon`,
+    /// which the catalogue holds as an image stack with no bitmap of its own,
+    /// and iOS 26 answers `UIImage(named:)` for one with an assertion, not nil.
     @MainActor
     static var appIcon: UIImage? {
-        if let icon = UIImage(named: "AppIcon") {
-            return icon
-        }
-        guard let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
-              let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
-              let files = primary["CFBundleIconFiles"] as? [String],
-              let last = files.last
-        else { return nil }
-        return UIImage(named: last)
+        UIImage(named: "AppIconMark")
     }
 
     // MARK: Text helpers

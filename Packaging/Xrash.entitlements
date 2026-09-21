@@ -32,6 +32,10 @@
 	                         `jetsam.json` carries `priorities_error` and the
 	                         properties and memory figures come back anyway.
 
+	The two storage keys are for the icon beside a report, read out of another
+	app's bundle: `no-sandbox` does not open a bundle or a data container on its
+	own on every platform. The daemon carries the same pair.
+
 	They belong to the custom firmware wrappers only. The Catalyst app is signed
 	with no entitlements at all, and a sideload `.ipa` must not carry these.
 
@@ -67,6 +71,10 @@
 	<key>com.apple.private.security.no-sandbox</key>
 	<true/>
 	<key>platform-application</key>
+	<true/>
+	<key>com.apple.private.security.storage.AppBundles</key>
+	<true/>
+	<key>com.apple.private.security.storage.AppDataContainers</key>
 	<true/>
 	<key>com.apple.private.xpc.launchd.per-user-lookup</key>
 	<true/>
