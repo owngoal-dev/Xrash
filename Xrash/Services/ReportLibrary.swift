@@ -84,7 +84,17 @@ final class ReportLibrary {
 
     private func publish(_ rows: [ReportSummary]) {
         summaries.send(rows.sorted { $0.date > $1.date })
-        let seen = Set(UserDefaults.standard.stringArray(forKey: Self.seenDefaultsKey) ?? [])
+        let stored = UserDefaults.standard.stringArray(forKey: Self.seenDefaultsKey)
+        var seen = Set(stored ?? [])
+        // The first listing there has ever been — the one the welcome shows —
+        // is the whole history of the device, and none of it is news. Spent
+        // on the first listing with anything in it: a pass that runs while
+        // the daemon is still starting comes back empty, and the next one is
+        // the whole directory.
+        if stored == nil, !rows.isEmpty {
+            seen = Set(rows.map(\.id))
+            UserDefaults.standard.set(Array(seen), forKey: Self.seenDefaultsKey)
+        }
         unreadIDs.send(Set(rows.map(\.id)).subtracting(seen))
     }
 

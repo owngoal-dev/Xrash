@@ -6,44 +6,35 @@ import XrashClient
 import XrashReport
 import XrashSymbols
 
-/// The Symbols page: imported dSYMs, extracted system symbols, what is missing.
+/// The Symbols page: extracted system symbols, and the way in to the imported
+/// dSYMs and to what is missing.
 ///
 /// System symbols are the reason this page exists. A crash report names system
 /// frames by address only, and the cache that could resolve them is replaced
 /// by the next OS update — extracting once keeps every report from this build
 /// readable afterwards.
-final class SymbolsViewController: UITableViewController, UIDocumentPickerDelegate, UISearchResultsUpdating {
+final class SymbolsViewController: UITableViewController, UIDocumentPickerDelegate {
     private enum Section: Hashable {
-        case dsyms, system, missing
+        case dsyms, system
     }
 
+    /// The two lists that can run long are a page below, grouped by binary;
+    /// what stays here is a count and the things to do.
     private enum Row: Hashable {
-        case dsym(String)
+        case importedDSYMs
+        case missingSymbols
         case importDSYM
         case importFromGitHub
         case symbolSet(String)
         case noSymbolSet
         case extractAll
         case deleteSystem
-        case missing(MissingImage)
-        case showAllMissing(String)
-        case noneMissing
     }
-
-    private struct MissingImage: Hashable {
-        var uuid: String
-        var name: String
-    }
-
-    /// Past this, one app's many builds would be the whole section.
-    private static let shownPerImageName = 5
 
     private let environment: AppEnvironment
-    private var missing = [MissingImage]()
+    private var missing = [SymbolListViewController.Entry]()
     private var missingScan: Task<Void, Never>?
-    private var expanded = Set<String>()
     private var isWorking = false
-    private var query = ""
     private var dataSource: SectionedTableDataSource<Section, Row>!
 
     init(environment: AppEnvironment = .shared) {
@@ -63,14 +54,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         // No "+" in the bar: the two import rows sit in the first section,
         // and one affordance beats two.
 
-        let search = UISearchController(searchResultsController: nil)
-        search.searchResultsUpdater = self
-        search.obscuresBackgroundDuringPresentation = false
-        search.searchBar.placeholder = String(localized: "Search symbols by name, UUID or build")
-        navigationItem.searchController = search
-        navigationItem.hidesSearchBarWhenScrolling = true
-        definesPresentationContext = true
-
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "symbol")
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] table, indexPath, row in
             self?.cell(for: row, at: indexPath, in: table) ?? UITableViewCell()
@@ -79,7 +62,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             switch section {
             case .dsyms: String(localized: "dSYMs")
             case .system: String(localized: "System Symbols")
-            case .missing: String(localized: "Missing Symbols")
             }
         }
         dataSource.footer = { section in
@@ -90,11 +72,9 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 String(
                     localized: "Extracted once per system version, so system frames have names in every report."
                 )
-            case .missing:
-                String(localized: "Images in recent reports that no dSYM covers.")
             }
         }
-        // Only dSYM and symbol-set rows answer with a swipe action below.
+        // Only symbol-set rows answer with a swipe action below.
         dataSource.isEditable = true
     }
 
@@ -110,98 +90,77 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
 
     // MARK: Rows
 
-    /// Searching narrows the three lists and takes the action rows away: what
-    /// the user is looking for is a symbol file, not a button.
+    /// A link row is there only while it has something behind it.
     private func render(animated: Bool = true) {
-        let isSearching = !query.isEmpty
-        let dsyms = environment.dsyms.records
-            .filter { matches($0.binaryName, $0.id, $0.arch) }
-            .map { Row.dsym($0.id) }
-        let sets = environment.systemSymbols.sets
-            .filter { matches($0.id) }
-            .map { Row.symbolSet($0.id) }
+        let store = environment.systemSymbols
         var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
-        let dsymRows = dsyms + (isSearching ? [] : [.importDSYM, .importFromGitHub])
-        if !dsymRows.isEmpty {
-            snapshot.appendSections([.dsyms])
-            snapshot.appendItems(dsymRows, toSection: .dsyms)
-        }
-        if !isSearching || !sets.isEmpty {
-            snapshot.appendSections([.system])
-            let stored = sets.isEmpty && !isSearching ? [Row.noSymbolSet] : sets
-            let actions: [Row] = isSearching
-                ? []
-                : [.extractAll] + (environment.systemSymbols.sets.isEmpty ? [] : [.deleteSystem])
-            snapshot.appendItems(stored + actions, toSection: .system)
-        }
-        let missingRows = missingRows(isSearching: isSearching)
-        if !missingRows.isEmpty {
-            snapshot.appendSections([.missing])
-            snapshot.appendItems(missingRows, toSection: .missing)
-        }
+        snapshot.appendSections([.dsyms, .system])
+        snapshot.appendItems(
+            (environment.dsyms.records.isEmpty ? [] : [.importedDSYMs])
+                + (missing.isEmpty ? [] : [.missingSymbols])
+                + [.importDSYM, .importFromGitHub],
+            toSection: .dsyms
+        )
+        // Extracting again is only worth a row once what is stored is gone.
+        snapshot.appendItems(
+            (store.sets.isEmpty ? [.noSymbolSet] : store.sets.map { Row.symbolSet($0.id) })
+                + (isCurrentSystemExtracted ? [] : [.extractAll])
+                + (store.sets.isEmpty ? [] : [.deleteSystem]),
+            toSection: .system
+        )
+        // The counts on the link rows are not part of their identity.
+        snapshot.reconfigureItems([.importedDSYMs, .missingSymbols].filter(snapshot.itemIdentifiers.contains))
         let isFirstLoad = dataSource.snapshot().numberOfItems == 0
         dataSource.apply(snapshot, animatingDifferences: animated && !isFirstLoad && view.window != nil)
-
-        tableView.setEmptyState(snapshot.numberOfItems == 0 ? .message(
-            symbolName: "magnifyingglass",
-            title: String(localized: "No Results"),
-            description: String(localized: "Nothing here matches “\(query)”."),
-            actionTitle: nil
-        ) : nil)
     }
 
-    /// One row per (name, UUID). An app that crashed across many builds would
-    /// otherwise be the whole section, so only its newest few are shown until
-    /// the reader asks for the rest.
-    private func missingRows(isSearching: Bool) -> [Row] {
-        let matching = missing.filter { matches($0.name, $0.uuid) }
-        guard !matching.isEmpty else { return isSearching ? [] : [.noneMissing] }
-
-        var rows = [Row]()
-        var seenNames = Set<String>()
-        for name in matching.map(\.name) where seenNames.insert(name).inserted {
-            let images = matching.filter { $0.name == name }
-            let shown = expanded.contains(name) || isSearching
-                ? images
-                : Array(images.prefix(Self.shownPerImageName))
-            rows.append(contentsOf: shown.map(Row.missing))
-            if shown.count < images.count {
-                rows.append(.showAllMissing(name))
-            }
+    // ponytail: a set has no "whole cache" flag, and symbolicating a report
+    // tops the running build's set up with a few dozen images. A whole cache is
+    // thousands, so the count tells them apart; store a flag in
+    // `SystemSymbolSet` if a cache ever comes in under this.
+    private var isCurrentSystemExtracted: Bool {
+        environment.systemSymbols.sets.contains {
+            $0.id == SystemSymbolStore.osBuild() && $0.imageCount >= 1000
         }
-        return rows
     }
 
-    /// Case- and diacritic-insensitive, which is what `localizedStandardContains`
-    /// already is.
-    private func matches(_ fields: String?...) -> Bool {
-        guard !query.isEmpty else { return true }
-        return fields.contains { $0?.localizedStandardContains(query) == true }
-    }
-
-    func updateSearchResults(for searchController: UISearchController) {
-        query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespaces)
-        render()
+    private func link(
+        _ table: UITableView,
+        _ indexPath: IndexPath,
+        title: String,
+        count: Int,
+        symbol: String
+    ) -> UITableViewCell {
+        let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
+        var content = UIListContentConfiguration.valueCell()
+        content.text = title
+        content.secondaryText = count.formatted()
+        content.image = UIImage(systemName: symbol)
+        cell.contentConfiguration = content
+        cell.accessoryType = .disclosureIndicator
+        cell.selectionStyle = .default
+        return cell
     }
 
     private func cell(for row: Row, at indexPath: IndexPath, in table: UITableView) -> UITableViewCell {
         switch row {
-        case let .dsym(uuid):
-            let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
-            var content = cell.defaultContentConfiguration()
-            if let record = environment.dsyms.records.first(where: { $0.id == uuid }) {
-                content.text = record.binaryName
-                content.secondaryText = [
-                    record.arch,
-                    String(record.id.prefix(8)),
-                    ReportFormat.byteCount(record.byteCount),
-                ].joined(separator: " · ")
-            }
-            content.secondaryTextProperties.color = .secondaryLabel
-            content.image = UIImage(systemName: "doc.text.magnifyingglass")
-            cell.contentConfiguration = content
-            cell.selectionStyle = .none
-            return cell
+        case .importedDSYMs:
+            return link(
+                table,
+                indexPath,
+                title: String(localized: "Imported dSYMs"),
+                count: environment.dsyms.records.count,
+                symbol: "doc.text.magnifyingglass"
+            )
+
+        case .missingSymbols:
+            return link(
+                table,
+                indexPath,
+                title: String(localized: "Missing Symbols"),
+                count: missing.count,
+                symbol: "questionmark.square.dashed"
+            )
 
         case .importDSYM:
             return action(
@@ -233,6 +192,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             content.secondaryTextProperties.color = .secondaryLabel
             content.image = UIImage(systemName: "cpu")
             cell.contentConfiguration = content
+            cell.accessoryType = .none
             cell.selectionStyle = .none
             return cell
 
@@ -244,6 +204,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             content.image = UIImage(systemName: "cpu")
             content.imageProperties.tintColor = .secondaryLabel
             cell.contentConfiguration = content
+            cell.accessoryType = .none
             cell.selectionStyle = .none
             return cell
 
@@ -263,37 +224,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 symbol: "trash",
                 tint: .systemRed
             )
-
-        case let .missing(image):
-            let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
-            var content = cell.defaultContentConfiguration()
-            content.text = image.name
-            // A UUID is the whole point of the row; it is read, copied and
-            // compared, so it is not set in grey.
-            content.secondaryText = image.uuid
-            content.secondaryTextProperties.color = .label
-            content.secondaryTextProperties.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
-            content.image = UIImage(systemName: "questionmark.square.dashed")
-            cell.contentConfiguration = content
-            cell.selectionStyle = .none
-            return cell
-
-        case let .showAllMissing(name):
-            return action(
-                table,
-                indexPath,
-                title: String(localized: "Show All \(name) Builds"),
-                symbol: "ellipsis"
-            )
-
-        case .noneMissing:
-            let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
-            var content = cell.defaultContentConfiguration()
-            content.text = String(localized: "Nothing is missing symbols.")
-            content.textProperties.color = .secondaryLabel
-            cell.contentConfiguration = content
-            cell.selectionStyle = .none
-            return cell
         }
     }
 
@@ -312,7 +242,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         content.image = UIImage(systemName: symbol)
         content.imageProperties.tintColor = color
         cell.contentConfiguration = content
-        cell.accessoryView = nil
+        cell.accessoryType = .none
         cell.selectionStyle = .default
         return cell
     }
@@ -320,15 +250,47 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         switch dataSource.itemIdentifier(for: indexPath) {
+        case .importedDSYMs: showImportedDSYMs()
+        case .missingSymbols: showMissingSymbols()
         case .importDSYM: importDSYM()
         case .importFromGitHub: askForRepository()
         case .extractAll: confirmExtractAll()
         case .deleteSystem: confirmDeleteSystemSymbols()
-        case let .showAllMissing(name):
-            expanded.insert(name)
-            render()
         default: break
         }
+    }
+
+    // MARK: The long lists
+
+    private func showImportedDSYMs() {
+        let store = environment.dsyms
+        navigationController?.pushViewController(SymbolListViewController(
+            title: String(localized: "Imported dSYMs"),
+            footer: String(localized: "A dSYM names the addresses in your own code."),
+            symbolName: "doc.text.magnifyingglass",
+            entries: {
+                store.records.map { record in
+                    .init(id: record.id, group: record.binaryName, text: [
+                        record.arch,
+                        String(record.id.prefix(8)),
+                        ReportFormat.byteCount(record.byteCount),
+                        ReportFormat.date(record.imported),
+                    ].joined(separator: " · "))
+                }
+            },
+            delete: { try? store.remove(uuid: $0) }
+        ), animated: true)
+    }
+
+    private func showMissingSymbols() {
+        let missing = missing
+        navigationController?.pushViewController(SymbolListViewController(
+            title: String(localized: "Missing Symbols"),
+            footer: String(localized: "Images in recent reports that no dSYM covers."),
+            symbolName: "questionmark.square.dashed",
+            isMonospaced: true,
+            entries: { missing }
+        ), animated: true)
     }
 
     override func tableView(
@@ -338,21 +300,15 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         let delete = UIContextualAction(style: .destructive, title: String(localized: "Delete")) {
             [weak self] _, _, done in
             guard let self else { return done(false) }
-            switch dataSource.itemIdentifier(for: indexPath) {
-            case let .dsym(uuid):
-                try? environment.dsyms.remove(uuid: uuid)
-            case let .symbolSet(build):
-                try? environment.systemSymbols.remove(build: build)
-            default:
+            guard case let .symbolSet(build) = dataSource.itemIdentifier(for: indexPath) else {
                 return done(false)
             }
+            try? environment.systemSymbols.remove(build: build)
             render()
             done(true)
         }
-        switch dataSource.itemIdentifier(for: indexPath) {
-        case .dsym, .symbolSet: return UISwipeActionsConfiguration(actions: [delete])
-        default: return nil
-        }
+        guard case .symbolSet = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        return UISwipeActionsConfiguration(actions: [delete])
     }
 
     override func tableView(
@@ -361,15 +317,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         point _: CGPoint
     ) -> UIContextMenuConfiguration? {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case let .missing(image):
-            let uuid = image.uuid
-            return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-                UIMenu(children: [
-                    UIAction(title: String(localized: "Copy UUID"), image: UIImage(systemName: "doc.on.doc")) { _ in
-                        UIPasteboard.general.string = uuid
-                    },
-                ])
-            }
         case .importFromGitHub:
             // The repositories asked for before, so the second visit is a tap.
             let recent = GitHubReleaseSymbols.recentRepositories
@@ -565,18 +512,18 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         let library = environment.library
         let store = environment.dsyms
         let scan = Task { [weak self] in
-            var found = [MissingImage]()
+            var found = [SymbolListViewController.Entry]()
             var seen = Set<String>()
             for summary in library.summaries.value.prefix(20) where summary.kind == .crash {
                 guard !Task.isCancelled else { return }
                 guard let crash = try? await library.report(for: summary.id).crash else { continue }
                 for image in crash.images where ReportBundleBuilder.isThirdParty(image) {
                     guard seen.insert(image.uuid).inserted, store.url(forUUID: image.uuid) == nil else { continue }
-                    found.append(MissingImage(uuid: image.uuid, name: image.name))
+                    found.append(.init(id: image.uuid, group: image.name, text: image.uuid))
                 }
             }
             guard !Task.isCancelled else { return }
-            self?.missing = found.sorted { $0.name < $1.name }
+            self?.missing = found
             self?.render(animated: false)
         }
         missingScan = scan

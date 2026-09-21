@@ -59,6 +59,13 @@
 	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<!--
+		Installed under Applications the app is a system app to SpringBoard,
+		and a system app gets no Notifications page in Settings — and no
+		authorization to ask for — unless it says it posts local ones.
+	-->
+	<key>SBAppUsesLocalNotifications</key>
+	<true/>
 	<key>UIFileSharingEnabled</key>
 	<false/>
 	<key>UTExportedTypeDeclarations</key>

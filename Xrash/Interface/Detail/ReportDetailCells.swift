@@ -68,6 +68,39 @@ final class ReportHeaderCell: UITableViewCell {
     }
 }
 
+/// A value row that can open a menu on the tap, the way `FrameCell` does: a
+/// row offering several things to do lists them where the finger is.
+final class ValueCell: UITableViewCell {
+    /// Asked each time the menu opens; nil leaves an ordinary row.
+    var menuProvider: (() -> [UIMenuElement])? {
+        didSet {
+            menuButton.isHidden = menuProvider == nil
+            // A content configuration set later puts its view on top.
+            contentView.bringSubviewToFront(menuButton)
+        }
+    }
+
+    private let menuButton = UIButton(type: .custom)
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        menuButton.isHidden = true
+        menuButton.showsMenuAsPrimaryAction = true
+        menuButton.menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                completion(self?.menuProvider?() ?? [])
+            },
+        ])
+        contentView.addSubview(menuButton)
+        menuButton.snp.makeConstraints { $0.edges.equalToSuperview() }
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+}
+
 /// One stack frame, in the shape a crash report has always had: index, what
 /// it is, and which image it came from.
 final class FrameCell: UITableViewCell {

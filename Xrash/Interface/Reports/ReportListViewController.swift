@@ -337,11 +337,6 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
 
     private func refresh() async {
         await library.refresh()
-        await ReportPruner.prune(
-            library,
-            olderThan: settings.preferences.value.retentionDays,
-            from: self
-        )
     }
 
     // MARK: Reasons behind the scroll

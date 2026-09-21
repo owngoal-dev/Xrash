@@ -18,9 +18,9 @@ struct ReportFilter: Codable, Equatable, Sendable {
     static let analyticsKinds: Set<ReportKind> = [.analytics, .other]
 
     var unreadOnly = false
-    /// Analytics is out of the box off: 25 of the 66 files on the test device
-    /// were Siri analytics payloads and not one of them was a crash.
-    var kinds: Set<ReportKind> = [.crash, .hang, .resource, .jetsam, .panic]
+    /// Everything out of the box, analytics and logs included: the list shows
+    /// what the directory holds, and the switch in Settings takes them away.
+    var kinds: Set<ReportKind> = [.crash, .hang, .resource, .jetsam, .panic, .analytics, .other]
     var grouping = Grouping.category
     var order = Order.newest
     /// Case-sensitive, matched against `ReportSummary.processName`. A view
@@ -71,16 +71,11 @@ struct ReportPreferences: Codable, Equatable, Sendable {
         }
     }
 
-    var symbolicatesOnOpen = true
     var defaultView = DefaultView.summary
-    /// Reports older than this are deleted after a refresh. Zero never prunes.
-    var retentionDays = 0
     // The text viewer's two, remembered across reports rather than per file.
     /// Off: a wrapped stack frame reads as two frames.
     var wrapsLines = false
     var textScale = 1.0
-    /// The Raw view opens indented rather than as the two long lines on disk.
-    var formatsJSON = true
     /// A notification for a report that arrives while the app is running.
     /// Nothing is injected anywhere, so that is the whole of what it can see.
     var notifiesOnNewReports = true
@@ -92,12 +87,9 @@ struct ReportPreferences: Codable, Equatable, Sendable {
     /// others on the first launch after an update.
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        symbolicatesOnOpen = try values.decodeIfPresent(Bool.self, forKey: .symbolicatesOnOpen) ?? symbolicatesOnOpen
         defaultView = try values.decodeIfPresent(DefaultView.self, forKey: .defaultView) ?? defaultView
-        retentionDays = try values.decodeIfPresent(Int.self, forKey: .retentionDays) ?? retentionDays
         wrapsLines = try values.decodeIfPresent(Bool.self, forKey: .wrapsLines) ?? wrapsLines
         textScale = try values.decodeIfPresent(Double.self, forKey: .textScale) ?? textScale
-        formatsJSON = try values.decodeIfPresent(Bool.self, forKey: .formatsJSON) ?? formatsJSON
         notifiesOnNewReports = try values.decodeIfPresent(Bool.self, forKey: .notifiesOnNewReports)
             ?? notifiesOnNewReports
     }

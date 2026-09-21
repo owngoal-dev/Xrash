@@ -539,7 +539,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
 
     /// `23G83`. The build a report was written on is what its symbols are
     /// filed under, and this is the running one.
-    static func osBuild() -> String {
+    public static func osBuild() -> String {
         var size = 0
         guard sysctlbyname("kern.osversion", nil, &size, nil, 0) == 0, size > 0 else { return "unknown" }
         var value = [CChar](repeating: 0, count: size)

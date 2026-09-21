@@ -171,6 +171,16 @@ it succeeds. Deploy from `main`, including when an older release is edited.
 Keep the `uikittools` dependency: its triggers register and unregister the app.
 Maintainer hooks manage the daemon only; never add explicit `uicache` calls.
 
+That trigger is `uicache -a`, which registers only what is not registered yet.
+A package manager re-registers an upgrade itself; a bare `dpkg -i` over an
+installed copy does not, and LaunchServices keeps the previous build's
+Info.plist — version, document types, URL schemes, every key SpringBoard reads
+from the record rather than from disk. After installing by hand, run
+`uicache -p <prefix>/Applications/Xrash.app` in the terminal, and respring if
+SpringBoard has to read it again. When a plist or entitlement change "does not
+take", check the record's `CFBundleVersion` against the bundle's before
+anything else.
+
 ## Where things get tested
 
 The Mac harness first, the simulator for the visuals, `make mac-run` for the
@@ -202,6 +212,13 @@ Report which of those actually ran.
 - **One share sheet, one anchor.** `ReportShare.present` is the only place a
   `UIActivityViewController` is made; `make check` rejects another. Without a
   source view it raises on an iPad.
+- **Notifications take two declarations, and the prompt appearing proves
+  neither.** A platform binary is refused by `usernotificationsd` without
+  `com.apple.private.usernotifications.bundle-identifiers` naming its own id;
+  a system app gets no data provider from SpringBoard — *Allow* is tapped and
+  authorization still comes back false — without `SBAppUsesLocalNotifications`
+  in the Info.plist LaunchServices holds. Both say so in the device log under
+  the bundle id.
 - **Run `make check` after Xcode has had the project open.** It rewrites
   `objectVersion` on save, silently, and a commit made from a terminal that
   checked earlier carries it.

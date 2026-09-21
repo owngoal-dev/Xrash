@@ -54,12 +54,6 @@ enum ReportShare {
             """)
         ) { [weak controller] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
-            context.addAction(title: String.LocalizationValue("Review Files")) {
-                context.dispose {
-                    guard let controller else { return }
-                    Self.review(bundle, from: controller)
-                }
-            }
             context.addAction(title: String.LocalizationValue("Share"), attribute: .accent) {
                 context.dispose {
                     guard let controller else { return }
@@ -76,21 +70,6 @@ enum ReportShare {
         source: UIView?
     ) {
         present([AppEnvironment.shared.savedBundles.shareURL(for: bundle)], from: controller, source: source)
-    }
-
-    /// The collected files out of the archive, as a sheet: whoever was about to
-    /// share is not on the screen that lists them.
-    private static func review(_ bundle: SavedBundleStore.SavedBundle, from controller: UIViewController) {
-        let store = AppEnvironment.shared.savedBundles
-        do {
-            let directory = try store.extract(bundle)
-            let files = BundleDetailViewController.systemFiles(of: bundle.manifest, in: directory)
-            controller.presentAsFormSheet(UINavigationController(
-                rootViewController: SystemStateViewController(files: files, removing: directory)
-            ))
-        } catch {
-            controller.presentFailure("Could Not Open the Report", error)
-        }
     }
 
     /// The only place a share sheet is made, so the only place it is anchored:

@@ -215,9 +215,7 @@ final class ReportDetailViewController: UIViewController {
                 return
             }
             await loadSuspects()
-            if settings.preferences.value.symbolicatesOnOpen {
-                await symbolicate(force: false)
-            }
+            await symbolicate(force: false)
             await loadSimilar()
         }
     }

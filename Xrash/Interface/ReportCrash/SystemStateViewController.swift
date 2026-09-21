@@ -11,23 +11,15 @@ import XrashSystemState
 /// what it is about to ship and a saved bundle can show exactly what it did.
 final class SystemStateViewController: UITableViewController {
     private let files: [SystemStateFile]
-    /// Unpacked for this screen alone, and removed with it.
-    private let owned: URL?
 
-    init(files: [SystemStateFile], removing directory: URL? = nil) {
+    init(files: [SystemStateFile]) {
         self.files = files
-        owned = directory
         super.init(style: .insetGrouped)
     }
 
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) is unavailable")
-    }
-
-    deinit {
-        guard let owned else { return }
-        try? FileManager.default.removeItem(at: owned)
     }
 
     override func viewDidLoad() {

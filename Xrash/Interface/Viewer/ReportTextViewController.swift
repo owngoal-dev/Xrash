@@ -104,7 +104,8 @@ final class ReportTextViewController: UIViewController {
                 $0.configureWithDefaultBackground()
             }
         }
-        if settings.preferences.value.formatsJSON, let formattedText {
+        // Always indented to start with; the menu goes back to the file's own lines.
+        if let formattedText {
             unformattedText = text
             text = formattedText()
             isFormatted = true

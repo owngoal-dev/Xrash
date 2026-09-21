@@ -1,4 +1,3 @@
-import AlertController
 import UIKit
 import XrashSymbols
 
@@ -15,6 +14,8 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
     private var releases = [GitHubReleaseSymbols.Release]()
     private var query = ""
     private var isLoading = false
+    /// Archives imported while this page has been up, for the checkmarks.
+    private var imported = Set<GitHubReleaseSymbols.Asset>()
     private var dataSource: UITableViewDiffableDataSource<Int, String>!
 
     init(
@@ -60,7 +61,10 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             content.secondaryText = Self.subtitle(of: release)
             content.secondaryTextProperties.color = .secondaryLabel
             content.secondaryTextProperties.numberOfLines = 2
-            content.image = UIImage(systemName: hasSymbols ? "arrow.down.circle" : "tag")
+            let isImported = hasSymbols && imported.isSuperset(of: release.symbolAssets)
+            content.image = UIImage(
+                systemName: isImported ? "checkmark.circle.fill" : hasSymbols ? "arrow.down.circle" : "tag"
+            )
             content.imageProperties.tintColor = hasSymbols ? view.tintColor : .secondaryLabel
             cell.contentConfiguration = content
             cell.accessoryType = hasSymbols ? .disclosureIndicator : .none
@@ -163,29 +167,20 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
         case 0:
             presentFailure("Could Not Import the Symbols", GitHubReleaseSymbols.Failure.noSymbolArchive)
         case 1:
-            download(assets[0])
+            download(assets[0]) {}
         default:
-            chooseAsset(from: assets)
+            navigationController?.pushViewController(
+                GitHubAssetsViewController(assets: assets, imported: imported) { [weak self] asset, done in
+                    self?.download(asset, done: done)
+                },
+                animated: true
+            )
         }
     }
 
-    private func chooseAsset(from assets: [GitHubReleaseSymbols.Asset]) {
-        let alert = AlertViewController(
-            title: String(localized: "Choose an Archive"),
-            message: String(localized: "This release has more than one debug symbol archive.")
-        ) { [weak self] context in
-            context.allowSimpleDispose()
-            for asset in assets {
-                context.addAction(title: String.LocalizationValue(asset.name)) {
-                    context.dispose { self?.download(asset) }
-                }
-            }
-            context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
-        }
-        present(alert, animated: true)
-    }
-
-    private func download(_ asset: GitHubReleaseSymbols.Asset) {
+    /// Stays on the page afterwards: a release is often wanted for more than
+    /// one of its archives, and the next tag down may be wanted too.
+    private func download(_ asset: GitHubReleaseSymbols.Asset, done: @escaping () -> Void) {
         let destination = FileManager.default.temporaryDirectory
             .appendingPathComponent("Downloads", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -199,7 +194,8 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             defer { try? FileManager.default.removeItem(at: destination.deletingLastPathComponent()) }
             do {
                 let imported = try await ProgressCard.run(
-                    from: self,
+                    // The archive list may be the page on top.
+                    from: navigationController ?? self,
                     title: String(localized: "Importing Debug Symbols")
                 ) { report in
                     try FileManager.default.createDirectory(
@@ -219,12 +215,79 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
                 Toast.show(imported == 0
                     ? String(localized: "Every symbol file in that archive was already imported")
                     : String(localized: "Imported \(imported) dSYMs"))
-                navigationController?.popViewController(animated: true)
+                self.imported.insert(asset)
+                done()
+                var snapshot = dataSource.snapshot()
+                snapshot.reconfigureItems(snapshot.itemIdentifiers)
+                await dataSource.apply(snapshot, animatingDifferences: false)
             } catch is CancellationError {
                 return
             } catch {
-                presentFailure("Could Not Import the Symbols", error)
+                (navigationController ?? self).presentFailure("Could Not Import the Symbols", error)
             }
+        }
+    }
+}
+
+/// The debug symbol archives of one release, when it carries several.
+private final class GitHubAssetsViewController: UITableViewController {
+    private let assets: [GitHubReleaseSymbols.Asset]
+    private var imported: Set<GitHubReleaseSymbols.Asset>
+    /// The second argument is called once the archive is in the store.
+    private let onPick: (GitHubReleaseSymbols.Asset, @escaping () -> Void) -> Void
+
+    init(
+        assets: [GitHubReleaseSymbols.Asset],
+        imported: Set<GitHubReleaseSymbols.Asset>,
+        onPick: @escaping (GitHubReleaseSymbols.Asset, @escaping () -> Void) -> Void
+    ) {
+        self.assets = assets
+        self.imported = imported
+        self.onPick = onPick
+        super.init(style: .insetGrouped)
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = String(localized: "Choose an Archive")
+        navigationItem.largeTitleDisplayMode = .never
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "asset")
+    }
+
+    override func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
+        assets.count
+    }
+
+    override func tableView(_: UITableView, titleForFooterInSection _: Int) -> String? {
+        String(localized: "This release has more than one debug symbol archive.")
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "asset", for: indexPath)
+        let asset = assets[indexPath.row]
+        var content = UIListContentConfiguration.subtitleCell()
+        content.text = asset.name
+        content.textProperties.lineBreakMode = .byTruncatingMiddle
+        content.secondaryText = ReportFormat.byteCount(UInt64(max(asset.byteCount, 0)))
+        content.secondaryTextProperties.color = .secondaryLabel
+        content.image = UIImage(
+            systemName: imported.contains(asset) ? "checkmark.circle.fill" : "arrow.down.circle"
+        )
+        cell.contentConfiguration = content
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let asset = assets[indexPath.row]
+        onPick(asset) { [weak self] in
+            self?.imported.insert(asset)
+            self?.tableView.reloadRows(at: [indexPath], with: .none)
         }
     }
 }

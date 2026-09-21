@@ -1,4 +1,4 @@
-import AlertController
+import Then
 import UIKit
 import XrashBlame
 import XrashReport
@@ -26,7 +26,7 @@ final class ReportSummaryViewController: UITableViewController {
         super.viewDidLoad()
         tableView.register(ReportHeaderCell.self, forCellReuseIdentifier: ReportHeaderCell.reuseIdentifier)
         tableView.register(FrameCell.self, forCellReuseIdentifier: FrameCell.reuseIdentifier)
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "value")
+        tableView.register(ValueCell.self, forCellReuseIdentifier: "value")
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, item in
             self?.cell(for: item, at: indexPath, in: tableView) ?? UITableViewCell()
         }
@@ -136,7 +136,9 @@ final class ReportSummaryViewController: UITableViewController {
         configuration.secondaryTextProperties.numberOfLines = 0
         configuration.secondaryTextProperties.color = .secondaryLabel
         cell.accessoryType = .none
+        cell.accessoryView = nil
         cell.selectionStyle = .none
+        var menu: (() -> [UIMenuElement])?
 
         let report = content.report
         switch item {
@@ -192,10 +194,13 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.image = UIImage(systemName: "exclamationmark.circle")
             configuration.imageProperties.tintColor = .systemOrange
             cell.selectionStyle = .default
-            // One thing to do happens on the tap; several open as a list, and
+            // One thing to do happens on the tap; several open as a menu, and
             // the row says so.
-            if suspect.map({ suspectActions($0).count > 1 }) == true {
-                cell.accessoryType = .disclosureIndicator
+            if let suspect, suspectActions(suspect).count > 1 {
+                cell.accessoryView = UIImageView(image: UIImage(systemName: "chevron.up.chevron.down")).then {
+                    $0.tintColor = .tertiaryLabel
+                }
+                menu = { [weak self] in self?.suspectMenu(suspect) ?? [] }
             }
         case .showAllFrames:
             configuration.text = String(localized: "Show All Frames")
@@ -254,6 +259,7 @@ final class ReportSummaryViewController: UITableViewController {
         configuration.directionalLayoutMargins.bottom = Self.rowInset
         configuration.textToSecondaryTextVerticalPadding = 3
         cell.contentConfiguration = configuration
+        (cell as? ValueCell)?.menuProvider = menu
     }
 
     // MARK: Reading the model
@@ -333,14 +339,10 @@ final class ReportSummaryViewController: UITableViewController {
             (parent as? ReportDetailViewController)?.showRawSegment()
         case let .suspect(id):
             guard let suspect = content.suspects.first(where: { $0.id == id }) else { return }
-            let actions = suspectActions(suspect)
             // One thing to do is done, not asked about: the row that only
-            // copies its path still copies it on the tap.
-            guard actions.count > 1 else {
-                actions.first?.run()
-                return
-            }
-            presentSuspectActions(suspect, actions)
+            // copies its path still copies it on the tap. A row with several
+            // is under its menu button and never gets here.
+            suspectActions(suspect).first?.run()
         case _ where item.isCopyable:
             guard let text = displayedText(at: indexPath), !text.isEmpty else { return }
             UIPasteboard.general.string = text
@@ -374,9 +376,7 @@ final class ReportSummaryViewController: UITableViewController {
         switch item {
         case let .suspect(id):
             guard let suspect = content.suspects.first(where: { $0.id == id }) else { return nil }
-            elements = suspectActions(suspect).map { action in
-                UIAction(title: action.title, image: UIImage(systemName: action.symbol)) { _ in action.run() }
-            }
+            elements = suspectMenu(suspect)
         case .panicText:
             // A tap copies the panic string; the whole file is one screen away.
             elements = [
@@ -393,8 +393,8 @@ final class ReportSummaryViewController: UITableViewController {
 
     // MARK: Suspects
 
-    /// One list of what a suspect row offers, so the tap, the card and the
-    /// context menu cannot come to different answers. Copy Path is always
+    /// One list of what a suspect row offers, so the tap and the context
+    /// menu cannot come to different answers. Copy Path is always
     /// there; the rest depend on what dpkg knows and which sibling apps are
     /// installed.
     private struct SuspectAction {
@@ -430,17 +430,11 @@ final class ReportSummaryViewController: UITableViewController {
         return actions
     }
 
-    /// The card of them. Alerts go through `AlertController` in this app, which
-    /// presents in the middle of the window and needs no popover anchor — an
-    /// action sheet without one raises on an iPad.
-    private func presentSuspectActions(_ suspect: Suspect, _ actions: [SuspectAction]) {
-        let alert = AlertViewController(title: suspect.imageName, message: suspect.id) { context in
-            for action in actions {
-                context.addAction(title: action.title) { context.dispose { action.run() } }
-            }
-            context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
+    /// The menu of them, for the tap and the long press alike.
+    private func suspectMenu(_ suspect: Suspect) -> [UIMenuElement] {
+        suspectActions(suspect).map { action in
+            UIAction(title: action.title, image: UIImage(systemName: action.symbol)) { _ in action.run() }
         }
-        present(alert, animated: true)
     }
 
     /// A child is inside the container's navigation stack, so pushing from

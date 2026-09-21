@@ -36,6 +36,13 @@
 	app's bundle: `no-sandbox` does not open a bundle or a data container on its
 	own on every platform. The daemon carries the same pair.
 
+	`usernotifications.bundle-identifiers` is what lets the app ask for
+	notifications at all. A platform binary is not taken at its bundle's word:
+	usernotificationsd refuses every call — authorization, badge, request — with
+	"Entitlement … required to request user notifications" unless the bundle id
+	is listed here, and Settings then has no Notifications page to turn on. The
+	Info.plist's `SBAppUsesLocalNotifications` is the other half.
+
 	They belong to the custom firmware wrappers only. The Catalyst app is signed
 	with no entitlements at all, and a sideload `.ipa` must not carry these.
 
@@ -86,5 +93,9 @@
 	<true/>
 	<key>com.apple.private.memorystatus</key>
 	<true/>
+	<key>com.apple.private.usernotifications.bundle-identifiers</key>
+	<array>
+		<string>wiki.qaq.xrash</string>
+	</array>
 </dict>
 </plist>

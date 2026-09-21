@@ -9,13 +9,10 @@ import XrashReport
 final class SettingsViewController: UITableViewController {
     private enum Row {
         case status
-        case symbolicateOnOpen
         case defaultView
-        case formatJSON
         case showAnalytics
         case hiddenProcesses
         case crashNotifications
-        case retention
         case deleteAll
         case storage
         case version
@@ -41,7 +38,13 @@ final class SettingsViewController: UITableViewController {
     private var observers = Set<AnyCancellable>()
 
     private var sections: [Section] {
-        [
+        // Full access with nothing waiting on a person is not news; the
+        // section is there only while it has something to say.
+        var isSettled = false
+        if case .privileged = status {
+            isSettled = agentDetail == nil
+        }
+        return (isSettled ? [] : [
             Section(
                 title: String(localized: "Service"),
                 footer: String(
@@ -49,12 +52,13 @@ final class SettingsViewController: UITableViewController {
                 ),
                 rows: [.status]
             ),
+        ]) + [
             Section(
                 title: String(localized: "Reports"),
                 footer: String(
                     localized: "Most of what the system writes is analytics and logs, not crashes."
                 ),
-                rows: [.symbolicateOnOpen, .defaultView, .formatJSON, .showAnalytics, .hiddenProcesses]
+                rows: [.defaultView, .showAnalytics, .hiddenProcesses]
             ),
             Section(
                 title: String(localized: "Notifications"),
@@ -65,10 +69,8 @@ final class SettingsViewController: UITableViewController {
             ),
             Section(
                 title: String(localized: "Cleanup"),
-                footer: String(
-                    localized: "Auto-delete removes every report older than the age you pick, read or not."
-                ),
-                rows: [.retention, .deleteAll, .storage]
+                footer: nil,
+                rows: [.deleteAll, .storage]
             ),
             Section(
                 title: String(localized: "About"),
@@ -171,18 +173,6 @@ final class SettingsViewController: UITableViewController {
                 cell.accessoryType = .disclosureIndicator
                 cell.selectionStyle = .default
             }
-        case .symbolicateOnOpen:
-            configuration.text = String(localized: "Symbolicate on Open")
-            cell.accessoryView = toggle(
-                isOn: settings.preferences.value.symbolicatesOnOpen,
-                action: #selector(toggleSymbolicate)
-            )
-        case .formatJSON:
-            configuration.text = String(localized: "Format JSON Automatically")
-            cell.accessoryView = toggle(
-                isOn: settings.preferences.value.formatsJSON,
-                action: #selector(toggleFormatJSON)
-            )
         case .defaultView:
             configuration.text = String(localized: "Default View")
             configuration.secondaryText = label(for: settings.preferences.value.defaultView)
@@ -206,11 +196,6 @@ final class SettingsViewController: UITableViewController {
                 isOn: settings.preferences.value.notifiesOnNewReports,
                 action: #selector(toggleNotifications)
             )
-        case .retention:
-            configuration.text = String(localized: "Auto-Delete Reports")
-            configuration.secondaryText = retentionLabel(settings.preferences.value.retentionDays)
-            cell.accessoryType = .disclosureIndicator
-            cell.selectionStyle = .default
         case .deleteAll:
             configuration.text = String(localized: "Delete All Reports…")
             configuration.textProperties.color = .systemRed
@@ -252,8 +237,6 @@ final class SettingsViewController: UITableViewController {
             navigationController?.pushViewController(defaultViewChooser(), animated: true)
         case .hiddenProcesses:
             navigationController?.pushViewController(HiddenProcessesViewController(), animated: true)
-        case .retention:
-            navigationController?.pushViewController(retentionChooser(), animated: true)
         case .deleteAll:
             confirmDeleteAll()
         case .source:
@@ -274,14 +257,6 @@ final class SettingsViewController: UITableViewController {
         control.isOn = isOn
         control.addTarget(self, action: action, for: .valueChanged)
         return control
-    }
-
-    @objc private func toggleSymbolicate(_ control: UISwitch) {
-        settings.changePreferences { $0.symbolicatesOnOpen = control.isOn }
-    }
-
-    @objc private func toggleFormatJSON(_ control: UISwitch) {
-        settings.changePreferences { $0.formatsJSON = control.isOn }
     }
 
     @objc private func toggleAnalytics(_ control: UISwitch) {
@@ -400,10 +375,6 @@ final class SettingsViewController: UITableViewController {
         }
     }
 
-    private func retentionLabel(_ days: Int) -> String {
-        days == 0 ? String(localized: "Never") : String(localized: "After \(days) days")
-    }
-
     // MARK: Choosers
 
     private func defaultViewChooser() -> UIViewController {
@@ -413,17 +384,6 @@ final class SettingsViewController: UITableViewController {
             selected: settings.preferences.value.defaultView
         ) { [weak self] choice in
             self?.settings.changePreferences { $0.defaultView = choice }
-        }
-    }
-
-    private func retentionChooser() -> UIViewController {
-        ChoiceViewController(
-            title: String(localized: "Auto-Delete Reports"),
-            choices: [0, 7, 30, 90].map { (retentionLabel($0), $0) },
-            selected: settings.preferences.value.retentionDays,
-            footer: String(localized: "Older reports are deleted after the list refreshes.")
-        ) { [weak self] days in
-            self?.settings.changePreferences { $0.retentionDays = days }
         }
     }
 
