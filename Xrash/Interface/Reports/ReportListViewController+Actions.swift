@@ -172,7 +172,7 @@ extension ReportListViewController {
                 UIAction(
                     title: String(localized: "Hide Process"),
                     image: UIImage(systemName: "eye.slash"),
-                    attributes: self.lockedProcessName == nil ? [] : .hidden
+                    attributes: lockedProcessName == nil ? [] : .hidden
                 ) { _ in
                     self.hideProcess(summary.processName)
                 },

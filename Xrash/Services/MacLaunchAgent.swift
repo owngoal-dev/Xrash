@@ -248,7 +248,7 @@ final class MacLaunchAgent {
         /// with none at all.
         private static func helperAnswers() async -> Bool {
             let client = DaemonClient()
-            let answered = (try? await client.connect()) != nil
+            let answered = await (try? client.connect()) != nil
             await client.disconnect()
             return answered
         }

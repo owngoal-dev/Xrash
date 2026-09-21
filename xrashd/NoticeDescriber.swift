@@ -91,7 +91,9 @@ enum NoticeDescriber {
         var buffer = [UInt8](repeating: 0, count: 4096)
         while true {
             let count = read(descriptor, &buffer, buffer.count)
-            if count < 0, errno == EINTR { continue }
+            if count < 0, errno == EINTR {
+                continue
+            }
             guard count > 0 else { return count == 0 ? output : nil }
             output.append(contentsOf: buffer[..<count])
             guard output.count <= NoticeDetail.maximumEncodedByteCount else { return nil }
@@ -121,7 +123,11 @@ enum NoticeDescriber {
         posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_CLOEXEC_DEFAULT))
 
         let fileName = (path as NSString).lastPathComponent
-        var arguments: [UnsafeMutablePointer<CChar>?] = [executable, argument, fileName].map { strdup($0) } + [nil]
+        // Spelled out a step at a time: one expression here is more than an
+        // older compiler's type checker resolves.
+        let words: [String] = [executable, argument, fileName]
+        var arguments: [UnsafeMutablePointer<CChar>?] = words.map { (word: String) in strdup(word) }
+        arguments.append(nil)
         defer { arguments.forEach { free($0) } }
         var pid: pid_t = 0
         guard posix_spawn(&pid, executable, &actions, &attributes, &arguments, environ) == 0 else {

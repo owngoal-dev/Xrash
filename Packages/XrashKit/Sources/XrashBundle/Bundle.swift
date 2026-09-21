@@ -104,15 +104,18 @@ public struct BundleManifest: Codable, Hashable, Sendable {
 
 /// What goes into the archive besides the manifest.
 public struct BundleOptions: Codable, Hashable, Sendable {
-    public var includesRawReports = true
-    public var includesCrashText = true
-    public var includesJSON = true
+    /// Every form of the report at once: the original file, the rendered crash
+    /// text and the JSON. Whoever opens the bundle reads whichever one their
+    /// tools speak, and a report kept in only one of them is a report someone
+    /// has to convert.
+    public var includesReports = true
     public var includesPDF = true
     /// Off by default: binaries are large and may not be the user's to share.
     public var includesBinaries = false
-    /// Off by default: it names everything installed and running on the
-    /// machine, which is the person's business and not a default.
-    public var includesSystemState = false
+    /// On, but the files are collected only once something asks for them, and
+    /// the form shows them before the archive is written: it names everything
+    /// installed and running, so it is offered already reviewable.
+    public var includesSystemState = true
 
     public init() {}
 }

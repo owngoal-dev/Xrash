@@ -72,7 +72,7 @@ final class HiddenProcessesViewController: UITableViewController, UITextFieldDel
     }
 
     override func tableView(
-        _ tableView: UITableView,
+        _: UITableView,
         commit editingStyle: UITableViewCell.EditingStyle,
         forRowAt indexPath: IndexPath
     ) {

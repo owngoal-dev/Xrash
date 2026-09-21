@@ -95,7 +95,8 @@ final class ReportsSplitViewController: UISplitViewController {
     /// column still has a list to show, and it is the one that was in use.
     func showPlaceholder() {
         if let navigation = viewController(for: .secondary) as? UINavigationController,
-           navigation.viewControllers.count > 1 {
+           navigation.viewControllers.count > 1
+        {
             navigation.popViewController(animated: true)
             return
         }

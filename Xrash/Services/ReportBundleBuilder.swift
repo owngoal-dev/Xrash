@@ -89,7 +89,7 @@ enum ReportBundleBuilder {
                 relation: entry.relation,
                 report: report
             )
-            let raw = request.options.includesRawReports ? try? await library.data(for: entry.id) : nil
+            let raw = request.options.includesReports ? try? await library.data(for: entry.id) : nil
             let written = try await write(member, raw: raw, options: request.options, into: working)
             member.rawPath = written.rawPath
             member.textPath = written.textPath
@@ -250,10 +250,14 @@ enum ReportBundleBuilder {
         options: BundleOptions,
         into working: URL
     ) async throws -> MemberFiles {
+        var result = MemberFiles()
+        // One option covers all three forms of a report, so nothing to write
+        // means not even a directory to write it into.
+        guard options.includesReports else { return result }
+
         let directory = working.appendingPathComponent("reports/\(member.id)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-        var result = MemberFiles()
         func put(_ data: Data, named name: String, at archivePath: String) throws {
             let url = directory.appendingPathComponent(name)
             try data.write(to: url, options: .atomic)
@@ -265,11 +269,11 @@ enum ReportBundleBuilder {
             try put(raw, named: name, at: Layout.raw(member: member.id, fileName: name))
             result.rawPath = Layout.raw(member: member.id, fileName: name)
         }
-        if options.includesCrashText, let text = ReportRenderer.crashText(member.report).data(using: .utf8) {
+        if let text = ReportRenderer.crashText(member.report).data(using: .utf8) {
             try put(text, named: "report.crash", at: Layout.text(member: member.id))
             result.textPath = Layout.text(member: member.id)
         }
-        if options.includesJSON, let json = try? ReportRenderer.modelJSON(member.report) {
+        if let json = try? ReportRenderer.modelJSON(member.report) {
             try put(json, named: "report.json", at: Layout.json(member: member.id))
             result.jsonPath = Layout.json(member: member.id)
         }

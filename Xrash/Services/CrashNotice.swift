@@ -101,7 +101,7 @@ final class CrashNotice {
     /// Alert, badge and sound. The OS asks a person once however many times
     /// this is called; the Settings switch asks when it is turned on.
     func requestAuthorization() async -> Bool {
-        let granted = (try? await UNUserNotificationCenter.current()
+        let granted = await (try? UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
         isAuthorized = granted
         return granted

@@ -160,8 +160,9 @@ handshake.
   `kSMErrorInvalidSignature` when it finds a job it does not own. Run
   `make mac-daemon-uninstall` before testing a zip.
 - **Login Items is where a Mac's helper stalls,** waiting for a person to allow
-  it. Settings' status row says so and opens System Settings; nothing else
-  surfaces it, because nothing else needs it.
+  it. Nothing in the app says so any more: Settings has no Service section,
+  whatever the helper's state (owner's call, 2026-09-21), and the app reads
+  what the user can read without it. `MacLaunchAgent.status` still knows.
 - **`LSSupportsOpeningDocumentsInPlace` is `true`.** macOS does not support
   `NO` and warns; no build setting may contradict the plist. Everything that
   takes an external URL brackets it with
@@ -269,7 +270,9 @@ is sized — the welcome passes Irisin's own 520×620 and turns the detents off,
 which leaves it a plain page sheet on a phone). Narrow: the same controller's
 `.compact` column is
 `RootTabBarController`, four tabs. A report's Summary / Details / Raw switch
-is the first group of its ••• menu; the bar title is the process name.
+is the *View As* submenu at the top of its ••• menu, its subtitle the current
+choice; the share formats and *Reveal in Fila* are the *Report File* submenu.
+The bar title is the process name.
 `LoadBudget` holds a screen back for its first data (1 s at launch, 200 ms per
 page) so it comes up finished and un-animated.
 

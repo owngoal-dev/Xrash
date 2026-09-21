@@ -66,12 +66,16 @@ final class WelcomePreparingController: UIViewController {
     private let percentLabel = UILabel()
     private let itemLabel = UILabel()
     private var percentWidth: Constraint?
-    private lazy var actionBar = WelcomeActionBar(title: String(localized: "Get Started")) { [weak self] in
+    /// What the button says once nothing is running: `Get Started` when this
+    /// is the last page, `Continue` when one follows.
+    private let finishTitle: String
+    private lazy var actionBar = WelcomeActionBar(title: finishTitle) { [weak self] in
         self?.onFinish()
     }
 
-    init(environment: AppEnvironment = .shared, onFinish: @escaping () -> Void) {
+    init(environment: AppEnvironment = .shared, finishTitle: String, onFinish: @escaping () -> Void) {
         self.environment = environment
+        self.finishTitle = finishTitle
         self.onFinish = onFinish
         super.init(nibName: nil, bundle: nil)
         // As on the first page, and for the same reason: the bar is empty on
@@ -194,6 +198,7 @@ final class WelcomePreparingController: UIViewController {
         }
 
         let scrollView = UIScrollView().then { $0.alwaysBounceVertical = true }
+        scrollView.hideTopEdgeEffect()
         let contentView = UIView()
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -360,7 +365,7 @@ final class WelcomePreparingController: UIViewController {
         itemLabel.text = workingDetail ?? String(localized: "Ready")
         actionBar.title = isWorking
             ? String(localized: "Continue in Background")
-            : String(localized: "Get Started")
+            : finishTitle
         // Only while something is running: once it is not, the sheet can go
         // the way any other sheet goes, and either way the welcome is seen.
         navigationController?.isModalInPresentation = isWorking
@@ -423,9 +428,15 @@ final class WelcomePreparingController: UIViewController {
 
     /// What the line under the bar names: whatever is being worked on now.
     private var workingDetail: String? {
-        if symbolsState == .running { return symbolsDetail }
-        if reportsState == .running { return reportsDetail }
-        if helperState == .running { return helperDetail }
+        if symbolsState == .running {
+            return symbolsDetail
+        }
+        if reportsState == .running {
+            return reportsDetail
+        }
+        if helperState == .running {
+            return helperDetail
+        }
         return nil
     }
 }

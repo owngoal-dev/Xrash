@@ -48,7 +48,7 @@ final class BundleArchiveTests: XCTestCase {
             ),
         ]
         let decoded = try PropertyListDecoder().decode(
-            BundleManifest.self, from: try encoder.encode(withState)
+            BundleManifest.self, from: encoder.encode(withState)
         )
         XCTAssertEqual(decoded, withState)
         XCTAssertEqual(decoded.systemFiles?.first?.archivePath, "system/launchd-services.json")

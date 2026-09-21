@@ -2,10 +2,12 @@ import AlertController
 import SnapKit
 import Then
 import UIKit
+import UserNotifications
 
 /// The first page of the welcome: the app's mark, a two-line title, what Xrash
-/// does, and one button. The welcome is a navigation stack in a sheet, and the
-/// page after this one — the first pass over the reports — finishes it.
+/// does, and one button. The welcome is a navigation stack in a sheet: the
+/// first pass over the reports comes next, and a page that asks for
+/// notifications after it when the system has not asked yet.
 ///
 /// Ported from Irisin's `WelcomeController` (MIT, the same owner): its view
 /// hierarchy, metrics, transition and presentation, with Xrash's words, icons
@@ -167,6 +169,7 @@ final class WelcomeController: UIViewController {
         // The navigation bar stays for the page after this one and is empty
         // here: this page starts at the top of the sheet and scrolls under it.
         scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.hideTopEdgeEffect()
         scrollView.snp.makeConstraints { x in
             x.top.equalToSuperview()
             x.leading.trailing.equalTo(view.safeAreaLayoutGuide)
@@ -257,19 +260,33 @@ final class WelcomeController: UIViewController {
         stackView.addArrangedSubview(spacer)
     }
 
+    /// The system asks once and answers from memory after that. So the page
+    /// that asks is for someone who has not been asked: on a replay from
+    /// Settings, or with an answer given already, the second page is the last
+    /// and its button says so.
     private func showNextPage() {
-        let page = WelcomePreparingController { [weak self] in self?.finish() }
+        Task { [weak self] in
+            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            guard let self else { return }
+            let asks = status == .notDetermined
+            let page = WelcomePreparingController(
+                finishTitle: asks ? String(localized: "Continue") : String(localized: "Get Started")
+            ) { [weak self] in
+                asks ? self?.showNotificationsPage() : self?.finish()
+            }
+            navigationController?.pushViewController(page, animated: true)
+        }
+    }
+
+    private func showNotificationsPage() {
+        let page = WelcomeNotificationsController { [weak self] in self?.finish() }
         navigationController?.pushViewController(page, animated: true)
     }
 
     /// Ends the welcome. The last page's button calls this.
     private func finish() {
         Self.markSeen()
-        // The system asks once and answers from memory after that, so a replay
-        // from Settings asks nothing.
-        navigationController?.dismiss(animated: true) {
-            Task { _ = await CrashNotice.shared.requestAuthorization() }
-        }
+        navigationController?.dismiss(animated: true)
     }
 
     private static func markSeen() {

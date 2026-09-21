@@ -142,7 +142,9 @@ enum ReportListArrangement {
     }
 
     private static func section(for summary: ReportSummary, input: ReportListInput) -> ReportSection {
-        if let locked = input.lockedProcessName { return .process(locked) }
+        if let locked = input.lockedProcessName {
+            return .process(locked)
+        }
         switch input.filter.grouping {
         case .category: return .group(summary.group)
         case .process: return .process(summary.processName)

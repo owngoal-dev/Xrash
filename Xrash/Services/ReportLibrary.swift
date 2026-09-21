@@ -66,7 +66,7 @@ final class ReportLibrary {
             listingProgress.send(nil)
         }
 
-        let entries = await((try? backend.listReports()) ?? []) + importedEntries()
+        let entries = await ((try? backend.listReports()) ?? []) + importedEntries()
         var rows = entries.map {
             ReportDecoder.summary(path: $0.path, byteCount: $0.byteCount, modified: $0.modified)
         }
@@ -157,7 +157,7 @@ final class ReportLibrary {
     /// Returns the ids that could not be removed.
     @discardableResult
     func delete(_ ids: [String]) async -> [String] {
-        let failed = await(try? backend.deleteReports(at: ids.filter { !isImported($0) })) ?? ids
+        let failed = await (try? backend.deleteReports(at: ids.filter { !isImported($0) })) ?? ids
         var failedImports = [String]()
         for id in ids where isImported(id) {
             if (try? FileManager.default.removeItem(atPath: id)) == nil {

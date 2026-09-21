@@ -309,7 +309,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
 
     private func openSystemFile(named name: String) {
         do {
-            let files = Self.systemFiles(of: bundle.manifest, in: try extracted())
+            let files = try Self.systemFiles(of: bundle.manifest, in: extracted())
             guard let file = files.first(where: { $0.name == name }) else { return }
             SystemStateViewController.open(file, from: self)
         } catch {

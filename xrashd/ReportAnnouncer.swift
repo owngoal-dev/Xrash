@@ -29,7 +29,10 @@ final class ReportAnnouncer {
 
     /// True while a pass is owed or a post has not been answered; the idle
     /// exit waits for it.
-    var isBusy: Bool { pendingPosts > 0 || passIsScheduled }
+    var isBusy: Bool {
+        pendingPosts > 0 || passIsScheduled
+    }
+
     private var passIsScheduled = false
 
     /// Nil where this process cannot post for the app: the Mac's per-user

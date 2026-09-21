@@ -1,14 +1,12 @@
 import AlertController
 import Combine
 import UIKit
-import XrashClient
 import XrashReport
 
 /// The Settings page. A plain grouped table: the rows are fixed, so a snapshot
 /// would only be a second place to keep the same list.
 final class SettingsViewController: UITableViewController {
     private enum Row {
-        case status
         case defaultView
         case showAnalytics
         case hiddenProcesses
@@ -29,30 +27,12 @@ final class SettingsViewController: UITableViewController {
 
     private let library: ReportLibrary
     private let settings: AppSettings
-    private let backend: ReportBackend
-    private var status = BackendStatus.connecting
-    /// What the Mac's bundled LaunchAgent is waiting for, if anything. Off a
-    /// Mac this stays `.notApplicable` and nothing below reads differently —
-    /// the row is told by data, not by a compilation condition.
-    private var agentStatus = MacLaunchAgent.Status.notApplicable
     private var observers = Set<AnyCancellable>()
 
+    /// No row for the helper, whatever state it is in: how reports get opened
+    /// is not a setting, and the welcome's Helper stage is where it is told.
     private var sections: [Section] {
-        // Full access with nothing waiting on a person is not news; the
-        // section is there only while it has something to say.
-        var isSettled = false
-        if case .privileged = status {
-            isSettled = agentDetail == nil
-        }
-        return (isSettled ? [] : [
-            Section(
-                title: String(localized: "Service"),
-                footer: String(
-                    localized: "The helper runs only while the app asks it something, and exits when idle."
-                ),
-                rows: [.status]
-            ),
-        ]) + [
+        [
             Section(
                 title: String(localized: "Reports"),
                 footer: String(
@@ -81,14 +61,10 @@ final class SettingsViewController: UITableViewController {
         ]
     }
 
-    init(
-        library: ReportLibrary = AppEnvironment.shared.library,
-        backend: ReportBackend = AppEnvironment.shared.backend
-    ) {
+    init(library: ReportLibrary = AppEnvironment.shared.library) {
         self.library = library
         // Not a default argument: those are evaluated off the main actor.
         settings = .shared
-        self.backend = backend
         super.init(style: .insetGrouped)
     }
 
@@ -104,20 +80,6 @@ final class SettingsViewController: UITableViewController {
         navigationItem.largeTitleDisplayMode = .always
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "row")
 
-        backend.status
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.status = $0
-                self?.tableView.reloadData()
-            }
-            .store(in: &observers)
-        MacLaunchAgent.shared.status
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.agentStatus = $0
-                self?.tableView.reloadData()
-            }
-            .store(in: &observers)
         settings.preferences
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.tableView.reloadData() }
@@ -165,20 +127,6 @@ final class SettingsViewController: UITableViewController {
         configuration.secondaryTextProperties.color = .secondaryLabel
 
         switch row {
-        case .status:
-            configuration = UIListContentConfiguration.subtitleCell()
-            configuration.text = statusTitle
-            // What the helper is waiting for beats what the connection is
-            // doing: "Connecting…" forever is what an unapproved Login Item
-            // looks like from here.
-            configuration.secondaryText = agentDetail ?? statusDetail
-            configuration.secondaryTextProperties.color = .secondaryLabel
-            configuration.image = UIImage(systemName: statusSymbol)
-            configuration.imageProperties.tintColor = statusTint
-            if agentOpensLoginItems {
-                cell.accessoryType = .disclosureIndicator
-                cell.selectionStyle = .default
-            }
         case .defaultView:
             configuration.text = String(localized: "Default View")
             configuration.secondaryText = label(for: settings.preferences.value.defaultView)
@@ -235,10 +183,6 @@ final class SettingsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         switch sections[indexPath.section].rows[indexPath.row] {
-        case .status:
-            if agentOpensLoginItems {
-                MacLaunchAgent.shared.openLoginItemsSettings()
-            }
         case .defaultView:
             navigationController?.pushViewController(defaultViewChooser(), animated: true)
         case .hiddenProcesses:
@@ -300,70 +244,6 @@ final class SettingsViewController: UITableViewController {
             }
         }
         present(alert, animated: true)
-    }
-
-    private var statusTitle: String {
-        switch status {
-        case .connecting: String(localized: "Connecting…")
-        // Not "Connected as root": on a Mac the helper is a per-user
-        // LaunchAgent, and root is exactly what it is not there. What both
-        // platforms share is how much of the directory it opens.
-        case .privileged: String(localized: "Full access")
-        case .sandboxed: String(localized: "Limited access")
-        }
-    }
-
-    private var statusDetail: String? {
-        switch status {
-        case .connecting: String(localized: "Waiting for the helper to start.")
-        case .privileged: String(localized: "Every report can be opened.")
-        case .sandboxed: String(localized: "Reading only the reports the app can open without the helper.")
-        }
-    }
-
-    /// What the Mac's helper is waiting for, when it is waiting for a person.
-    /// Nil on every other platform and in every settled state.
-    private var agentDetail: String? {
-        switch agentStatus {
-        case .needsApproval:
-            String(localized: "Allow Xrash in Login Items to let the helper start.")
-        case .needsRelocation:
-            String(localized: "Move Xrash to the Applications folder to let the helper start.")
-        case .failed:
-            // Spelled here as well as in `MacLaunchAgent`: that one compiles
-            // on Catalyst only, and the catalogue is checked against the keys
-            // the iOS build extracts.
-            String(
-                localized: "Unable to turn on the Xrash helper. Open Login Items in System Settings to allow it."
-            )
-        default:
-            nil
-        }
-    }
-
-    /// Whether tapping the row has somewhere to go. Relocation does not: that
-    /// is a move in Finder, not a switch in System Settings.
-    private var agentOpensLoginItems: Bool {
-        switch agentStatus {
-        case .needsApproval, .failed: true
-        default: false
-        }
-    }
-
-    private var statusSymbol: String {
-        switch status {
-        case .connecting: "ellipsis.circle"
-        case .privileged: "checkmark.seal"
-        case .sandboxed: "lock"
-        }
-    }
-
-    private var statusTint: UIColor {
-        switch status {
-        case .connecting: .secondaryLabel
-        case .privileged: .systemGreen
-        case .sandboxed: .systemOrange
-        }
     }
 
     private static var versionText: String {

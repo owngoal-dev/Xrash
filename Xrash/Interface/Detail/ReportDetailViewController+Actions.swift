@@ -10,20 +10,15 @@ extension ReportDetailViewController {
         guard decodedReport != nil else { return [] }
         // Whatever the text child offers — find, wrap, text size — and only
         // while one of the two text segments is the thing on screen.
-        var elements: [UIMenuElement] = [UIMenu(options: .displayInline, children: segmentElements)]
+        var elements: [UIMenuElement] = [UIMenu(options: .displayInline, children: [viewAsMenu])]
         if !textViewerElements.isEmpty {
             elements.append(UIMenu(options: .displayInline, children: textViewerElements))
         }
-        let share = UIMenu(
-            title: String(localized: "Share"),
-            image: UIImage(systemName: "square.and.arrow.up"),
-            children: shareElements()
-        )
-        guard let reportID = libraryReportID else { return elements + [share] }
+        guard let reportID = libraryReportID else { return elements + [reportFileMenu(revealing: nil)] }
         if let symbolicateAction {
             elements.append(UIMenu(options: .displayInline, children: [symbolicateAction]))
         }
-        var group: [UIMenuElement] = [
+        elements.append(UIMenu(options: .displayInline, children: [
             UIAction(title: String(localized: "Report Crash…"), image: UIImage(systemName: "paperplane")) {
                 [weak self] _ in
                 guard let self else { return }
@@ -31,18 +26,8 @@ extension ReportDetailViewController {
                     UINavigationController(rootViewController: ReportCrashViewController(primaryID: reportID))
                 )
             },
-            share,
-        ]
-        // The report id is its path, so Fila — where it is installed — can show
-        // the file itself.
-        if let fila = SiblingApps.revealInFila(path: reportID) {
-            group.append(
-                UIAction(title: String(localized: "Reveal in Fila"), image: UIImage(systemName: "folder")) { _ in
-                    SiblingApps.open(fila)
-                }
-            )
-        }
-        elements.append(UIMenu(options: .displayInline, children: group))
+            reportFileMenu(revealing: reportID),
+        ]))
         // Its own group: a rule between the thing that cannot be undone and
         // the things beside it.
         elements.append(
@@ -57,6 +42,40 @@ extension ReportDetailViewController {
             ])
         )
         return elements
+    }
+
+    /// Summary, Details and Raw are one report seen three ways, so they are
+    /// one row that says which: the menu under it is the choice, and the
+    /// subtitle is the answer without opening it.
+    private var viewAsMenu: UIMenu {
+        let chosen = segmentElements.compactMap { $0 as? UIAction }.first { $0.state == .on }
+        let menu = UIMenu(
+            title: String(localized: "View As"),
+            image: UIImage(systemName: "eye"),
+            options: .singleSelection,
+            children: segmentElements
+        )
+        menu.subtitle = chosen?.title
+        return menu
+    }
+
+    /// Everything that is about the file rather than the crash: the formats
+    /// it leaves in, and — where Fila is installed — the file where it lies.
+    /// The report id is its path, which is what Fila is handed.
+    private func reportFileMenu(revealing reportID: String?) -> UIMenu {
+        var children = shareElements()
+        if let reportID, let fila = SiblingApps.revealInFila(path: reportID) {
+            children.append(UIMenu(options: .displayInline, children: [
+                UIAction(title: String(localized: "Reveal in Fila"), image: UIImage(systemName: "folder")) { _ in
+                    SiblingApps.open(fila)
+                },
+            ]))
+        }
+        return UIMenu(
+            title: String(localized: "Report File"),
+            image: UIImage(systemName: "doc"),
+            children: children
+        )
     }
 
     /// Four formats, each a different file: the rendered report, the file the
@@ -135,7 +154,8 @@ extension ReportDetailViewController {
                     await AppEnvironment.shared.library.delete([reportID])
                     guard let self else { return }
                     if let reports = self.splitViewController as? ReportsSplitViewController,
-                       !reports.isCollapsed {
+                       !reports.isCollapsed
+                    {
                         reports.showPlaceholder()
                     } else {
                         self.navigationController?.popViewController(animated: true)

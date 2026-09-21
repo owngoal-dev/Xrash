@@ -240,22 +240,48 @@ public enum SystemState {
         }
 
         private static func jetsamProperties() throws -> [String: Any] {
-            ["properties": try jetsamSnapshot()["properties"] as? [String: Any] ?? [:]]
+            try ["properties": jetsamSnapshot()["properties"] as? [String: Any] ?? [:]]
         }
     #else
         private static let off = SystemStateFailure(
             reason: "system state can only be collected on the device"
         )
 
-        private static func device() throws -> [String: Any] { throw off }
-        private static func services() throws -> [String: Any] { throw off }
-        private static func disabledServices() throws -> [String: Any] { throw off }
-        private static func environment() throws -> [String: Any] { throw off }
-        private static func apps() throws -> [String: Any] { throw off }
-        private static func tweaks(_: DpkgDatabase?) throws -> [String: Any] { throw off }
-        private static func processes() throws -> [String: Any] { throw off }
-        private static func jetsam() throws -> [String: Any] { throw off }
-        private static func jetsamProperties() throws -> [String: Any] { throw off }
+        private static func device() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func services() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func disabledServices() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func environment() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func apps() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func tweaks(_: DpkgDatabase?) throws -> [String: Any] {
+            throw off
+        }
+
+        private static func processes() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func jetsam() throws -> [String: Any] {
+            throw off
+        }
+
+        private static func jetsamProperties() throws -> [String: Any] {
+            throw off
+        }
     #endif
 }
 

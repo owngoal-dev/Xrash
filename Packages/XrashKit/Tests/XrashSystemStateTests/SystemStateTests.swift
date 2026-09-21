@@ -85,7 +85,7 @@ final class SystemStateTests: XCTestCase {
         )
         for file in files {
             XCTAssertEqual(file.url, output.appendingPathComponent(file.name))
-            XCTAssertEqual(file.byteCount, UInt64(try Data(contentsOf: file.url).count))
+            XCTAssertEqual(file.byteCount, try UInt64(Data(contentsOf: file.url).count))
             XCTAssertGreaterThan(file.byteCount, 0)
         }
 
@@ -123,6 +123,6 @@ final class SystemStateTests: XCTestCase {
 
     private func object(in files: [SystemStateFile], named name: String) throws -> [String: Any] {
         let file = try XCTUnwrap(files.first { $0.name == name }, name)
-        return try XCTUnwrap(JSONSerialization.jsonObject(with: try Data(contentsOf: file.url)) as? [String: Any])
+        return try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: file.url)) as? [String: Any])
     }
 }

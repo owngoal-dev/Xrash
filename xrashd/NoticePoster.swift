@@ -8,7 +8,10 @@ import XrashReport
     /// The Mac's helper is a per-user agent signed with no entitlement, so it
     /// cannot post for the app, and the app there announces on its own.
     struct NoticePoster {
-        init?() { nil }
+        init?() {
+            nil
+        }
+
         func post(_: Notice, detail _: NoticeDetail?, completion _: @escaping () -> Void) {}
     }
 

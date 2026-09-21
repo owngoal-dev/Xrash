@@ -10,7 +10,8 @@
             "value" : "Xrash"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "CFBundleName" : {
       "comment" : "Bundle name",
@@ -21,7 +22,8 @@
             "value" : "Xrash"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "Crash Report" : {
       "comment" : "Document kind, shown in Files and Open With",

@@ -30,8 +30,11 @@ final class ReportCrashViewController: UITableViewController {
         case reviewSystemState
     }
 
+    /// `reports` is one switch over all three forms of a report — the original
+    /// file, the rendered crash text and the JSON. Three switches asked the
+    /// person to pick a file format for a reader they have never met.
     private enum Include: Hashable, CaseIterable {
-        case rawReports, crashText, json, pdf, binaries, dsyms, systemState
+        case reports, pdf, binaries, dsyms, systemState
     }
 
     private let primaryID: String
@@ -496,9 +499,7 @@ final class ReportCrashViewController: UITableViewController {
 
     private func title(for include: Include) -> String {
         switch include {
-        case .rawReports: String(localized: "Original Reports")
-        case .crashText: String(localized: "Crash Text")
-        case .json: String(localized: "JSON")
+        case .reports: String(localized: "Original Reports")
         case .pdf: String(localized: "PDF Summary")
         case .binaries: String(localized: "Binaries")
         case .dsyms: String(localized: "Matching dSYMs")
@@ -520,9 +521,7 @@ final class ReportCrashViewController: UITableViewController {
 
     private func isOn(_ include: Include) -> Bool {
         switch include {
-        case .rawReports: options.includesRawReports
-        case .crashText: options.includesCrashText
-        case .json: options.includesJSON
+        case .reports: options.includesReports
         case .pdf: options.includesPDF
         case .binaries: options.includesBinaries
         case .dsyms: includesDSYMs
@@ -532,9 +531,7 @@ final class ReportCrashViewController: UITableViewController {
 
     private func set(_ include: Include, to isOn: Bool) {
         switch include {
-        case .rawReports: options.includesRawReports = isOn
-        case .crashText: options.includesCrashText = isOn
-        case .json: options.includesJSON = isOn
+        case .reports: options.includesReports = isOn
         case .pdf: options.includesPDF = isOn
         case .binaries: options.includesBinaries = isOn
         case .dsyms: includesDSYMs = isOn
@@ -567,16 +564,12 @@ final class ReportCrashViewController: UITableViewController {
 
     private var estimatedSizeText: String {
         var bytes = UInt64(0)
-        let members = [primarySummary].compactMap(\.self) + linked.compactMap { summary(for: $0.id) }
-        for member in members {
-            if options.includesRawReports {
-                bytes += member.byteCount
-            }
-            if options.includesCrashText {
-                bytes += member.byteCount / 2
-            }
-            if options.includesJSON {
-                bytes += member.byteCount
+        if options.includesReports {
+            let members = [primarySummary].compactMap(\.self) + linked.compactMap { summary(for: $0.id) }
+            for member in members {
+                // The original file and the JSON each come out about the size
+                // of the report; the rendered crash text about half of it.
+                bytes += member.byteCount * 2 + member.byteCount / 2
             }
         }
         if options.includesPDF {

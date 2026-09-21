@@ -7,10 +7,10 @@ import XrashReport
 /// the top row it pushed that row's text off the margin the rows under it
 /// keep. Centred, with the kind's badge on its corner.
 final class ReportIconHeaderView: UIView {
-    static let iconSide: CGFloat = 128
-    private static let badgeSide: CGFloat = 36
-    private static let topPadding: CGFloat = 24
-    private static let bottomPadding: CGFloat = 8
+    static let iconSide: CGFloat = 80
+    private static let badgeSide: CGFloat = 26
+    private static let topPadding: CGFloat = 32
+    private static let bottomPadding: CGFloat = 32
 
     /// What a table has to be told, since a table header sizes nothing itself.
     static let height = topPadding + iconSide + bottomPadding
@@ -43,7 +43,7 @@ final class ReportIconHeaderView: UIView {
         }
         badgeView.snp.makeConstraints { make in
             make.size.equalTo(Self.badgeSide)
-            make.trailing.bottom.equalTo(iconView).offset(6)
+            make.trailing.bottom.equalTo(iconView).offset(5)
         }
     }
 
