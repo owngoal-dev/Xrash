@@ -8,6 +8,7 @@ final class ReportHeaderCell: UITableViewCell {
     static let reuseIdentifier = "reportHeader"
 
     private let iconView = ReportIconView()
+    private let badgeView = UIImageView()
     private let nameLabel = UILabel()
     private let detailLabel = UILabel()
 
@@ -21,7 +22,9 @@ final class ReportHeaderCell: UITableViewCell {
             $0.numberOfLines = 2
         }
         detailLabel.do {
-            $0.font = DetailTypography.value
+            // A kind, a version and a bundle id: the same second line, and
+            // the same small monospace, as every row under it.
+            $0.font = DetailTypography.mono()
             $0.textColor = .secondaryLabel
             $0.numberOfLines = 2
         }
@@ -37,8 +40,27 @@ final class ReportHeaderCell: UITableViewCell {
             $0.alignment = .center
             $0.spacing = 14
         }
+        // An app's own icon says nothing about how it ended, so the corner
+        // does: the kind's colour, cut out of the card the way a badge is.
+        badgeView.do {
+            $0.image = UIImage(
+                systemName: "exclamationmark.circle.fill",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .bold)
+            )
+            $0.contentMode = .scaleAspectFit
+            $0.backgroundColor = .secondarySystemGroupedBackground
+            $0.layer.cornerRadius = 11
+            $0.layer.masksToBounds = true
+            $0.isAccessibilityElement = false
+        }
+
         contentView.addSubview(content)
+        contentView.addSubview(badgeView)
         iconView.snp.makeConstraints { $0.size.equalTo(56) }
+        badgeView.snp.makeConstraints { make in
+            make.size.equalTo(22)
+            make.trailing.bottom.equalTo(iconView).offset(4)
+        }
         content.snp.makeConstraints { make in
             make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
             make.top.bottom.equalToSuperview().inset(12)
@@ -52,6 +74,7 @@ final class ReportHeaderCell: UITableViewCell {
 
     func configure(with report: Report, summary: ReportSummary) {
         iconView.configure(with: summary, executablePath: report.crash?.process.path)
+        badgeView.tintColor = ReportFormat.tint(for: summary)
         let name = report.crash?.process.name.isEmpty == false
             ? report.crash?.process.name
             : summary.processName

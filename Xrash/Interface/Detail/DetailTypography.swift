@@ -2,12 +2,12 @@ import UIKit
 
 /// The type on a report screen, which is two families and no more.
 ///
-/// The card at the top is prose: body, and a field's name is bold where its
-/// value is `secondaryLabel`. Everything below it — Application Information,
-/// the stacks, a panic — is a machine's own words, so it is one monospaced
-/// footnote throughout and colour is what tells a symbol from an address. A
-/// monospaced exception line, an 11-point address and a 12-point symbol made
-/// one screen read as three.
+/// What the app says is body: a field's name in bold, a row that opens
+/// something in regular. What the *report* says is one small monospace —
+/// every value under a field name, Application Information, the stacks, a
+/// panic — and colour is what tells a symbol from an address. A 12-point
+/// symbol over an 11-point address, beside a title3 header and a proportional
+/// incident id, made one screen read as four.
 enum DetailTypography {
     /// Bold body: the first line of a field row.
     static var name: UIFont {

@@ -135,8 +135,9 @@ final class ReportSummaryViewController: UITableViewController {
         configuration.textProperties.numberOfLines = 0
         configuration.secondaryTextProperties.numberOfLines = 0
         configuration.secondaryTextProperties.color = .secondaryLabel
-        // One size a row, decided here: a field's name in bold, a machine's
-        // line monospaced, everything else body.
+        // One size a row, decided here: a field's name in bold, the value
+        // under it monospaced like every other line the report itself wrote,
+        // and a row that opens something in plain body.
         configuration.textProperties.font = if item.namesAField {
             DetailTypography.name
         } else if item.isMachineText {
@@ -144,7 +145,10 @@ final class ReportSummaryViewController: UITableViewController {
         } else {
             DetailTypography.value
         }
-        configuration.secondaryTextProperties.font = DetailTypography.value
+        // Every second line on this screen is the report's own words — a
+        // queue, a symbol, an address, a version — so all of them are the
+        // small monospace.
+        configuration.secondaryTextProperties.font = DetailTypography.mono()
         cell.accessoryType = .none
         cell.accessoryView = nil
         cell.selectionStyle = .none
@@ -208,9 +212,11 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.textProperties.color = .tintColor
             cell.selectionStyle = .default
         case let .thread(index):
-            let thread = report.crash?.threads[index]
+            let thread = report.crash.flatMap { $0.threads.indices.contains(index) ? $0.threads[index] : nil }
             configuration.text = threadTitle(thread)
-            configuration.secondaryText = thread.flatMap(threadSubtitle(_:))
+            configuration.secondaryText = report.crash.flatMap { crash in
+                thread.flatMap { threadSubtitle($0, in: crash) }
+            }
             configuration.secondaryTextProperties.numberOfLines = 1
             configuration.secondaryTextProperties.lineBreakMode = .byTruncatingMiddle
             cell.accessoryType = .disclosureIndicator
@@ -290,13 +296,24 @@ final class ReportSummaryViewController: UITableViewController {
 
     /// What tells one thread from the next: its name, its queue, and — since
     /// most threads have neither — what it was doing, which is its top frame.
-    private func threadSubtitle(_ thread: ReportThread) -> String? {
+    private func threadSubtitle(_ thread: ReportThread, in crash: CrashReport) -> String? {
         let labels = [thread.name, thread.queue].compactMap(\.self).filter { !$0.isEmpty }
         // Unsymbolicated, the top frame is still its program counter.
         let top = thread.frames.first.map { $0.symbol ?? ReportFormat.address($0.address) }
+            ?? programCounter(of: thread, in: crash)
         let named = labels.isEmpty ? [top].compactMap(\.self) : labels
         let parts = NSOrderedSet(array: named).array.compactMap { $0 as? String }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// A thread sampled without a stack — most of them, in a report this
+    /// size — still has a program counter, and that is the whole of what the
+    /// report knows about it. Shown as a frame's second line is: the image it
+    /// fell in, when the report names one, and the address.
+    private func programCounter(of thread: ReportThread, in crash: CrashReport) -> String? {
+        guard let pc = thread.registers.first(where: { $0.name == "pc" })?.value else { return nil }
+        let image = crash.images.index(containing: pc).map { crash.images[$0].name }
+        return [image, ReportFormat.address(pc)].compactMap(\.self).joined(separator: " · ")
     }
 
     private func describe(_ suspect: Suspect) -> String {

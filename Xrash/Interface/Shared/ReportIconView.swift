@@ -2,8 +2,9 @@ import UIKit
 import XrashReport
 
 /// The leading tile of a report row: the app's own icon when the system still
-/// has one, otherwise a symbol in a rounded tile. Every row gets a tile of the
-/// same size so the titles line up whichever it is.
+/// has one, otherwise artwork standing in for it — a terminal for a process, a
+/// log for everything else. Every row gets a tile of the same size so the
+/// titles line up whichever it is.
 final class ReportIconView: UIView {
     static let size: CGFloat = 38
 
@@ -39,11 +40,12 @@ final class ReportIconView: UIView {
         shownKey = key
         loadTask?.cancel()
         // A process is a picture, as in Inspector: the terminal artwork until
-        // (and unless) the app's own icon turns up. Only reports that are not
-        // about one process keep a symbol.
+        // (and unless) the app's own icon turns up. A report about no single
+        // process is a picture too — the system's own log artwork. A symbol
+        // in a grey tile among app icons read as a control, not a report.
         switch summary.group {
         case .app, .service: showPicture(UIImage(named: "TerminalIcon"))
-        default: showGlyph(ReportFormat.glyph(for: summary), tint: ReportFormat.tint(for: summary))
+        default: showPicture(UIImage(named: "LogIcon"))
         }
 
         // A panic belongs to no app, so it wears this one's icon: a picture
@@ -68,15 +70,5 @@ final class ReportIconView: UIView {
         imageView.image = image
         imageView.contentMode = .scaleAspectFill
         imageView.tintColor = nil
-    }
-
-    private func showGlyph(_ symbolName: String, tint: UIColor) {
-        backgroundColor = .tertiarySystemFill
-        imageView.image = UIImage(
-            systemName: symbolName,
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .medium)
-        )
-        imageView.tintColor = tint
-        imageView.contentMode = .center
     }
 }
