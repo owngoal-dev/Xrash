@@ -168,6 +168,7 @@ private final class RegisterCell: UITableViewCell {
             make.top.bottom.equalToSuperview().inset(8)
         }
 
+        menuButton.accessibilityLabel = String(localized: "More")
         menuButton.showsMenuAsPrimaryAction = true
         menuButton.menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in completion(self?.copyActions() ?? []) },

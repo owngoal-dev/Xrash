@@ -68,6 +68,9 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             content.imageProperties.tintColor = hasSymbols ? view.tintColor : .secondaryLabel
             cell.contentConfiguration = content
             cell.accessoryType = hasSymbols ? .disclosureIndicator : .none
+            // The checkmark is the only thing saying the archive is already in
+            // the store; the subtitle carries the rest of the row's state.
+            cell.accessibilityValue = isImported ? String(localized: "Imported") : nil
             return cell
         }
         load()
@@ -279,6 +282,9 @@ private final class GitHubAssetsViewController: UITableViewController {
             systemName: imported.contains(asset) ? "checkmark.circle.fill" : "arrow.down.circle"
         )
         cell.contentConfiguration = content
+        // The glyph is the whole difference between a downloaded archive and
+        // one still to fetch.
+        cell.accessibilityValue = imported.contains(asset) ? String(localized: "Imported") : nil
         return cell
     }
 

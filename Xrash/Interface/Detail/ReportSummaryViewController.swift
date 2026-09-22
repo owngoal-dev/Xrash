@@ -221,6 +221,9 @@ final class ReportSummaryViewController: UITableViewController {
             if let suspect, suspectActions(suspect).count > 1 {
                 cell.accessoryView = UIImageView(image: UIImage(systemName: "chevron.up.chevron.down")).then {
                     $0.tintColor = .tertiaryLabel
+                    // The chevron only says the row has a menu, which the
+                    // button over the row already names.
+                    $0.isAccessibilityElement = false
                 }
                 menu = { [weak self] in self?.suspectMenu(suspect) ?? [] }
             }

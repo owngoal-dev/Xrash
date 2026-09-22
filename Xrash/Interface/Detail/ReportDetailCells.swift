@@ -139,6 +139,7 @@ final class ValueCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         menuButton.isHidden = true
+        menuButton.accessibilityLabel = String(localized: "More")
         menuButton.showsMenuAsPrimaryAction = true
         menuButton.menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
@@ -208,6 +209,7 @@ final class FrameCell: UITableViewCell {
 
         // The row's one interaction is its menu, so a tap opens it where the
         // finger is — a table cell has no menu of its own, a button over it has.
+        menuButton.accessibilityLabel = String(localized: "More")
         menuButton.showsMenuAsPrimaryAction = true
         menuButton.menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
@@ -282,5 +284,8 @@ final class FrameCell: UITableViewCell {
             origin.append(String(localized: "inlined"))
         }
         originLabel.text = origin.joined(separator: " · ")
+        accessibilityLabel = [indexLabel.text, symbolLabel.text, originLabel.text]
+            .compactMap(\.self)
+            .joined(separator: ", ")
     }
 }

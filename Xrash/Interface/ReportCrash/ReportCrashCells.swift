@@ -120,6 +120,9 @@ final class FormTextViewCell: UITableViewCell, UITextViewDelegate {
         $0.adjustsFontForContentSizeCategory = true
         $0.textColor = .placeholderText
         $0.numberOfLines = 0
+        // It sits over the text view and names it; read on its own it would be
+        // a second stop saying the same thing.
+        $0.isAccessibilityElement = false
     }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -144,6 +147,7 @@ final class FormTextViewCell: UITableViewCell, UITextViewDelegate {
 
     func configure(text: String, placeholder: String) {
         textView.text = text
+        textView.accessibilityLabel = placeholder
         placeholderLabel.text = placeholder
         placeholderLabel.isHidden = !text.isEmpty
     }
