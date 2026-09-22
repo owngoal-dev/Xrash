@@ -61,7 +61,7 @@ final class ThreadViewController: UITableViewController, UISearchResultsUpdating
                 )
                 (cell as? FrameCell)?.menuProvider = { [weak self] in
                     guard let self else { return [] }
-                    return frameMenu(frame, in: crash)
+                    return frameActions(frame, in: crash)
                 }
                 return cell
             case let .register(index):
@@ -171,10 +171,18 @@ private final class RegisterCell: UITableViewCell {
         menuButton.accessibilityLabel = String(localized: "More")
         menuButton.showsMenuAsPrimaryAction = true
         menuButton.menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in completion(self?.copyActions() ?? []) },
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                completion(self?.copyActions().menuElements ?? [])
+            },
         ])
         contentView.addSubview(menuButton)
         menuButton.snp.makeConstraints { $0.edges.equalToSuperview() }
+        // A name, a value and a note are one register, so they are one stop
+        // and the label `configure` assembles is what is read — a cell is not
+        // an accessibility element until it is told to be. That hides the
+        // button covering the row, so `configure` hands the copy menu to the
+        // rotor as custom actions.
+        isAccessibilityElement = true
     }
 
     @available(*, unavailable)
@@ -189,17 +197,19 @@ private final class RegisterCell: UITableViewCell {
         valueLabel.textColor = register.value == 0 ? .secondaryLabel : .label
         noteLabel.text = note
         accessibilityLabel = [register.name, value, note].compactMap(\.self).joined(separator: ", ")
+        // What the menu offers depends on whether this register has a note, so
+        // the rotor's copy of it is rebuilt here rather than once in `init`.
+        accessibilityCustomActions = copyActions().accessibilityActions
     }
 
-    private func copyActions() -> [UIMenuElement] {
+    private func copyActions() -> [RowMenuAction] {
         let value = valueLabel.text ?? ""
-        var actions = [UIAction(title: String(localized: "Copy Value"), image: UIImage(systemName: "doc.on.doc")) { _ in
+        var actions = [RowMenuAction(title: String(localized: "Copy Value"), symbolName: "doc.on.doc") {
             UIPasteboard.general.string = value
             Toast.show(String(localized: "Copied"))
         }]
         if let note = noteLabel.text {
-            actions.append(UIAction(title: String(localized: "Copy Note"), image: UIImage(systemName: "text.quote")) {
-                _ in
+            actions.append(RowMenuAction(title: String(localized: "Copy Note"), symbolName: "text.quote") {
                 UIPasteboard.general.string = note
                 Toast.show(String(localized: "Copied"))
             })

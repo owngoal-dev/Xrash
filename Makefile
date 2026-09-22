@@ -51,6 +51,7 @@ VERSION_APPLIER     := $(ROOT_DIR)/Scripts/apply-version.sh
 DEB_VERIFIER        := $(ROOT_DIR)/Scripts/verify-deb.sh
 FLOOR_AUDIT         := $(ROOT_DIR)/Scripts/audit-ios-floor.sh
 SYMBOL_CHECK        := $(ROOT_DIR)/Scripts/check-symbol-availability.py
+ACCESSIBILITY_CHECK := $(ROOT_DIR)/Scripts/check-accessibility.py
 CONTROL_TEMPLATE    := $(ROOT_DIR)/Packaging/DEBIAN/control
 ENTITLEMENTS        := $(ROOT_DIR)/Packaging/Xrash.entitlements
 DAEMON_ENTITLEMENTS := $(ROOT_DIR)/Packaging/Xrashd.entitlements
@@ -136,7 +137,7 @@ check:
 	@command -v dpkg-deb >/dev/null || { echo "error: dpkg-deb is required" >&2; exit 69; }
 	@test -d "$(PROJECT)" || { echo "error: Xrash.xcodeproj is missing" >&2; exit 66; }
 	@test -f "$(CONTROL_TEMPLATE)" || { echo "error: Debian control template is missing" >&2; exit 66; }
-	@for script in "$(DEB_PACKAGER)" "$(VERSION_APPLIER)" "$(DEB_VERIFIER)" "$(FLOOR_AUDIT)" "$(SYMBOL_CHECK)" "$(MAC_PACKAGER)" "$(MAC_DAEMON_LOADER)" "$(ROOT_DIR)/Scripts/sign-frameworks.sh" "$(ROOT_DIR)/Scripts/check-ui-libraries.sh" "$(ROOT_DIR)/Scripts/check-localization.sh"; do \
+	@for script in "$(DEB_PACKAGER)" "$(VERSION_APPLIER)" "$(DEB_VERIFIER)" "$(FLOOR_AUDIT)" "$(SYMBOL_CHECK)" "$(ACCESSIBILITY_CHECK)" "$(MAC_PACKAGER)" "$(MAC_DAEMON_LOADER)" "$(ROOT_DIR)/Scripts/sign-frameworks.sh" "$(ROOT_DIR)/Scripts/check-ui-libraries.sh" "$(ROOT_DIR)/Scripts/check-localization.sh"; do \
 		test -x "$$script" || { echo "error: $$script is not executable" >&2; exit 66; }; \
 	done
 	@for xcconfig in Version Base Development Release; do \
@@ -162,6 +163,7 @@ check:
 			echo "$$hits" >&2; exit 65; \
 		fi
 	@"$(SYMBOL_CHECK)" "$(MINIMUM_IOS_VERSION)" "$(ROOT_DIR)/Xrash" "$(KIT_PACKAGE)/Sources"
+	@"$(ACCESSIBILITY_CHECK)" "$(ROOT_DIR)/Xrash" "$(KIT_PACKAGE)/Sources"
 	@"$(ROOT_DIR)/Scripts/check-ui-libraries.sh"
 	@"$(ROOT_DIR)/Scripts/check-localization.sh"
 	@plutil -lint "$(ENTITLEMENTS)" "$(DAEMON_ENTITLEMENTS)" "$(LAUNCH_DAEMON)"

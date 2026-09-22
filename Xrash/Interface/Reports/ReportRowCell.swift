@@ -34,6 +34,12 @@ final class ReportRowCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         accessoryType = .disclosureIndicator
         configurationUpdateHandler = Self.groupedBackgroundHandler
+        // The row is one sentence, not an icon, two labels and a date read one
+        // stop at a time: a cell is not an accessibility element until it is
+        // told to be, and the label `configure` assembles is read only once it
+        // is one. The disclosure indicator is drawn by the cell rather than
+        // being a control of its own, so nothing here loses its touch target.
+        isAccessibilityElement = true
 
         titleLabel.do {
             $0.font = .preferredFont(forTextStyle: .body)

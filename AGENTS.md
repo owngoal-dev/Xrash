@@ -113,6 +113,17 @@ through `UNUserNotificationCenter(bundleIdentifier:)` — the daemon carries
   `SHOUTING_KEY` identifiers; `make check` greps for both. Pick one catalogue
   discipline and keep it: compiler `.stringsdata` with no `extractionState`,
   or unseen keys kept as `manual` and pruned by hand.
+- **A cell that writes its own `accessibilityLabel` sets
+  `isAccessibilityElement`.** UIKit reads the label off a view only when that
+  view is an accessibility element, and a cell with subviews is not one by
+  default: the sentence the cell assembled is walked past and its subviews are
+  read instead, one stop each. Nothing warns, and six of this app's rows were
+  silent that way — five since they were written, the sixth copied from one of
+  them. `Scripts/check-accessibility.py` (platformize-app-ios', copied
+  unchanged) fails `make check` on the next one. The flag hides every subview,
+  so a row that owns a control offers it as a `UIAccessibilityCustomAction`
+  instead; `RowMenuAction` is the one shape a row's menu is built from, for the
+  finger and for the rotor both.
 
 ## Layout
 

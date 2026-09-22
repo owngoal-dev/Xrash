@@ -135,7 +135,7 @@ final class ReportSummaryViewController: UITableViewController {
                         suspectPaths: Set(content.suspects.map(\.id))
                     )
                 )
-                (cell as? FrameCell)?.menuProvider = { [weak self] in self?.frameMenu(frame, in: crash) ?? [] }
+                (cell as? FrameCell)?.menuProvider = { [weak self] in self?.frameActions(frame, in: crash) ?? [] }
             }
             return cell
         default:
@@ -466,38 +466,39 @@ final class ReportSummaryViewController: UITableViewController {
 }
 
 extension UIViewController {
-    /// The menu a frame row opens on a tap: what the frame names, and the
-    /// image it came out of.
-    func frameMenu(_ frame: Frame, in crash: CrashReport) -> [UIMenuElement] {
-        var elements = [UIMenuElement]()
+    /// What a frame row offers: what the frame names, and the image it came
+    /// out of. A tap shows them as a menu; VoiceOver, whose stop is the whole
+    /// row, is offered the same list in its rotor.
+    func frameActions(_ frame: Frame, in crash: CrashReport) -> [RowMenuAction] {
+        var actions = [RowMenuAction]()
         if let symbol = frame.symbol {
-            elements.append(UIAction(
+            actions.append(RowMenuAction(
                 title: String(localized: "Copy Symbol"),
-                image: UIImage(systemName: "doc.on.doc")
-            ) { _ in
+                symbolName: "doc.on.doc"
+            ) {
                 UIPasteboard.general.string = symbol
                 Toast.show(String(localized: "Copied"))
             })
         }
-        elements.append(UIAction(
+        actions.append(RowMenuAction(
             title: String(localized: "Copy Address"),
-            image: UIImage(systemName: "number")
-        ) { _ in
+            symbolName: "number"
+        ) {
             UIPasteboard.general.string = ReportFormat.address(frame.address)
             Toast.show(String(localized: "Copied"))
         })
         if let index = frame.imageIndex, crash.images.indices.contains(index) {
             let image = crash.images[index]
-            elements.append(UIAction(
+            actions.append(RowMenuAction(
                 title: String(localized: "Show Image"),
-                image: UIImage(systemName: "shippingbox")
-            ) { [weak self] _ in
+                symbolName: "shippingbox"
+            ) { [weak self] in
                 guard let self else { return }
                 let images = ImagesViewController(crash: crash, packages: AppEnvironment.shared.packages)
                 images.focus(on: image)
                 navigationController?.pushViewController(images, animated: true)
             })
         }
-        return elements
+        return actions
     }
 }

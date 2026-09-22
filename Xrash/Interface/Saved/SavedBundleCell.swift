@@ -16,6 +16,11 @@ final class SavedBundleCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
+        // The row is one sentence, not a title and a subtitle read one stop at
+        // a time: a cell is not an accessibility element until it is told to
+        // be, and the label `configure` assembles is read only once it is one.
+        // The row's one interaction is the push the whole row performs.
+        isAccessibilityElement = true
         titleLabel.do {
             $0.font = .preferredFont(forTextStyle: .body)
             // The title carries the date a bundle was made; truncating it

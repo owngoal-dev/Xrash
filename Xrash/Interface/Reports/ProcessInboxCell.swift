@@ -23,6 +23,12 @@ final class ProcessInboxCell: UITableViewCell {
         accessoryType = .disclosureIndicator
         // These rows sit in the same column as a report's, drawn the same way.
         configurationUpdateHandler = ReportRowCell.groupedBackgroundHandler
+        // And read the same way: one sentence, not an icon, two labels and a
+        // bare number one stop at a time. A cell is not an accessibility
+        // element until it is told to be, and the label `configure` assembles
+        // is read only once it is one. The capsule is a drawn shape and the
+        // disclosure indicator belongs to the cell, so no control is lost.
+        isAccessibilityElement = true
 
         titleLabel.do {
             $0.font = .preferredFont(forTextStyle: .body)
