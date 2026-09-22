@@ -354,6 +354,82 @@ final class DecoderTests: XCTestCase {
         XCTAssertTrue(report.rawText.hasSuffix("not json"))
     }
 
+    // MARK: Text bodies
+
+    /// A Microstackshots report is a JSON header over text, and the text says
+    /// which limit was crossed.
+    func testResourceReportNamesItsEvent() throws {
+        let report = try decode(Fixture.diskWrites)
+        XCTAssertEqual(report.kind, .resource)
+        XCTAssertNil(report.crash)
+        XCTAssertEqual(report.resource?.event, "disk writes")
+        XCTAssertEqual(report.reason, "disk writes")
+    }
+
+    func testBasebinException() throws {
+        let report = try decode(Fixture.basebinException)
+        XCTAssertEqual(report.kind, .crash)
+        XCTAssertEqual(report.header.name, "launchd")
+        XCTAssertEqual(report.header.osVersion, "18.7.1 (22H31)")
+        XCTAssertNotNil(report.header.timestamp)
+        XCTAssertEqual(report.reason, "EXC_BAD_ACCESS")
+
+        let crash = try XCTUnwrap(report.crash)
+        XCTAssertEqual(crash.process.name, "launchd")
+        XCTAssertEqual(crash.process.pid, 1)
+        XCTAssertEqual(crash.process.path, "/sbin/launchd")
+        XCTAssertEqual(crash.device.model, "iPhone11,8")
+        XCTAssertEqual(crash.exception?.codes, "0x0000000000000001, 0x0000000000000008")
+        XCTAssertEqual(crash.exception?.subtype, "KERN_INVALID_ADDRESS at 0x0000000000000008")
+
+        let thread = try XCTUnwrap(crash.faultingThread)
+        XCTAssertEqual(thread.id, 13482)
+        XCTAssertEqual(thread.registers.count, 36)
+        XCTAssertEqual(thread.registers.first?.name, "x0")
+        // The stripped program counter, not the signed one.
+        XCTAssertEqual(thread.registers.first { $0.name == "pc" }?.value, 0x1_0309_7BBC)
+
+        // The signed return address is dropped for its stripped repeat.
+        XCTAssertEqual(thread.frames.count, 6)
+        XCTAssertEqual(thread.frames[0].symbol, "crashreporter_test_bad_access")
+        XCTAssertEqual(thread.frames[0].symbolLocation, 0x2C)
+        XCTAssertEqual(crash.images.image(for: thread.frames[0])?.name, "libjailbreak.dylib")
+        XCTAssertEqual(thread.frames[0].imageOffset, 0x2BBBC)
+        XCTAssertNil(thread.frames[3].symbol)
+        XCTAssertEqual(crash.images.image(for: thread.frames[3])?.path, "/sbin/launchd")
+    }
+
+    func testBasebinSignal() throws {
+        let report = try decode(Fixture.basebinSignal)
+        XCTAssertEqual(report.reason, "SIGABRT")
+        let crash = try XCTUnwrap(report.crash)
+        let thread = try XCTUnwrap(crash.faultingThread)
+        XCTAssertEqual(thread.frames.map(\.address), [0x1_EBED_81DC, 0x2_2551_3C1C])
+        XCTAssertEqual(crash.images.image(for: thread.frames[0])?.name, "libsystem_kernel.dylib")
+        XCTAssertEqual(crash.images.image(for: thread.frames[1])?.name, "libsystem_blocks.dylib")
+    }
+
+    /// The legacy format has fields that look alike; it must not be taken.
+    func testBasebinRefusesOtherText() throws {
+        let report = try decode(Fixture.legacy)
+        XCTAssertGreaterThan(report.crash?.threads.count ?? 0, 1)
+    }
+
+    /// `XRASH_REPORT_DIR=<folder> swift test` — every crash, hang, resource and
+    /// panic report in a folder pulled off a device has a line for its row.
+    func testEveryReportInAFolderHasAReason() throws {
+        guard let folder = ProcessInfo.processInfo.environment["XRASH_REPORT_DIR"] else {
+            throw XCTSkip("XRASH_REPORT_DIR is not set")
+        }
+        let root = URL(fileURLWithPath: folder)
+        for name in try FileManager.default.contentsOfDirectory(atPath: folder).sorted() {
+            guard let data = try? Data(contentsOf: root.appendingPathComponent(name)),
+                  let report = try? ReportDecoder.decode(data, fileName: name),
+                  [.crash, .hang, .resource, .panic].contains(report.kind) else { continue }
+            XCTAssertNotNil(report.reason, name)
+        }
+    }
+
     // MARK: Helpers
 
     private func decode(_ name: String) throws -> Report {

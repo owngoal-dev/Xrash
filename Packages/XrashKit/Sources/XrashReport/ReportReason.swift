@@ -14,6 +14,9 @@ public extension Report {
         if let panic {
             return panic.panicString.split(separator: "\n").first.map(String.init)
         }
+        if let resource {
+            return resource.event
+        }
         return nil
     }
 }

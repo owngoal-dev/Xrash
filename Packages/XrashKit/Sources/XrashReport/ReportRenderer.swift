@@ -9,13 +9,21 @@ public enum ReportRenderer {
     }
 
     /// The raw file as indented JSON: header object, blank line, body object.
+    /// A resource report's body is text under a JSON header line, so the
+    /// header is indented on its own and the text follows as written. A body
+    /// that starts like JSON and will not parse — several objects on several
+    /// lines — leaves the whole file untouched rather than half-formatted.
     /// Non-JSON reports come back unchanged.
     public static func prettyJSON(_ report: Report) -> String {
         let parts = report.rawText.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
-        guard parts.count == 2, let header = indented(parts[0]), let body = indented(parts[1]) else {
+        guard parts.count == 2, let header = indented(parts[0]) else {
             return report.rawText
         }
-        return header + "\n\n" + body
+        if let body = indented(parts[1]) {
+            return header + "\n\n" + body
+        }
+        guard !parts[1].hasPrefix("{") else { return report.rawText }
+        return header + "\n\n" + parts[1]
     }
 
     /// A short issue-tracker summary: what died, why, the faulting stack.

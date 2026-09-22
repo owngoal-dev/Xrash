@@ -1,0 +1,32 @@
+{"app_name":"Relaxin","timestamp":"2026-09-18 17:37:15.00 +0800","app_version":"0.0.0","slice_uuid":"00000000-0000-0000-0000-000000000001","build_version":"0","bundleID":"com.example.relaxin","duration_ms":"78558","share_with_app_devs":0,"is_first_party":0,"bug_type":"145","os_version":"iPhone OS 18.7.1 (22H31)","roots_installed":0,"name":"Relaxin","incident_id":"00000000-0000-0000-0000-000000000002"}
+Date/Time:        2026-09-18 17:35:51.280 +0800
+End time:         2026-09-18 17:37:09.838 +0800
+OS Version:       iPhone OS 18.7.1 (Build 22H31)
+Architecture:     arm64e
+Report Version:   60
+Incident Identifier: 00000000-0000-0000-0000-000000000002
+
+Data Source:      Microstackshots
+Shared Cache:     00000000-0000-0000-0000-000000000003 slid base address 0x197ea0000, slide 0x17ea0000
+
+Command:          Relaxin
+Path:             /private/var/containers/Bundle/Application/00000000-0000-0000-0000-000000000004/Relaxin.app/Relaxin
+Identifier:       com.example.relaxin
+Version:          0.0.0 (0)
+Is First Party:   No
+Architecture:     arm64e
+Parent:           UNKNOWN [1]
+PID:              460
+
+Event:            disk writes
+Action taken:     none
+Writes:           1073.75 MB of file backed memory dirtied over 79 seconds (13.67 MB per second average), exceeding limit of 12.43 KB per second over 86400 seconds
+Writes limit:     1073.74 MB
+Limit duration:   86400s
+Writes caused:    1073.75 MB
+Writes duration:  79s
+Duration:         78.56s
+Steps:            90 (10.49 MB/step)
+
+Hardware model:   iPhone11,8
+Active cpus:      6

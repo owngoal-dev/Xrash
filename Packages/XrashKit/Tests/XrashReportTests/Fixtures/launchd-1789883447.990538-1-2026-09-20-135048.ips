@@ -1,0 +1,36 @@
+Device Model:   iPhone11,8
+Device Version: Version 18.7.1 (Build 22H31)
+Architecture:   arm64e
+
+Thread 13482 crashed.
+
+Exception:            EXC_BAD_ACCESS
+Exception Code[0]:    0x0000000000000001 (1)
+Exception Code[1]:    0x0000000000000008 (8)
+
+Register State:
+ x0 = 0x0000000000000002,  x1 = 0x0000000000000008,  x2 = 0x0000000000000016,  x3 = 0x0000000000000000,  x4 = 0x0000000000000000,  x5 = 0x0000000000000000,  x6 = 0x0000000000000000
+ x7 = 0x0000000000000000,  x8 = 0x0000000000000008,  x9 = 0x4352415348525054, x10 = 0x00000000000000E4, x11 = 0x00000000000000F0, x12 = 0xAAAAAAAAAAAAC000, x13 = 0x0000000000000000
+x14 = 0x0000000104B5CC70, x15 = 0x0000000D8007C000, x16 = 0x905E5B8225463E70, x17 = 0x00000002822A7FA0, x18 = 0x0000000000000000, x19 = 0x0000000D80010040, x20 = 0x0000000D8007C000
+x21 = 0x00000000000003A4, x22 = 0x0000000000000065, x23 = 0x0000000000000000, x24 = 0x0000000000000000, x25 = 0x000000016B59B0E0, x26 = 0x0000000205BC4480, x27 = 0xFFE00040FFFFFFFC
+x28 = 0x000000016B59B0E0,  lr = 0xDB32D48103097B84,  pc = 0x8256F28103097BBC,  sp = 0x006045816CF6A460,  fp = 0x003EE1816CF6A470, cpsr= 0x60000000,       flags = 0x0000000E
+esr = 0x92000046,         far = 0x0000000000000008
+
+Stripped State:
+ pc = 0x0000000103097BBC,  lr = 0xDB32D48103097B84,  sp = 0x000000016CF6A460,  fp = 0x000000016CF6A470
+
+Backtrace:
+0x103097BBC: crashreporter_test_bad_access (0x103097B90 + 0x2C) (/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/libjailbreak.dylib(0x10306C000) + 0x2BBBC)
+0xDB32D48103097B84: crashreporter_test_trigger (0x103097AF8 + 0xDB32D4800000008C) (/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/libjailbreak.dylib(0x10306C000) + 0xDB32D4800002BB84)
+0x103097B84: crashreporter_test_trigger (0x103097AF8 + 0x8C) (/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/libjailbreak.dylib(0x10306C000) + 0x2BB84)
+0x10303EFF0: xpc_receive_mach_msg_hook (0x10303EF14 + 0xDC) (/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/launchdhook.dylib(0x103038000) + 0x6FF0)
+0x102FF145C: <unexported> (0x0 + 0x102FF145C) (/sbin/launchd(0x102FA8000) + 0x4945C)
+0x19819D5CC: <redacted> (0x19819D5BC + 0x10) (/usr/lib/system/libdispatch.dylib(0x198182000) + 0x1B5CC)
+0x21A69CAAC: start_wqthread (0x21A69CAA4 + 0x8) (/usr/lib/system/libsystem_pthread.dylib(0x21A69C000) + 0xAAC)
+
+Images:
+0x0000000103038000	/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/launchdhook.dylib
+0x0000000102FA8000	/sbin/launchd
+0x000000010306C000	/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/libjailbreak.dylib
+0x0000000198182000	/usr/lib/system/libdispatch.dylib
+0x000000021A69C000	/usr/lib/system/libsystem_pthread.dylib

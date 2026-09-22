@@ -203,7 +203,9 @@ enum ReportBundleBuilder {
             candidates.insert(executable, at: 0)
         }
         var seen = Set<String>()
-        return candidates.filter { isThirdParty($0) && seen.insert($0.uuid).inserted }
+        // A bundle files a binary under its UUID. An image the report gave
+        // none — a jailbreak's own reporter — cannot be tied to a file on disk.
+        return candidates.filter { isThirdParty($0) && !$0.uuid.isEmpty && seen.insert($0.uuid).inserted }
     }
 
     /// Not Apple's, by the report's own `source` column or by where the image

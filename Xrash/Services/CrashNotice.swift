@@ -40,6 +40,7 @@ final class CrashNotice {
     /// Settings words its footer from this.
     let daemonAnnounces = CurrentValueSubject<Bool, Never>(false)
     private var sentPolicy: NoticePolicy?
+    private var withdrawnNames = Set<String>()
     private var policyTask: Task<Void, Never>?
 
     private init() {
@@ -142,6 +143,7 @@ final class CrashNotice {
         )
         accounted.formUnion(summaries.map(\.id))
         sendPolicy()
+        withdraw(hidden: filter.hiddenProcessNames)
         guard isAuthorized, settings.preferences.value.notifiesOnNewReports else {
             return UnreadBadge.set(0)
         }
@@ -201,6 +203,22 @@ final class CrashNotice {
         UNUserNotificationCenter.current().add(
             UNNotificationRequest(identifier: summary.id, content: content, trigger: nil)
         ) { _ in }
+    }
+
+    /// Hiding a process takes its reports off the list; the banners already
+    /// in Notification Center go with them. Both posters put the process name
+    /// in `threadIdentifier`, so it is the one thing to match on.
+    private func withdraw(hidden names: Set<String>) {
+        guard !names.isEmpty, names != withdrawnNames else { return }
+        withdrawnNames = names
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { delivered in
+            let identifiers = delivered
+                .filter { names.contains($0.request.content.threadIdentifier) }
+                .map(\.request.identifier)
+            guard !identifiers.isEmpty else { return }
+            center.removeDeliveredNotifications(withIdentifiers: identifiers)
+        }
     }
 
     private func readAuthorization() async {

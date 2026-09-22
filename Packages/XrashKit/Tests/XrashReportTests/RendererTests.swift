@@ -65,6 +65,16 @@ final class RendererTests: XCTestCase {
         XCTAssertTrue(try ReportRenderer.prettyJSON(decode(Fixture.panic)).contains("18446741874833784832"))
     }
 
+    /// A JSON header over a text body: the header is indented, the text kept.
+    func testPrettyJSONIndentsAHeaderOverText() throws {
+        let report = try decode(Fixture.diskWrites)
+        let pretty = ReportRenderer.prettyJSON(report)
+        XCTAssertTrue(pretty.hasPrefix("{\n"))
+        XCTAssertTrue(pretty.contains("\"app_name\" : \"Relaxin\""))
+        XCTAssertTrue(pretty.contains("\n\nDate/Time:        2026-09-18"))
+        XCTAssertTrue(pretty.hasSuffix("Active cpus:      6\n"))
+    }
+
     /// Several JSON objects on several lines: not a header plus a body, so it
     /// comes back untouched rather than half-formatted.
     func testPrettyJSONLeavesNonPairsAlone() throws {

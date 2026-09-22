@@ -103,6 +103,9 @@ public struct Report: Codable, Hashable, Sendable {
     public var crash: CrashReport?
     public var jetsam: JetsamReport?
     public var panic: PanicReport?
+    /// Present for the hang and resource reports whose body is Microstackshots
+    /// text rather than JSON.
+    public var resource: ResourceReport?
     /// The file as text, untouched — what the JSON viewer shows.
     public var rawText: String
 
@@ -312,6 +315,15 @@ public struct JetsamProcess: Codable, Hashable, Sendable {
     public init(name: String, residentPages: UInt64) {
         self.name = name
         self.residentPages = residentPages
+    }
+}
+
+public struct ResourceReport: Codable, Hashable, Sendable {
+    /// `cpu usage`, `disk writes`, `wakeups` — the body's `Event:` field, as written.
+    public var event: String
+
+    public init(event: String) {
+        self.event = event
     }
 }
 

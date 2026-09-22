@@ -6,8 +6,9 @@ public enum ReportDecodingError: Error, Equatable, Sendable {
     case unreadable
 }
 
-/// `.ips` (a header JSON line, then a body JSON object), the legacy text
-/// `.crash`, and anything else as `.other` with its text kept.
+/// `.ips` (a header JSON line, then a body JSON object), a jailbreak's basebin
+/// log, the legacy text `.crash`, and anything else as `.other` with its text
+/// kept.
 public enum ReportDecoder {
     /// A row for the list from the name alone — no file is opened.
     /// `Fila-2026-09-08-191717.ips.synced` → process `Fila`, that date, synced.
@@ -61,7 +62,11 @@ public enum ReportDecoder {
         if let report = IPSDecoder.decode(text: text) {
             return report
         }
-        return LegacyCrashDecoder.decode(text: text, kind: ReportFileName(fileName).kind)
+        let name = ReportFileName(fileName)
+        if let report = BasebinCrashDecoder.decode(text: text, fileName: name) {
+            return report
+        }
+        return LegacyCrashDecoder.decode(text: text, kind: name.kind)
     }
 
     // MARK: Grouping

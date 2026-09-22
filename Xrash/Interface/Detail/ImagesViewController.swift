@@ -8,10 +8,11 @@ import XrashReport
 final class ImagesViewController: UITableViewController, UISearchResultsUpdating {
     private let crash: CrashReport
     private let packages: DpkgDatabase?
-    private var dataSource: SectionedTableDataSource<Int, String>!
+    /// Rows are load addresses: the one thing every report gives every image.
+    private var dataSource: SectionedTableDataSource<Int, UInt64>!
     private var shown = [BinaryImage]()
     private var searchText = ""
-    private var focusUUID: String?
+    private var focus: BinaryImage?
 
     init(crash: CrashReport, packages: DpkgDatabase?) {
         self.crash = crash
@@ -25,8 +26,8 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
     }
 
     /// Opens with one image already found — what "Show Image" on a frame does.
-    func focus(on uuid: String) {
-        focusUUID = uuid
+    func focus(on image: BinaryImage) {
+        focus = image
     }
 
     override func viewDidLoad() {
@@ -44,17 +45,17 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         definesPresentationContext = true
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "image")
-        dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, uuid in
+        dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, base in
             let cell = tableView.dequeueReusableCell(withIdentifier: "image", for: indexPath)
-            self?.configure(cell, uuid: uuid)
+            self?.configure(cell, base: base)
             return cell
         }
         dataSource.header = { [weak self] _ in
             String(inflecting: "^[\(self?.shown.count ?? 0) image](inflect: true)")
         }
-        if let focusUUID, let image = crash.images.first(where: { $0.uuid == focusUUID }) {
-            search.searchBar.text = image.name
-            searchText = image.name
+        if let focus {
+            search.searchBar.text = focus.name
+            searchText = focus.name
         }
         render()
     }
@@ -72,12 +73,12 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
                 .compactMap(\.self)
                 .contains { $0.matches(needle) }
         }
-        var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+        var snapshot = NSDiffableDataSourceSnapshot<Int, UInt64>()
         if !shown.isEmpty {
             snapshot.appendSections([0])
-            // The UUID is the identity a symbolicator uses; duplicates in one
-            // report would be the same binary mapped twice.
-            snapshot.appendItems(shown.map(\.uuid).removingDuplicates())
+            // Not the UUID: a jailbreak's own reporter lists images without
+            // one. Two images at one address would be a corrupt report.
+            snapshot.appendItems(shown.map(\.base).removingDuplicates())
         }
         dataSource.apply(snapshot, animatingDifferences: false)
         tableView.setEmptyState(shown.isEmpty ? .message(
@@ -88,8 +89,8 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         ) : nil)
     }
 
-    private func configure(_ cell: UITableViewCell, uuid: String) {
-        guard let image = shown.first(where: { $0.uuid == uuid }) else { return }
+    private func configure(_ cell: UITableViewCell, base: UInt64) {
+        guard let image = shown.first(where: { $0.base == base }) else { return }
         var configuration = UIListContentConfiguration.subtitleCell()
         configuration.text = image.name
         configuration.secondaryTextProperties.numberOfLines = 0
@@ -99,7 +100,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         let owner = packages?.owner(ofPath: image.path)
         configuration.secondaryText = [
             [image.arch, ReportFormat.address(image.base)].compactMap(\.self).joined(separator: " · "),
-            image.uuid,
+            image.uuid.isEmpty ? nil : image.uuid,
             owner.map { [$0.name ?? $0.identifier, $0.version].compactMap(\.self).joined(separator: " ") },
         ].compactMap(\.self).joined(separator: "\n")
         cell.contentConfiguration = configuration
@@ -108,8 +109,8 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard let uuid = dataSource.itemIdentifier(for: indexPath),
-              let image = shown.first(where: { $0.uuid == uuid }) else { return }
+        guard let base = dataSource.itemIdentifier(for: indexPath),
+              let image = shown.first(where: { $0.base == base }) else { return }
         inspectBinary(image)
     }
 
@@ -118,8 +119,8 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         contextMenuConfigurationForRowAt indexPath: IndexPath,
         point _: CGPoint
     ) -> UIContextMenuConfiguration? {
-        guard let uuid = dataSource.itemIdentifier(for: indexPath),
-              let image = shown.first(where: { $0.uuid == uuid }) else { return nil }
+        guard let base = dataSource.itemIdentifier(for: indexPath),
+              let image = shown.first(where: { $0.base == base }) else { return nil }
         let owner = packages?.owner(ofPath: image.path)
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             var elements: [UIMenuElement] = [

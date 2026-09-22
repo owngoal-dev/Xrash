@@ -1,0 +1,35 @@
+Device Model:   iPhone11,8
+Device Version: Version 18.7.1 (Build 22H31)
+Architecture:   arm64e
+
+Signal: SIGABRT (6)
+
+Thread 15830 crashed.
+
+errno = 0, code = 0, status = 6
+address = 0x00000001EBED81DC, value = 0x0000000000000000, band = 0x0
+
+Register State:
+x0 = 0x0000000000000000
+x1 = 0x0000000000000000
+x19 = 0x0000000000000006
+x28 = 0x0046118205BC3D00
+lr = 0x0000000225513C1C
+pc = 0x00000001EBED81DC
+sp = 0x000000016BF1E410
+fp = 0x000000016BF1E430
+cpsr = 0x40000000
+esr = 0x56000080
+far = 0x0000000000000000
+
+Stack trace:
+pc = 0x00000001EBED81DC
+lr = 0x0000000225513C1C
+fp = 0x000000016BF1E430
+
+Images:
+0x000000010419C000	/private/var/containers/Bundle/Application/.jbroot-0000000000000000/basebin/launchdhook.dylib
+0x000000010410C000	/sbin/launchd
+0x0000000225508000	/usr/lib/system/libsystem_blocks.dylib
+0x00000001A3038000	/usr/lib/system/libsystem_c.dylib
+0x00000001EBED3000	/usr/lib/system/libsystem_kernel.dylib

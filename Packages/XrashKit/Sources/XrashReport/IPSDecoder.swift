@@ -45,7 +45,13 @@ enum IPSDecoder {
 
         let kind = BugType.kind(of: header.bugType)
         var report = Report(header: header, kind: kind, rawText: text)
-        guard parts.count > 1, let body = json(Data(parts[1].utf8)) else { return report }
+        guard parts.count > 1 else { return report }
+        guard let body = json(Data(parts[1].utf8)) else {
+            if kind == .hang || kind == .resource {
+                report.resource = resource(from: parts[1])
+            }
+            return report
+        }
 
         switch kind {
         case .crash:
@@ -81,6 +87,16 @@ enum IPSDecoder {
             return process
         }
         return report
+    }
+
+    /// A Microstackshots body is `Field:   value` lines over a sample tree. The
+    /// field that says what limit was crossed sits in the first screenful.
+    private static func resource(from body: Substring) -> ResourceReport? {
+        for line in body.prefix(4096).split(separator: "\n") where line.hasPrefix("Event:") {
+            let event = line.dropFirst("Event:".count).trimmingCharacters(in: .whitespaces)
+            return event.isEmpty ? nil : ResourceReport(event: event)
+        }
+        return nil
     }
 
     private static func panic(from body: [String: Any]) -> PanicReport? {

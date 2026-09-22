@@ -16,6 +16,9 @@ final class FileNameTests: XCTestCase {
             ("Crasher_2019-01-02-123456_iPhone.crash", "Crasher", .crash, false),
             ("SiriSearchFeedback-2026-09-05-133708.000.ips.synced", "SiriSearchFeedback", .analytics, true),
             ("spotlight_heartbeat_last.log", "spotlight_heartbeat_last", .other, false),
+            // A basebin reporter's epoch and pid, with and without the dot.
+            ("launchd-1789883447.990538-1-2026-09-20-135048.ips", "launchd", .crash, false),
+            ("jailbreakd-178988300887279-891-2026-09-20-134328.ips", "jailbreakd", .crash, false),
         ]
         for (fileName, process, kind, synced) in cases {
             let parsed = ReportFileName(fileName)

@@ -12,6 +12,9 @@ enum Fixture {
     static let census = "Analytics-Census-2026-09-15-143550.ips.ca.synced"
     static let jetsam = "JetsamEvent-2026-09-10-101010.ips"
     static let legacy = "Crasher_2019-01-02-123456_iPhone.crash"
+    static let diskWrites = "Relaxin-2026-09-18-173715.ips"
+    static let basebinException = "launchd-1789883447.990538-1-2026-09-20-135048.ips"
+    static let basebinSignal = "launchd-178988300887279-1-2026-09-20-134328.ips"
 
     static func data(_ name: String, file: StaticString = #filePath, line: UInt = #line) throws -> Data {
         let root = try XCTUnwrap(Bundle.module.resourceURL, "no resource bundle", file: file, line: line)

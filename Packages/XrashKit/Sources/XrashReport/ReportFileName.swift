@@ -11,6 +11,8 @@ struct ReportFileName {
     var date: Date?
     var kind: ReportKind
     var isSynced: Bool
+    /// Only a basebin report's name carries one.
+    var pid: Int32?
 
     /// Packaging, not identity: peeled off the end in any order, along with a
     /// numeric `.0002` de-duplication counter.
@@ -20,6 +22,11 @@ struct ReportFileName {
     private static let resourceMarkers = ["cpu_resource", "wakeups_resource", "diskwrites_resource"]
 
     private static let stamp = NSRegularExpression(literal: "^(.*?)[-_](\\d{4}-\\d{2}-\\d{2}-\\d{6})")
+
+    /// `launchd-1789969423.319857-1` — a jailbreak's basebin reporter puts the
+    /// epoch, its microseconds and the pid between the name and the stamp. The
+    /// dot does not survive every tool a report passes through.
+    private static let basebinTail = NSRegularExpression(literal: "^(.+)-\\d{9,10}\\.?\\d{1,6}-(\\d+)$")
 
     init(_ fileName: String) {
         var stem = fileName
@@ -44,6 +51,10 @@ struct ReportFileName {
         }
         for marker in Self.resourceMarkers where processName.hasSuffix(".\(marker)") {
             processName = String(processName.dropLast(marker.count + 1))
+        }
+        if let groups = Self.basebinTail.groups(in: processName) {
+            processName = groups[1]
+            pid = Int32(groups[2])
         }
     }
 

@@ -491,7 +491,7 @@ extension UIViewController {
             ) { [weak self] _ in
                 guard let self else { return }
                 let images = ImagesViewController(crash: crash, packages: AppEnvironment.shared.packages)
-                images.focus(on: image.uuid)
+                images.focus(on: image)
                 navigationController?.pushViewController(images, animated: true)
             })
         }

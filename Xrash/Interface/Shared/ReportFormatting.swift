@@ -69,9 +69,11 @@ enum ReportFormat {
     }
 
     /// `EXC_CRASH (SIGABRT) · 0.3.7 (58)`. Falls back to the kind while the
-    /// report is still just a name on disk.
+    /// report is still just a name on disk — and when it was read and had no
+    /// reason to give, which the list remembers as an empty string.
     static func subtitle(for summary: ReportSummary, reason: String?) -> String {
-        [reason ?? kindLabel(summary.kind), summary.appVersion]
+        let reason = reason?.isEmpty == false ? reason : nil
+        return [reason ?? kindLabel(summary.kind), summary.appVersion]
             .compactMap(\.self)
             .joined(separator: " · ")
     }
