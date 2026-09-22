@@ -227,10 +227,17 @@ final class ReportCrashViewController: UITableViewController {
                     with: suggestion.summary,
                     detail: RelationText.label(for: suggestion.relation)
                 )
+                // The plus is the whole of what the row offers and an image
+                // view says nothing: the cell's own line has to carry it.
+                // `configure` has just written that line, so this reads it
+                // once rather than piling onto a recycled row's.
+                cell.accessibilityLabel = [cell.accessibilityLabel, String(localized: "Add")]
+                    .compactMap(\.self).joined(separator: ", ")
             }
             cell.accessoryView = UIImageView(image: UIImage(systemName: "plus.circle.fill")).then {
                 $0.tintColor = view.tintColor
                 $0.sizeToFit()
+                $0.isAccessibilityElement = false
             }
             return cell
 
@@ -252,6 +259,9 @@ final class ReportCrashViewController: UITableViewController {
             ) as! FormTextFieldCell
             cell.textField.text = bundleTitle
             cell.textField.placeholder = String(localized: "Title")
+            // A placeholder names the field only while it is empty, and a text
+            // field in a row takes no name from the row.
+            cell.textField.accessibilityLabel = String(localized: "Title")
             cell.textField.removeTarget(self, action: nil, for: .editingChanged)
             cell.textField.addTarget(self, action: #selector(titleChanged), for: .editingChanged)
             return cell

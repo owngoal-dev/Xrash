@@ -487,14 +487,18 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         lockedProcessName == nil ? filterItem : deleteProcessItem
     }
 
-    private lazy var filterItem = UIBarButtonItem(
-        image: UIImage(systemName: "line.3.horizontal.decrease"),
-        menu: UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                completion(self?.filterElements() ?? [])
-            },
-        ])
-    )
+    private lazy var filterItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(
+            image: UIImage(systemName: "line.3.horizontal.decrease"),
+            menu: UIMenu(children: [
+                UIDeferredMenuElement.uncached { [weak self] completion in
+                    completion(self?.filterElements() ?? [])
+                },
+            ])
+        )
+        item.accessibilityLabel = String(localized: "Filter")
+        return item
+    }()
 
     private lazy var deleteProcessItem: UIBarButtonItem = {
         let item = UIBarButtonItem(

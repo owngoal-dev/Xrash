@@ -132,6 +132,8 @@ final class ProgressCoverViewController: UIViewController {
         }
         spinner.hidesWhenStopped = true
         bar.progressTintColor = AlertControllerConfiguration.accentColor
+        // A bar reads out its percentage but has nothing to call itself.
+        bar.accessibilityLabel = String(localized: "Overall progress")
         let gauge = UIView()
         gauge.addSubview(bar)
         gauge.addSubview(spinner)

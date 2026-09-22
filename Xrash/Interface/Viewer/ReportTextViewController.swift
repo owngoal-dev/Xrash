@@ -174,7 +174,7 @@ final class ReportTextViewController: UIViewController {
     // MARK: Bar
 
     private func renderBarItems() {
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
+        let more = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
             menu: UIMenu(children: [
                 UIDeferredMenuElement.uncached { [weak self] completion in
@@ -182,6 +182,8 @@ final class ReportTextViewController: UIViewController {
                 },
             ])
         )
+        more.accessibilityLabel = String(localized: "More")
+        navigationItem.rightBarButtonItem = more
     }
 
     /// Offered by whoever owns the bar — this screen when it is pushed, the

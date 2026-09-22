@@ -51,7 +51,11 @@ final class EmptyStateView: UIView {
                     systemName: symbolName,
                     withConfiguration: UIImage.SymbolConfiguration(font: titleFont)
                 )
-            ).then { $0.tintColor = .secondaryLabel }
+            ).then {
+                $0.tintColor = .secondaryLabel
+                // The title below says what the symbol stands for.
+                $0.isAccessibilityElement = false
+            }
             let titleLabel = label(title, style: .title3, color: .label).then { $0.font = titleFont }
             var views: [UIView] = [symbol, titleLabel]
             if let description {
