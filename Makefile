@@ -124,8 +124,8 @@ set-version:
 	@"$(VERSION_APPLIER)" "$(VERSION)" $(BUILD)
 
 # Every build gets its own number, so a device can say which build it runs.
-# CI is exempt: the workflow pins the build number to its run number, and a
-# bump there would ship an artifact that disagrees with the tag.
+# CI is exempt: it builds and publishes the commit's own number, and a bump
+# there would ship an artifact that disagrees with the commit that was tested.
 bump-build:
 	@if [ -n "$${CI:-}" ]; then echo "==> CI: keeping build $(BUILD_NUMBER)"; else \
 		"$(VERSION_APPLIER)" "$(APP_VERSION)" $$(( $(BUILD_NUMBER) + 1 )) >/dev/null; \

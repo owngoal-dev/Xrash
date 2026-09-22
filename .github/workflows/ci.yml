@@ -1,0 +1,248 @@
+# Pushes and pull requests: the host tests on one runner and, beside them, one
+# runner per product — the roothide package, the rootless package and the macOS
+# zip — each compiling, packaging and verifying its own. A last job collects the
+# three into the single artifact `xrash-<sha>` and keeps it for thirty days.
+#
+# Nothing is published from here: a tag publishes, through `release.yml`, the
+# artifact of its commit's run, once that run has passed.
+#
+# The version is the commit's. `make set-version`, the release note and the tag
+# are one commit; CI builds what Configuration/Version.xcconfig says, and the
+# release refuses anything not named for its tag.
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A pull request's new push cancels the run of its old one. A push to main
+# keeps its own run however soon the next one follows, since a tag on that
+# commit publishes what that run built — cancelling it destroys the artifact
+# the tag needs.
+concurrency:
+  group: xrash-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_ANALYTICS: "1"
+
+jobs:
+  test:
+    name: Run host tests
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run the XrashKit harness
+        run: make harness
+
+  package-deb:
+    name: Build and verify the ${{ matrix.flavor }} package
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - flavor: roothide
+            prefix: ""
+          - flavor: rootless
+            prefix: /var/jb
+
+    steps:
+      - name: Configure build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "DERIVED_DATA=$RUNNER_TEMP/xrash-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install packaging dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          formulae=()
+          command -v dpkg-deb >/dev/null 2>&1 || formulae+=(dpkg)
+          command -v ldid >/dev/null 2>&1 || formulae+=(ldid)
+          if (( ${#formulae[@]} > 0 )); then
+            brew install "${formulae[@]}"
+          fi
+
+      - name: Build the package with Xcode
+        run: |
+          xcodebuild -version
+          make deb FLAVOR=${{ matrix.flavor }} CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA" SKIP_HARNESS=1
+
+      # On a tag — the dispatch that rebuilds a commit whose artifact has aged
+      # out — the built version has to be the tag's, or the release would
+      # publish a package named for something else.
+      - name: Verify the package
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(make --no-print-directory print-version)"
+          APP_PATH="$DERIVED_DATA/Build/Products/Release-iphoneos/Xrash.app"
+          DAEMON_PATH="$DERIVED_DATA/Build/Products/Release-iphoneos/xrashd"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            test "$VERSION" = "${GITHUB_REF_NAME#v}"
+          fi
+          test "$(lipo -archs "$APP_PATH/Xrash")" = "arm64"
+          test "$(lipo -archs "$DAEMON_PATH")" = "arm64"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$APP_PATH/Info.plist")" = "AppIcon"
+          make audit-floor CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA"
+          DEB_PATH="$(make --no-print-directory print-deb-path FLAVOR=${{ matrix.flavor }})"
+          ARCHITECTURE="$(dpkg-deb -f "$DEB_PATH" Architecture)"
+          ./Scripts/verify-deb.sh "$DEB_PATH" wiki.qaq.xrash "$VERSION" "$ARCHITECTURE" "${{ matrix.prefix }}"
+          dpkg-deb --info "$DEB_PATH"
+          dpkg-deb --contents "$DEB_PATH"
+
+      # Each flavour is its own build on its own machine, so each ships the
+      # dSYMs of its own binaries; neither strip nor ldid touches LC_UUID.
+      - name: Archive dSYMs and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(make --no-print-directory print-version)"
+          DSYM_ZIP="$PWD/build/Packages/Xrash_${VERSION}_${{ matrix.flavor }}_dSYMs.zip"
+          (cd "$DERIVED_DATA/Build/Products/Release-iphoneos" && zip -qry "$DSYM_ZIP" *.dSYM)
+          cd build/Packages
+          shasum -a 256 *.deb *_dSYMs.zip | tee SHA256SUMS.${{ matrix.flavor }}
+          {
+            echo "### ${{ matrix.flavor }}"
+            echo
+            echo '```'
+            cat SHA256SUMS.${{ matrix.flavor }}
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # This runner's share of `xrash-<sha>`, kept as long as the collected
+      # artifact so a failed collect can be finished by hand.
+      - name: Upload the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: xrash-${{ matrix.flavor }}-${{ github.sha }}
+          path: |
+            build/Packages/*.deb
+            build/Packages/*_dSYMs.zip
+            build/Packages/SHA256SUMS.${{ matrix.flavor }}
+          if-no-files-found: error
+          retention-days: 30
+
+  package-macos:
+    name: Build and verify the macOS app
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Configure build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "DERIVED_DATA=$RUNNER_TEMP/xrash-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # No ldid or dpkg here: `make mac-zip` deliberately does not depend on
+      # `make check`, so a machine with nothing but Xcode can produce the zip.
+      #
+      # The zip is ad-hoc signed. A runner has no Developer ID certificate and
+      # nothing here should invent one, so the artifact is exactly what
+      # `make mac-zip` produces on a checkout with no identity; whoever installs
+      # it clears the quarantine bit once, and the release note says so.
+      # Signing it properly is a local `make mac-zip MAC_ZIP_IDENTITY=...` away.
+      - name: Build the macOS app
+        run: |
+          xcodebuild -version
+          make mac-zip DERIVED_DATA="$DERIVED_DATA"
+
+      - name: Verify the bundled helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(mktemp -d)/Xrash.app"
+          ditto -x -k build/Packages/Xrash-*-macos.zip "$(dirname "$app")"
+          test -x "$app/Contents/MacOS/xrashd" || { echo "the helper is missing" >&2; exit 1; }
+          test -f "$app/Contents/Library/LaunchAgents/wiki.qaq.xrashd.plist" \
+            || { echo "the bundled agent plist is missing" >&2; exit 1; }
+          lipo -info "$app/Contents/MacOS/Xrash"
+          lipo -info "$app/Contents/MacOS/xrashd"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+      # The app is the Catalyst build, the helper the plain macOS one.
+      - name: Archive dSYMs and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(make --no-print-directory print-version)"
+          DSYM_ZIP="$PWD/build/Packages/Xrash_${VERSION}_macos_dSYMs.zip"
+          (cd "$DERIVED_DATA/Build/Products" && zip -qry "$DSYM_ZIP" Release-maccatalyst/*.dSYM Release/*.dSYM)
+          cd build/Packages
+          shasum -a 256 *.zip | tee SHA256SUMS.macos
+
+      - name: Upload the app
+        uses: actions/upload-artifact@v7
+        with:
+          name: xrash-macos-${{ github.sha }}
+          path: |
+            build/Packages/*.zip
+            build/Packages/SHA256SUMS.macos
+          if-no-files-found: error
+          retention-days: 30
+
+  # The three runners' output, collected into the one artifact a tag publishes.
+  # `release.yml` downloads it by name and checks this list before it touches a
+  # release, so the list is written here, over everything the run built, rather
+  # than at tag time by a job that built nothing.
+  #
+  # The host tests gate it, as they gated the old workflow's publish job: the
+  # collected artifact exists only for a run where everything passed.
+  bundle:
+    name: Collect the packages
+    needs: [test, package-deb, package-macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download each runner's packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: xrash-*-${{ github.sha }}
+          path: build/Packages
+          merge-multiple: true
+
+      - name: Write one checksum list over everything the run built
+        working-directory: build/Packages
+        run: |
+          set -euo pipefail
+          cat SHA256SUMS.roothide SHA256SUMS.rootless SHA256SUMS.macos > SHA256SUMS
+          rm SHA256SUMS.roothide SHA256SUMS.rootless SHA256SUMS.macos
+          sha256sum --check SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload the packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: xrash-${{ github.sha }}
+          path: build/Packages
+          if-no-files-found: error
+          retention-days: 30
