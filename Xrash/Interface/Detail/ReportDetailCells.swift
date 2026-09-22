@@ -213,16 +213,27 @@ final class FrameCell: UITableViewCell {
         menuButton.showsMenuAsPrimaryAction = true
         menuButton.menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
-                completion(self?.menuProvider?() ?? [])
+                completion(self?.menuProvider?().menuElements ?? [])
             },
         ])
         contentView.addSubview(menuButton)
         menuButton.snp.makeConstraints { $0.edges.equalToSuperview() }
         selectionStyle = .none
+        // An index, a symbol and an origin are one line of a stack, so they
+        // are one stop and the label `configure` assembles is what is read —
+        // a cell is not an accessibility element until it is told to be. That
+        // hides the button covering the row, so the menu it opens is offered
+        // through the rotor instead; see `menuProvider`.
+        isAccessibilityElement = true
     }
 
-    /// Asked each time the menu opens.
-    var menuProvider: (() -> [UIMenuElement])?
+    /// Asked each time the menu opens, and once here for the rotor: the row
+    /// reads as one element, which puts the button that opens the menu out of
+    /// VoiceOver's reach, so the same things become custom actions.
+    var menuProvider: (() -> [RowMenuAction])? {
+        didSet { accessibilityCustomActions = menuProvider?().accessibilityActions }
+    }
+
     private let menuButton = UIButton(type: .custom)
 
     @available(*, unavailable)
