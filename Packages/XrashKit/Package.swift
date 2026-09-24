@@ -25,20 +25,15 @@ let package = Package(
         // trusts what it reads and traps on nonsense: XrashSymbols validates
         // headers before handing it a file.
         .package(url: "https://github.com/p-x9/MachOKit.git", from: "0.52.2"),
-        // MachOKit's own dependency, named here only to hold it back: 0.15.0
-        // dropped what swift-fileio-extra 0.2.2 reads. XrashSymbols lists the
-        // product because Xcode drops the constraint of a dependency no target
-        // uses. Goes when MachOKit has a release that builds against 0.15.
-        .package(url: "https://github.com/p-x9/swift-fileio.git", "0.14.0" ..< "0.15.0"),
         // Zip writing and reading for `.xrashreport` and zipped dSYMs.
-        .package(url: "https://github.com/Lakr233/libarchive.xcframework.git", from: "0.1.1"),
+        .package(url: "https://github.com/Lakr233/libarchive.xcframework.git", from: "1.0.0"),
         // Read-only system state — launchd, LaunchServices, processes, jetsam —
         // for the report bundle. `IcliSystem` is the half of icli that links
         // Foundation and CoreFoundation and nothing else, and it resolves every
         // private symbol it names at runtime, so it is safe on an iOS 15 floor.
         // Nothing here changes system state; the half that does stays in
         // `IcliKit`, which this does not link.
-        .package(url: "https://github.com/owngoal-dev/icli.git", from: "0.5.0"),
+        .package(url: "https://github.com/owngoal-dev/icli.git", from: "0.6.8"),
     ],
     targets: [
         // The wire vocabulary. Compiled into both sides, so it must stay free
@@ -66,7 +61,6 @@ let package = Package(
             dependencies: [
                 "XrashReport",
                 .product(name: "MachOKit", package: "MachOKit"),
-                .product(name: "FileIO", package: "swift-fileio"),
             ]
         ),
 
@@ -78,13 +72,7 @@ let package = Package(
             name: "XrashBundle",
             dependencies: [
                 "XrashReport",
-                // The Swift wrapper and its C framework differ only by case.
-                // Give the wrapper a distinct module name for Xcode's loader.
-                .product(
-                    name: "LibArchive",
-                    package: "libarchive.xcframework",
-                    moduleAliases: ["LibArchive": "XrashLibArchive"]
-                ),
+                .product(name: "ArchiveKit", package: "libarchive.xcframework"),
             ]
         ),
 

@@ -1,4 +1,4 @@
-import LibArchive
+import ArchiveKit
 import XCTest
 @testable import XrashBundle
 import XrashReport

@@ -60,7 +60,7 @@ forbid "deletion uses the standard trash symbol:" "$(search '"trash\.slash"' "$u
 # Nothing third-party links into the daemon, and the wire layer it links stays
 # Foundation-only.
 forbid "third-party modules must not link into xrashd or XrashProtocol:" \
-    "$(search '^import (SnapKit|Then|AlertController|SPIndicator|Runestone[A-Za-z]*|MachOKit|LibArchive)' \
+    "$(search '^import (SnapKit|Then|AlertController|SPIndicator|Runestone[A-Za-z]*|MachOKit|ArchiveKit)' \
         "$root/xrashd" \
         "$root/Packages/XrashKit/Sources/XrashProtocol")"
 

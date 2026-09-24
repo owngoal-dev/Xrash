@@ -1,6 +1,6 @@
+import ArchiveKit
 import Darwin
 import Foundation
-import LibArchive
 
 /// Unpacks a zip that someone else may have written.
 ///

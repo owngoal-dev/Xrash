@@ -1,6 +1,6 @@
+import ArchiveKit
 import Darwin
 import Foundation
-import LibArchive
 
 /// The bits both ends of the zip need: libarchive's status convention, and the
 /// locale it insists on converting names through.

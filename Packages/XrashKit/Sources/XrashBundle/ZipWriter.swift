@@ -1,6 +1,6 @@
+import ArchiveKit
 import Darwin
 import Foundation
-import LibArchive
 
 /// Writes the `.xrashreport` zip.
 ///
