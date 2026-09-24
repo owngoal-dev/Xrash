@@ -295,7 +295,7 @@ extension ReportListViewController {
     // MARK: Doing it
 
     func presentReportCrash(for id: String) {
-        let form = UINavigationController(rootViewController: ReportCrashViewController(primaryID: id))
+        let form = SheetNavigationController(rootViewController: ReportCrashViewController(primaryID: id))
         presentAsFormSheet(form)
     }
 

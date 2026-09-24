@@ -40,7 +40,7 @@ final class WelcomeController: UIViewController {
     /// form sheet size rather than `sheetSize`; see `presentAsFormSheet`.
     static func present(from presenter: UIViewController) {
         let controller = WelcomeController()
-        let navigator = UINavigationController(rootViewController: controller).then {
+        let navigator = SheetNavigationController(rootViewController: controller).then {
             // The first page has no title; the page after it titles itself.
             $0.navigationBar.prefersLargeTitles = true
             $0.view.backgroundColor = WelcomeStyle.background

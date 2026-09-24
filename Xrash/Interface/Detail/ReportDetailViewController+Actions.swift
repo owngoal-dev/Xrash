@@ -23,7 +23,7 @@ extension ReportDetailViewController {
                 [weak self] _ in
                 guard let self else { return }
                 presentAsFormSheet(
-                    UINavigationController(rootViewController: ReportCrashViewController(primaryID: reportID))
+                    SheetNavigationController(rootViewController: ReportCrashViewController(primaryID: reportID))
                 )
             },
             reportFileMenu(revealing: reportID),

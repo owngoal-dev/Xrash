@@ -34,8 +34,12 @@ extension UIViewController {
     /// on an iPad — takes no size at all. UIKit does not hold a nested form
     /// sheet to its preferred size: the card jumps on presentation and again on
     /// every push, so it keeps the system's own form sheet size instead.
+    ///
+    /// What is presented is a `SheetNavigationController`, which holds the
+    /// size it opens at. A stock navigation controller adds its bar's height
+    /// on every read, and the sheet followed the bar on a push that changed it.
     func presentAsFormSheet(
-        _ viewController: UIViewController,
+        _ viewController: SheetNavigationController,
         size: CGSize = CGSize(width: 555, height: 555),
         usesDetents: Bool = true
     ) {
@@ -54,7 +58,7 @@ extension UIViewController {
             // navigation controller — and only here: a page that sized itself
             // would resize the sheet on every push and pop. A presenter that
             // is itself presented is a sheet, and this one would be nested.
-            viewController.preferredContentSize = size
+            viewController.holdPreferredContentSize(size)
         }
         present(viewController, animated: true)
     }

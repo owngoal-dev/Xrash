@@ -116,7 +116,7 @@ final class ReportsSplitViewController: UISplitViewController {
         UIAction(title: title, image: UIImage(systemName: symbol)) { [weak self] _ in
             guard let self else { return }
             let page = make()
-            let navigation = UINavigationController(rootViewController: page)
+            let navigation = SheetNavigationController(rootViewController: page)
             page.navigationItem.leftBarButtonItem = UIBarButtonItem(
                 image: UIImage(systemName: "xmark"),
                 primaryAction: UIAction { [weak navigation] _ in navigation?.dismiss(animated: true) }
