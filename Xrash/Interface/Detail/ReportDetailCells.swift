@@ -20,7 +20,6 @@ final class ReportIconHeaderView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        iconView.magnification = Self.iconSide / ReportIconView.size
         // An app's own icon says nothing about how it ended, so the corner
         // does: the kind's colour, cut out of the page the way a badge is.
         badgeView.do {

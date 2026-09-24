@@ -258,6 +258,12 @@ Report which of those actually ran.
 - **A red accent tints a split view's primary column.** The column is a
   material and the selected row an accent fill; the list sets an opaque
   grouped background and its rows name their colours in both states.
+- **IconServices can crash while drawing its placeholder.** On iOS 18.3.1,
+  asking for a fictitious bundle id entered Core Image's OpenGL context and
+  jumped to a null function pointer (2026-09-24). `ApplicationIconProvider`
+  uses LaunchServices only to locate bundles and reads their PNGs or Mac `.icns`;
+  missing icons keep the row's bundled artwork. Do not restore an IconServices
+  probe or renderer, or look up another app's icon through `UIImage(named:)`.
 - **One share sheet, one anchor.** `ReportShare.present` is the only place a
   `UIActivityViewController` is made; `make check` rejects another. Without a
   source view it raises on an iPad.

@@ -41,6 +41,11 @@ forbid "alerts must use AlertController; found UIAlertController / UIAlertAction
 forbid "share sheets go through ReportShare.present, which anchors the popover:" \
     "$(search 'UIActivityViewController\(' "$ui_root" | grep -v 'Shared/ReportShare\.swift' || true)"
 
+# Even an unknown bundle id can enter IconServices' Core Image compositor and
+# crash before returning nil. Icons must come from bundle files instead.
+forbid "app icons must be read from bundle files, not rendered through IconServices:" \
+    "$(search '_applicationIconImageForBundleIdentifier:|_iconForResourceProxy:|NSClassFromString\("IS(Icon|Compositor)' "$ui_root")"
+
 # Every alert card carries a message under its title. An empty or missing
 # `message:` is a bare title over a text field, which reads as unfinished.
 # Kept in a variable: this producer is the one that can fail, and `set -e` only

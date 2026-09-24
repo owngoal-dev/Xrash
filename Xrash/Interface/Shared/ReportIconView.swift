@@ -11,10 +11,6 @@ final class ReportIconView: UIView {
     /// shape at a row's size and at the top of a report.
     private static let cornerShare: CGFloat = 9 / 38
 
-    /// How many times a row's tile this one is drawn at. IconServices is asked
-    /// for that many more pixels, or a large tile is a small one stretched.
-    var magnification: CGFloat = 1
-
     private let imageView = UIImageView()
     private var loadTask: Task<Void, Never>?
     private var shownKey: String?
@@ -65,12 +61,10 @@ final class ReportIconView: UIView {
         let bundleID = summary.kind == .panic ? Bundle.main.bundleIdentifier : summary.bundleID
         guard summary.group == .app || summary.kind == .panic, bundleID != nil || executablePath != nil
         else { return }
-        let scale = traitCollection.displayScale * magnification
         loadTask = Task { [weak self] in
             let icon = await ApplicationIconProvider.shared.icon(
                 bundleID: bundleID,
-                executablePath: executablePath,
-                scale: scale
+                executablePath: executablePath
             )
             guard !Task.isCancelled, let self, let icon, shownKey == key else { return }
             showPicture(icon)
