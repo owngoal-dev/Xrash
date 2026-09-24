@@ -278,7 +278,9 @@ Wide: `ReportsSplitViewController` — the report list beside the open report,
 two columns and never three; Saved, Symbols and Settings are 555×555 form
 sheets off the list's ••• menu (`presentAsFormSheet`, the only place a sheet
 is sized — the welcome passes Irisin's own 520×620 and turns the detents off,
-which leaves it a plain page sheet on a phone). Narrow: the same controller's
+which leaves it a plain page sheet on a phone). A sheet presented from inside a
+sheet — the welcome from Settings — is never given a size: UIKit resizes a
+nested form sheet on every push, so it keeps the system's own. Narrow: the same controller's
 `.compact` column is
 `RootTabBarController`, four tabs. A report's Summary / Details / Raw switch
 is the *View As* submenu at the top of its ••• menu, its subtitle the current

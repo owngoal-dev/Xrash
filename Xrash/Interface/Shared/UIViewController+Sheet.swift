@@ -29,6 +29,11 @@ extension UIViewController {
     /// original was drawn at and turns the detents off, which is what leaves it
     /// a plain page sheet on a phone — with no grabber, since it does not
     /// dismiss by hand until its work is done.
+    ///
+    /// A sheet presented from inside another sheet — the welcome from Settings
+    /// on an iPad — takes no size at all. UIKit does not hold a nested form
+    /// sheet to its preferred size: the card jumps on presentation and again on
+    /// every push, so it keeps the system's own form sheet size instead.
     func presentAsFormSheet(
         _ viewController: UIViewController,
         size: CGSize = CGSize(width: 555, height: 555),
@@ -44,10 +49,11 @@ extension UIViewController {
                 $0.prefersEdgeAttachedInCompactHeight = true
                 $0.widthFollowsPreferredContentSizeWhenEdgeAttached = true
             }
-        } else {
+        } else if presentingViewController == nil {
             // Fila's and Irisin's card. Set on what is presented — the
             // navigation controller — and only here: a page that sized itself
-            // would resize the sheet on every push and pop.
+            // would resize the sheet on every push and pop. A presenter that
+            // is itself presented is a sheet, and this one would be nested.
             viewController.preferredContentSize = size
         }
         present(viewController, animated: true)

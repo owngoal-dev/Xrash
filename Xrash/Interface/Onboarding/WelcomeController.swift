@@ -36,7 +36,8 @@ final class WelcomeController: UIViewController {
     /// on an iPad, that is a sheet presenting a sheet, which is legal because
     /// what presents is the navigation controller Settings sits in and it is
     /// presenting nothing: the welcome lands on top and leaves Settings behind
-    /// it, where the reader came from.
+    /// it, where the reader came from. Nested like that it takes the system's
+    /// form sheet size rather than `sheetSize`; see `presentAsFormSheet`.
     static func present(from presenter: UIViewController) {
         let controller = WelcomeController()
         let navigator = UINavigationController(rootViewController: controller).then {
