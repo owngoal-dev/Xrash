@@ -9,17 +9,28 @@ import XrashProtocol
 enum ApplicationBundleLocator {
     /// An executable path inside `Host.app/PlugIns/Extension.appex` belongs to
     /// the host app, so the first `.app` component is the answer for both the
-    /// main executable and every plug-in.
+    /// main executable and every plug-in. This reads the spelling only; the
+    /// bundle is canonicalised by `installedApplication` before it is opened.
     static func hostApplicationPath(for executablePath: String) -> String? {
-        guard let path = PathGuard.canonical(executablePath),
-              path.range(of: "/Bundle/Application/", options: .caseInsensitive) != nil
-            || path.range(of: "/Applications/", options: .caseInsensitive) != nil,
-            let appBoundary = path.range(of: ".app/", options: .caseInsensitive)
-        else {
-            return nil
-        }
-        let trailingSlash = path.index(before: appBoundary.upperBound)
-        return String(path[..<trailingSlash])
+        guard executablePath.hasPrefix("/"), !executablePath.utf8.contains(0) else { return nil }
+        let components = (executablePath as NSString).pathComponents
+        guard let bundle = components.dropFirst().firstIndex(where: { $0.lowercased().hasSuffix(".app") }),
+              bundle < components.count - 1 else { return nil }
+        return NSString.path(withComponents: Array(components[...bundle]))
+    }
+
+    /// `realpath(3)` of the bundle, not of the executable: a main binary that
+    /// is a link out of its `.app` still names that `.app`. Kept only when the
+    /// canonical components are an `.app` below an `Applications` directory
+    /// or a `Bundle/Application` container.
+    static func installedApplication(at applicationPath: String) -> String? {
+        guard let path = PathGuard.canonical(applicationPath) else { return nil }
+        let components = (path as NSString).pathComponents.map { $0.lowercased() }
+        guard let bundle = components.last, bundle.hasSuffix(".app") else { return nil }
+        let parents = components.dropLast()
+        let installed = parents.contains("applications")
+            || zip(parents, parents.dropFirst()).contains { $0 == "bundle" && $1 == "application" }
+        return installed ? path : nil
     }
 }
 
@@ -64,14 +75,15 @@ actor ApplicationIconProvider {
         applicationPath: String?
     ) -> UIImage? {
         autoreleasepool {
-            if let bundleID, let bundle = registeredBundle(identifier: bundleID),
-               let icon = bundledIcon(in: bundle)
-            {
+            let registered = bundleID.flatMap(registeredBundlePath)
+            if let registered, let icon = bundledIcon(at: registered) {
                 return icon
             }
-            guard let applicationPath, let path = PathGuard.canonical(applicationPath),
-                  let bundle = Bundle(path: path) else { return nil }
-            return bundledIcon(in: bundle)
+            // The executable's own bundle, unless that is the one just read.
+            guard let applicationPath,
+                  let path = ApplicationBundleLocator.installedApplication(at: applicationPath),
+                  path != registered else { return nil }
+            return bundledIcon(at: path)
         }
     }
 
@@ -83,10 +95,10 @@ actor ApplicationIconProvider {
 
     /// Resolve metadata only. No icon method is called on the proxy, and the
     /// private class and selectors are optional on every supported platform.
-    private nonisolated static func registeredBundle(identifier: String) -> Bundle? {
+    private nonisolated static func registeredBundlePath(identifier: String) -> String? {
         guard !identifier.isEmpty, !identifier.utf8.contains(0) else { return nil }
         if identifier == Bundle.main.bundleIdentifier {
-            return .main
+            return PathGuard.canonical(Bundle.main.bundlePath)
         }
         let selector = NSSelectorFromString("applicationProxyForIdentifier:")
         guard let proxyClass = NSClassFromString("LSApplicationProxy"),
@@ -99,20 +111,24 @@ actor ApplicationIconProvider {
         guard let proxy = implementation(proxyClass as AnyObject, selector, identifier as NSString)?.takeUnretainedValue(),
               proxy.responds(to: bundleURL),
               let url = proxy.perform(bundleURL)?.takeUnretainedValue() as? URL,
-              url.isFileURL, let path = PathGuard.canonical(url.path) else { return nil }
-        return Bundle(path: path)
+              url.isFileURL else { return nil }
+        return PathGuard.canonical(url.path)
     }
 
+    /// The report header's tile at the densest display: 80 points at 3x.
+    /// Nothing draws an icon larger, so nothing is decoded or kept larger.
+    private static let largestPixelSide = 240
+
     /// actool emits loose fallback PNGs for app icons, including those made
-    /// with Icon Composer. Read those files directly, at their native size,
-    /// so the detail view can share the row's image without scaling it up first.
+    /// with Icon Composer. Read those files directly; the row and the report
+    /// header share the largest one.
     ///
     /// Loose means a file: a name out of someone else's plist is never handed
     /// to `UIImage(named:in:)`. A catalogue built from an Icon Composer `.icon`
     /// holds names that are image stacks with no bitmap, and iOS 26 answers a
     /// lookup of one with an assertion, not nil (`AppIcon` in our own did).
-    private nonisolated static func bundledIcon(in bundle: Bundle) -> UIImage? {
-        guard let resources = bundle.resourceURL,
+    private nonisolated static func bundledIcon(at path: String) -> UIImage? {
+        guard let bundle = Bundle(path: path), let resources = bundle.resourceURL,
               let root = PathGuard.canonical(resources.path) else { return nil }
         let info = bundle.infoDictionary ?? [:]
         var names = info["CFBundleIconFiles"] as? [String] ?? []
@@ -125,49 +141,54 @@ actor ApplicationIconProvider {
                   let files = primary["CFBundleIconFiles"] as? [String] else { continue }
             names.append(contentsOf: files)
         }
+        let stems = Set(names.map { ($0 as NSString).deletingPathExtension }.filter { !$0.isEmpty })
         let files = (try? FileManager.default.contentsOfDirectory(atPath: root)) ?? []
-        // Keep the bitmap with the most pixels for both the row and the
-        // report header. A file can be declared under more than one key.
-        var best: UIImage?
-        var visited = Set<String>()
-        for name in names.reversed() {
-            let stem = (name as NSString).deletingPathExtension
-            guard !stem.isEmpty else { continue }
-            let matches = files.filter { file in
-                let fileStem = (file as NSString).deletingPathExtension
-                let matchesName = fileStem == stem || fileStem.hasPrefix(stem + "@") || fileStem.hasPrefix(stem + "~")
-                return matchesName && ["png", "icns"].contains((file as NSString).pathExtension.lowercased())
-            }
-            for file in matches {
-                if let path = PathGuard.regularFile(root + "/" + file, below: [root]),
-                   visited.insert(path).inserted,
-                   let image = bitmap(at: path),
-                   image.size.width * image.scale > (best.map { $0.size.width * $0.scale } ?? 0)
-                {
-                    best = image
-                }
-            }
+        // Every candidate is measured from its header; only the largest is
+        // decoded. A universal app declares a dozen sizes of the same picture.
+        var best: (source: CGImageSource, index: Int, width: Int)?
+        for file in files where isIconFile(file, declaredBy: stems) {
+            guard let candidate = PathGuard.regularFile(root + "/" + file, below: [root]),
+                  let largest = largestImage(at: candidate),
+                  largest.width > best?.width ?? 0 else { continue }
+            best = largest
         }
-        return best
+        guard let best else { return nil }
+        return decode(best.source, index: best.index)
     }
 
-    /// Native Mac apps declare an .icns file. ImageIO decodes its largest
-    /// bitmap directly too; it does not ask the system to compose an app icon.
-    private nonisolated static func bitmap(at path: String) -> UIImage? {
-        if (path as NSString).pathExtension.lowercased() == "png" {
-            return UIImage(contentsOfFile: path)
+    private nonisolated static func isIconFile(_ file: String, declaredBy stems: Set<String>) -> Bool {
+        guard ["png", "icns"].contains((file as NSString).pathExtension.lowercased()) else { return false }
+        let fileStem = (file as NSString).deletingPathExtension
+        return stems.contains { stem in
+            fileStem == stem || fileStem.hasPrefix(stem + "@") || fileStem.hasPrefix(stem + "~")
         }
+    }
+
+    /// The widest image in a file, read from its properties without decoding
+    /// it. A PNG holds one; a Mac `.icns` holds every size it was made at.
+    private nonisolated static func largestImage(at path: String) -> (source: CGImageSource, index: Int, width: Int)? {
         guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else { return nil }
-        var largestIndex: Int?
-        var largestWidth = 0
+        var largest: (source: CGImageSource, index: Int, width: Int)?
         for index in 0 ..< CGImageSourceGetCount(source) {
             guard let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [String: Any],
                   let width = properties[kCGImagePropertyPixelWidth as String] as? Int,
-                  width > largestWidth else { continue }
-            largestIndex = index
-            largestWidth = width
+                  width > largest?.width ?? 0 else { continue }
+            largest = (source, index, width)
         }
-        guard let largestIndex, let image = CGImageSourceCreateImageAtIndex(source, largestIndex, nil) else { return nil }
+        return largest
+    }
+
+    /// Decoded here, off the main thread, and no larger than the header draws
+    /// it: a Mac app's 1024-pixel `.icns` would otherwise stay in the cache at
+    /// 4 MB for a 38-point row. ImageIO scales down only, never up.
+    private nonisolated static func decode(_ source: CGImageSource, index: Int) -> UIImage? {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: largestPixelSide,
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else { return nil }
         return UIImage(cgImage: image)
     }
 }

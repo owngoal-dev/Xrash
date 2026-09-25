@@ -42,9 +42,11 @@ forbid "share sheets go through ReportShare.present, which anchors the popover:"
     "$(search 'UIActivityViewController\(' "$ui_root" | grep -v 'Shared/ReportShare\.swift' || true)"
 
 # Even an unknown bundle id can enter IconServices' Core Image compositor and
-# crash before returning nil. Icons must come from bundle files instead.
+# crash before returning nil. Icons must come from bundle files instead. Every
+# door into it counts: UIKit's icon methods, LSApplicationProxy's icon data, a
+# class looked up by name however it is looked up, and the framework itself.
 forbid "app icons must be read from bundle files, not rendered through IconServices:" \
-    "$(search '_applicationIconImageForBundleIdentifier:|_iconForResourceProxy:|NSClassFromString\("IS(Icon|Compositor)' "$ui_root")"
+    "$(search '_applicationIconImageForBundleIdentifier|_iconForResourceProxy|[iI]conDataForVariant|"IS(Icon|BundleIcon|Compositor|ImageDescriptor)[A-Za-z]*"|IconServices\.framework' "$ui_root")"
 
 # Every alert card carries a message under its title. An empty or missing
 # `message:` is a bare title over a text field, which reads as unfinished.
