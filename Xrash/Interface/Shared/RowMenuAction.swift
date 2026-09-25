@@ -27,10 +27,15 @@ struct RowMenuAction {
     }
 }
 
-// Closures rather than key paths: a key path to a main-actor-isolated property
-// is an error in the Swift 6 language mode.
+/// Closures rather than key paths: a key path to a main-actor-isolated property
+/// is an error in the Swift 6 language mode.
 @MainActor
 extension [RowMenuAction] {
-    var menuElements: [UIMenuElement] { map { $0.menuElement } }
-    var accessibilityActions: [UIAccessibilityCustomAction] { map { $0.accessibilityAction } }
+    var menuElements: [UIMenuElement] {
+        map { $0.menuElement }
+    }
+
+    var accessibilityActions: [UIAccessibilityCustomAction] {
+        map { $0.accessibilityAction }
+    }
 }
