@@ -54,7 +54,7 @@ final class ReportAnnouncer {
             let source = DispatchSource.makeFileSystemObjectSource(
                 fileDescriptor: descriptor,
                 eventMask: .write,
-                queue: queue
+                queue: queue,
             )
             source.setEventHandler { [weak self] in self?.schedulePass() }
             source.setCancelHandler { close(descriptor) }

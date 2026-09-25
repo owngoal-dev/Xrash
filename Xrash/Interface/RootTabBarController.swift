@@ -10,13 +10,13 @@ final class RootTabBarController: UITabBarController {
         reports.openReport = { [weak reports] summary in
             reports?.navigationController?.pushViewController(
                 ReportDetailViewController(reportID: summary.id),
-                animated: true
+                animated: true,
             )
         }
         reports.openProcess = { [weak reports] name in
             reports?.navigationController?.pushViewController(
                 ReportListViewController.processPage(for: name),
-                animated: true
+                animated: true,
             )
         }
         viewControllers = [

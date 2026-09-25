@@ -25,7 +25,7 @@ enum ReportPDFRenderer {
             x: margin,
             y: margin + chromeHeight,
             width: pageSize.width - margin * 2,
-            height: pageSize.height - margin * 2 - chromeHeight * 2
+            height: pageSize.height - margin * 2 - chromeHeight * 2,
         )
         let framesetter = CTFramesetterCreateWithAttributedString(body)
         let pages = paginate(framesetter, length: body.length, in: textRect.size)
@@ -97,7 +97,7 @@ enum ReportPDFRenderer {
             String(localized: "Reports in this bundle"),
             style: .heading,
             at: CGPoint(x: margin, y: y),
-            width: width
+            width: width,
         ) + 4
         let columns: [CGFloat] = [0.22, 0.12, 0.3, 0.2, 0.16].map { $0 * width }
         let header = row(
@@ -109,7 +109,7 @@ enum ReportPDFRenderer {
                 String(localized: "Relation"),
             ],
             columns: columns,
-            style: .tableHeader
+            style: .tableHeader,
         )
         let table = NSMutableAttributedString(attributedString: header)
         // ponytail: a cover holds about twenty rows; more than that and the
@@ -125,19 +125,19 @@ enum ReportPDFRenderer {
                     relationText(member.relation),
                 ],
                 columns: columns,
-                style: .table
+                style: .table,
             ))
         }
         if members.count > Self.coverRowLimit {
             table.append(attributed(
                 String(inflecting: "^[\(members.count - Self.coverRowLimit) more report](inflect: true) not listed."),
-                style: .caption
+                style: .caption,
             ))
         }
         table.draw(
             with: CGRect(x: margin, y: y, width: width, height: pageSize.height - y - margin),
             options: [.usesLineFragmentOrigin],
-            context: nil
+            context: nil,
         )
     }
 
@@ -146,7 +146,7 @@ enum ReportPDFRenderer {
     private static func bodyText(
         for manifest: BundleManifest,
         packages: DpkgDatabase?,
-        width: CGFloat
+        width: CGFloat,
     ) -> NSAttributedString {
         let text = NSMutableAttributedString()
         for member in [manifest.primary] + manifest.linked {
@@ -159,7 +159,7 @@ enum ReportPDFRenderer {
         _ member: BundleManifest.Member,
         to text: NSMutableAttributedString,
         packages: DpkgDatabase?,
-        width: CGFloat
+        width: CGFloat,
     ) {
         let role = member.relation.map { String(localized: "Linked · \(RelationText.label(for: $0))") }
             ?? String(localized: "Primary")
@@ -226,7 +226,7 @@ enum ReportPDFRenderer {
         text.append(row(
             [String(localized: "Name"), String(localized: "UUID"), String(localized: "Path")],
             columns: columns,
-            style: .tableHeader
+            style: .tableHeader,
         ))
         for image in shown.prefix(60) {
             text.append(row([image.name, image.uuid, image.path], columns: columns, style: .table))
@@ -234,19 +234,19 @@ enum ReportPDFRenderer {
         if systemCount > 0 {
             text.append(attributed(
                 String(inflecting: "^[\(systemCount) Apple system image](inflect: true) left out."),
-                style: .caption
+                style: .caption,
             ))
         }
     }
 
     private static func facts(
         of member: BundleManifest.Member,
-        crash: CrashReport
+        crash: CrashReport,
     ) -> [(label: String, value: String)] {
         var rows = [(label: String, value: String)]()
         rows.append((
             String(localized: "Process"),
-            "\(crash.process.name) [\(crash.process.pid.map(String.init) ?? "–")]"
+            "\(crash.process.name) [\(crash.process.pid.map(String.init) ?? "–")]",
         ))
         if let bundleID = crash.process.bundleID {
             rows.append((String(localized: "Bundle ID"), bundleID))
@@ -262,7 +262,7 @@ enum ReportPDFRenderer {
             let detail = [exception.signal, exception.subtype].compactMap(\.self).joined(separator: " · ")
             rows.append((
                 String(localized: "Exception"),
-                detail.isEmpty ? exception.type : "\(exception.type) · \(detail)"
+                detail.isEmpty ? exception.type : "\(exception.type) · \(detail)",
             ))
         }
         if let termination = crash.termination {
@@ -308,7 +308,7 @@ enum ReportPDFRenderer {
         range: CFRange,
         in rect: CGRect,
         context: CGContext,
-        pageSize: CGSize
+        pageSize: CGSize,
     ) {
         context.saveGState()
         // Core Text draws bottom-up; the PDF context is flipped for UIKit.
@@ -319,7 +319,7 @@ enum ReportPDFRenderer {
             x: rect.minX,
             y: pageSize.height - rect.maxY,
             width: rect.width,
-            height: rect.height
+            height: rect.height,
         )
         let frame = CTFramesetterCreateFrame(framesetter, range, CGPath(rect: flipped, transform: nil), nil)
         CTFrameDraw(frame, context)
@@ -338,7 +338,7 @@ enum ReportPDFRenderer {
         aligned.addAttribute(
             .paragraphStyle,
             value: paragraph,
-            range: NSRange(location: 0, length: aligned.length)
+            range: NSRange(location: 0, length: aligned.length),
         )
         aligned.draw(in: CGRect(x: margin + width * 0.7, y: y, width: width * 0.3, height: 14))
     }
@@ -348,12 +348,12 @@ enum ReportPDFRenderer {
         let bounds = text.boundingRect(
             with: CGSize(width: width, height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin],
-            context: nil
+            context: nil,
         )
         text.draw(
             with: CGRect(origin: origin, size: CGSize(width: width, height: ceil(bounds.height))),
             options: [.usesLineFragmentOrigin],
-            context: nil
+            context: nil,
         )
         return origin.y + ceil(bounds.height)
     }

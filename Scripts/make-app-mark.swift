@@ -40,7 +40,7 @@ func srgb(_ text: String) -> NSColor {
 }
 
 let json = try JSONSerialization.jsonObject(
-    with: Data(contentsOf: document.appendingPathComponent("icon.json"))
+    with: Data(contentsOf: document.appendingPathComponent("icon.json")),
 ) as? [String: Any] ?? [:]
 
 /// The entry without an `appearance` is the light one.
@@ -66,7 +66,7 @@ let layers: [Layer] = (group["layers"] as? [[String: Any]] ?? []).compactMap { i
         image: image,
         scale: CGFloat(position["scale"] as? Double ?? 1),
         translation: CGPoint(x: translation[0], y: translation[1]),
-        hiddenIn: Set(hidden)
+        hiddenIn: Set(hidden),
     )
 }
 
@@ -84,7 +84,7 @@ func render(side: Int, appearance: String) -> Data {
         isPlanar: false,
         colorSpaceName: .deviceRGB,
         bytesPerRow: 0,
-        bitsPerPixel: 0
+        bitsPerPixel: 0,
     ) else { fail("render failed") }
     NSGraphicsContext.saveGraphicsState()
     defer { NSGraphicsContext.restoreGraphicsState() }

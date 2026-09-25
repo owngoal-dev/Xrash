@@ -25,7 +25,7 @@ final class ReportIconHeaderView: UIView {
         badgeView.do {
             $0.image = UIImage(
                 systemName: "exclamationmark.circle.fill",
-                withConfiguration: UIImage.SymbolConfiguration(pointSize: Self.badgeSide, weight: .bold)
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: Self.badgeSide, weight: .bold),
             )
             $0.contentMode = .scaleAspectFit
             $0.backgroundColor = .systemGroupedBackground

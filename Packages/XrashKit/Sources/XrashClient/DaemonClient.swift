@@ -8,7 +8,7 @@
     private func xrashCreateMachServiceConnection(
         _ name: UnsafePointer<CChar>,
         _ queue: DispatchQueue?,
-        _ flags: UInt64
+        _ flags: UInt64,
     ) -> xpc_connection_t?
 
     public enum XrashClientError: Error, Equatable, Sendable {
@@ -40,7 +40,7 @@
         private let queue = DispatchQueue(
             label: "wiki.qaq.xrash.client.xpc",
             qos: .userInitiated,
-            autoreleaseFrequency: .workItem
+            autoreleaseFrequency: .workItem,
         )
         private var connection: xpc_connection_t?
         private var hello: HelloReply?
@@ -155,7 +155,7 @@
 
         private func request(
             _ operation: XrashOperation,
-            fill: ((xpc_object_t) -> Void)? = nil
+            fill: ((xpc_object_t) -> Void)? = nil,
         ) async throws -> Reply {
             _ = try await connect()
             let reply = try await send(operation, fill: fill)
@@ -171,7 +171,7 @@
 
         private func send(
             _ operation: XrashOperation,
-            fill: ((xpc_object_t) -> Void)? = nil
+            fill: ((xpc_object_t) -> Void)? = nil,
         ) async throws -> Reply {
             guard let connection else { throw XrashClientError.unavailable }
             let message = xpc_dictionary_create(nil, nil, 0)
@@ -201,7 +201,7 @@
             return .success(Reply(
                 code: code,
                 payload: payload,
-                descriptor: xpc_dictionary_dup_fd(object, XrashWireKey.descriptor)
+                descriptor: xpc_dictionary_dup_fd(object, XrashWireKey.descriptor),
             ))
         }
 

@@ -40,20 +40,20 @@ final class RelatedReportsViewController: UITableViewController, UISearchResults
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, id in
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ReportRowCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             )
             if let summary = self?.summaries.first(where: { $0.id == id }) {
                 (cell as? ReportRowCell)?.configure(with: ReportRowState(
                     summary: summary,
                     isUnread: self?.library.unreadIDs.value.contains(id) ?? false,
-                    reason: nil
+                    reason: nil,
                 ))
             }
             return cell
         }
         dataSource.header = { [weak self] _ in
             String(
-                inflecting: "^[\(self?.shown.count ?? 0) report](inflect: true) of the same crash"
+                inflecting: "^[\(self?.shown.count ?? 0) report](inflect: true) of the same crash",
             )
         }
         render()
@@ -81,7 +81,7 @@ final class RelatedReportsViewController: UITableViewController, UISearchResults
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
             description: String(localized: "No report in this list matches “\(needle)”."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
     }
 

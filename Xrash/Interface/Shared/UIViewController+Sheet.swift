@@ -41,7 +41,7 @@ extension UIViewController {
     func presentAsFormSheet(
         _ viewController: SheetNavigationController,
         size: CGSize = CGSize(width: 555, height: 555),
-        usesDetents: Bool = true
+        usesDetents: Bool = true,
     ) {
         viewController.modalPresentationStyle = .formSheet
         let window = viewIfLoaded?.window?.traitCollection ?? traitCollection

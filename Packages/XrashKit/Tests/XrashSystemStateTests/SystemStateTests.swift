@@ -18,7 +18,7 @@ final class SystemStateTests: XCTestCase {
         try FileManager.default.createDirectory(at: info, withIntermediateDirectories: true)
         try write(
             "/usr/lib/relative.dylib\n/Library/MobileSubstrate/DynamicLibraries/Relative.dylib\n",
-            to: info.appendingPathComponent("com.example.relative.list")
+            to: info.appendingPathComponent("com.example.relative.list"),
         )
         try write("/var/jb/usr/lib/prefixed.dylib\n", to: info.appendingPathComponent("com.example.prefixed.list"))
         try write(
@@ -34,7 +34,7 @@ final class SystemStateTests: XCTestCase {
             Version: 0.9
 
             """,
-            to: root.appendingPathComponent("var/lib/dpkg/status")
+            to: root.appendingPathComponent("var/lib/dpkg/status"),
         )
     }
 
@@ -81,7 +81,7 @@ final class SystemStateTests: XCTestCase {
                 "device.json", "launchd-services.json", "launchd-disabled.json", "launchd-environment.json",
                 "apps.json", "packages.json", "tweaks.json", "processes.json",
                 "jetsam.json", "jetsam-properties.json",
-            ]
+            ],
         )
         for file in files {
             XCTAssertEqual(file.url, output.appendingPathComponent(file.name))
@@ -106,7 +106,7 @@ final class SystemStateTests: XCTestCase {
         let reason = SystemState.reason(of: SystemStateFailure(reason: "launchd would not answer"))
         XCTAssertEqual(reason, "launchd would not answer")
         let written = try? JSONSerialization.jsonObject(
-            with: SystemState.failure(SystemStateFailure(reason: "no"))
+            with: SystemState.failure(SystemStateFailure(reason: "no")),
         ) as? [String: Any]
         XCTAssertEqual(written?["error"] as? String, "no")
     }

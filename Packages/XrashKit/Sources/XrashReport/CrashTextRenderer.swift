@@ -163,7 +163,7 @@ enum CrashTextRenderer {
                 column(process.name, 32)
                     + column(process.pid.map(String.init) ?? "", 8)
                     + column("\(megabytes) MB", 12)
-                    + (process.reason ?? process.states.joined(separator: ", "))
+                    + (process.reason ?? process.states.joined(separator: ", ")),
             )
         }
         return lines.joined(separator: "\n") + "\n"

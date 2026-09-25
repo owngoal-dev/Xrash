@@ -46,7 +46,7 @@ enum BasebinCrashDecoder {
     /// `0x1030: name (0x1000 + 0x30) (/path/image(0x1000) + 0x30)`.
     private static let framePattern = NSRegularExpression(
         literal: "^(0x[0-9a-fA-F]+): (.*) \\((0x[0-9a-fA-F]+) \\+ (0x[0-9a-fA-F]+)\\) "
-            + "\\((/.*)\\((0x[0-9a-fA-F]+)\\) \\+ (0x[0-9a-fA-F]+)\\)$"
+            + "\\((/.*)\\((0x[0-9a-fA-F]+)\\) \\+ (0x[0-9a-fA-F]+)\\)$",
     )
 
     /// What the reporter prints where it has no name to give.

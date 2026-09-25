@@ -114,7 +114,7 @@ final class AppSettings {
     init(defaults: UserDefaults = .standard) {
         filter = CurrentValueSubject(Self.read(from: defaults, key: Self.filterKey) ?? ReportFilter())
         preferences = CurrentValueSubject(
-            Self.read(from: defaults, key: Self.preferencesKey) ?? ReportPreferences()
+            Self.read(from: defaults, key: Self.preferencesKey) ?? ReportPreferences(),
         )
         filter.dropFirst().sink { Self.write($0, to: defaults, key: Self.filterKey) }.store(in: &writes)
         preferences.dropFirst()

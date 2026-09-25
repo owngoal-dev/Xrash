@@ -14,7 +14,7 @@ enum ReportDeletion {
     static func delete(
         _ ids: [String],
         from presenter: UIViewController,
-        library: ReportLibrary
+        library: ReportLibrary,
     ) async -> [String]? {
         guard ids.count > 1 else { return await library.delete(ids) }
         do {

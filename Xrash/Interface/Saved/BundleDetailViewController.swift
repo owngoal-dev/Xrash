@@ -102,7 +102,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             snapshot.appendSections([.about])
             snapshot.appendItems(
                 (bundle.manifest.notes.isEmpty ? [] : [Row.notes]) + [.device],
-                toSection: .about
+                toSection: .about,
             )
         }
         if !matching.isEmpty {
@@ -123,7 +123,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             snapshot.appendSections([.actions])
             snapshot.appendItems(
                 [.share] + (bundle.manifest.pdfPath == nil ? [] : [Row.exportPDF]),
-                toSection: .actions
+                toSection: .actions,
             )
         }
         dataSource.apply(snapshot, animatingDifferences: false)
@@ -132,7 +132,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
             description: String(localized: "No report in this bundle matches “\(query)”."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
     }
 
@@ -177,7 +177,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         case let .member(id):
             let cell = table.dequeueReusableCell(
                 withIdentifier: BundleReportCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! BundleReportCell
             if let member = members.first(where: { $0.id == id }) {
                 let detail = member.relation.map(RelationText.label) ?? String(localized: "Primary")
@@ -193,7 +193,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 title: String(localized: "Report.pdf"),
                 symbol: "doc.richtext",
                 detail: nil,
-                disclosure: true
+                disclosure: true,
             )
 
         case let .binary(uuid):
@@ -204,7 +204,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 title: (binary?.archivePath as NSString?)?.lastPathComponent ?? uuid,
                 symbol: "cube",
                 detail: ReportFormat.byteCount(binary?.byteCount ?? 0),
-                disclosure: false
+                disclosure: false,
             )
 
         case let .systemFile(name):
@@ -215,7 +215,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 title: name,
                 symbol: "doc.text",
                 detail: ReportFormat.byteCount(file?.byteCount ?? 0),
-                disclosure: true
+                disclosure: true,
             )
 
         case .share:
@@ -226,7 +226,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 symbol: "square.and.arrow.up",
                 detail: nil,
                 disclosure: false,
-                tinted: true
+                tinted: true,
             )
 
         case .exportPDF:
@@ -237,7 +237,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 symbol: "arrow.up.doc",
                 detail: nil,
                 disclosure: false,
-                tinted: true
+                tinted: true,
             )
         }
     }
@@ -249,7 +249,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         symbol: String,
         detail: String?,
         disclosure: Bool,
-        tinted: Bool = false
+        tinted: Bool = false,
     ) -> UITableViewCell {
         let cell = table.dequeueReusableCell(withIdentifier: "plain", for: indexPath)
         var content = cell.defaultContentConfiguration()
@@ -275,7 +275,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             guard let member = members.first(where: { $0.id == id }) else { return }
             navigationController?.pushViewController(
                 ReportDetailViewController(report: member.report, title: member.summary.processName),
-                animated: true
+                animated: true,
             )
         case let .systemFile(name):
             tableView.deselectRow(at: indexPath, animated: true)
@@ -284,7 +284,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             tableView.deselectRow(at: indexPath, animated: true)
             openPDF(
                 exporting: item == .exportPDF,
-                from: tableView.cellForRow(at: indexPath)
+                from: tableView.cellForRow(at: indexPath),
             )
         case .share:
             tableView.deselectRow(at: indexPath, animated: true)
@@ -344,7 +344,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             return SystemStateFile(
                 name: name,
                 url: directory.appendingPathComponent(BundleLayout.systemFile(name: name)),
-                byteCount: declared.byteCount
+                byteCount: declared.byteCount,
             )
         } ?? []
     }

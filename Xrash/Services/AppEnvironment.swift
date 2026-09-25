@@ -23,14 +23,14 @@ final class AppEnvironment {
         self.backend = backend
         dsyms = DSYMStore(directory: support.appendingPathComponent("dSYMs", isDirectory: true))
         systemSymbols = SystemSymbolStore(
-            directory: support.appendingPathComponent("SystemSymbols", isDirectory: true)
+            directory: support.appendingPathComponent("SystemSymbols", isDirectory: true),
         )
         symbolicator = Symbolicator(dsyms: dsyms, systemSymbols: systemSymbols) {
             try await backend.openImage(at: $0)
         }
         library = ReportLibrary(backend: backend, symbolicator: symbolicator)
         savedBundles = SavedBundleStore(
-            directory: support.appendingPathComponent("Bundles", isDirectory: true)
+            directory: support.appendingPathComponent("Bundles", isDirectory: true),
         )
     }
 

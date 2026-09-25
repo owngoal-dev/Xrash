@@ -26,7 +26,7 @@ final class CrashCorrelationTests: XCTestCase {
         let suggestion = CrashCorrelation.suggestions(
             for: summary("Fila", at: moment),
             primaryCrash: crash,
-            among: [candidate]
+            among: [candidate],
         ).first
         XCTAssertEqual(suggestion?.relation, .terminator)
         XCTAssertEqual(suggestion?.score, 80)
@@ -43,7 +43,7 @@ final class CrashCorrelationTests: XCTestCase {
             let suggestion = CrashCorrelation.suggestions(
                 for: summary("Fila", at: moment),
                 primaryCrash: crash,
-                among: [candidate]
+                among: [candidate],
             ).first
             XCTAssertEqual(suggestion?.relation, .relatedProcess, name)
             XCTAssertEqual(suggestion?.score, 60, name)
@@ -86,7 +86,7 @@ final class CrashCorrelationTests: XCTestCase {
         noise.incidentID = "INCIDENT-1"
         XCTAssertEqual(
             CrashCorrelation.suggestions(for: linked, primaryCrash: nil, among: [noise]).first?.relation,
-            .sameIncident
+            .sameIncident,
         )
     }
 
@@ -101,7 +101,7 @@ final class CrashCorrelationTests: XCTestCase {
         let suggestions = CrashCorrelation.suggestions(
             for: primary,
             primaryCrash: crash,
-            among: [primary, candidate]
+            among: [primary, candidate],
         )
         XCTAssertEqual(suggestions.count, 1)
         XCTAssertEqual(suggestions.first?.relation, .terminator)
@@ -128,7 +128,7 @@ final class CrashCorrelationTests: XCTestCase {
             group: kind == .crash ? .app : .other,
             date: date,
             byteCount: 4096,
-            isSynced: false
+            isSynced: false,
         )
     }
 }

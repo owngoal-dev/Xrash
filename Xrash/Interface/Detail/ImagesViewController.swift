@@ -85,7 +85,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
             description: String(localized: "No image in this report matches “\(needle)”."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
     }
 
@@ -117,7 +117,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let base = dataSource.itemIdentifier(for: indexPath),
               let image = shown.first(where: { $0.base == base }) else { return nil }
@@ -126,7 +126,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
             var elements: [UIMenuElement] = [
                 UIAction(
                     title: String(localized: "Inspect Binary"),
-                    image: UIImage(systemName: "doc.text.magnifyingglass")
+                    image: UIImage(systemName: "doc.text.magnifyingglass"),
                 ) { _ in
                     self?.inspectBinary(image)
                 },
@@ -144,17 +144,17 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
                 elements.append(
                     UIAction(title: String(localized: "Reveal in Fila"), image: UIImage(systemName: "folder")) { _ in
                         SiblingApps.open(fila)
-                    }
+                    },
                 )
             }
             if let owner, let irisin = SiblingApps.packageInIrisin(identifier: owner.identifier) {
                 elements.append(
                     UIAction(
                         title: String(localized: "Show Package in Irisin"),
-                        image: UIImage(systemName: "shippingbox")
+                        image: UIImage(systemName: "shippingbox"),
                     ) { _ in
                         SiblingApps.open(irisin)
-                    }
+                    },
                 )
             }
             return UIMenu(children: elements)

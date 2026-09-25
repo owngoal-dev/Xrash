@@ -102,7 +102,7 @@ public final class DSYMStore: @unchecked Sendable {
                     binaryName: candidate.lastPathComponent,
                     arch: slice.arch,
                     byteCount: slice.byteCount,
-                    imported: Date()
+                    imported: Date(),
                 ))
             }
         }
@@ -243,7 +243,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
     /// actually names; this is the one the app's button runs.
     public func extractCurrentSystem(
         openImage: @escaping ImageOpener,
-        progress: @escaping @Sendable (Double, String) -> Void
+        progress: @escaping @Sendable (Double, String) -> Void,
     ) async throws -> SystemSymbolSet {
         try await extract(only: nil, maximumImages: nil, openImage: openImage, progress: progress)
     }
@@ -258,7 +258,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
     public func extract(
         images: Set<UUID>,
         openImage: @escaping ImageOpener,
-        progress: @escaping @Sendable (Double, String) -> Void
+        progress: @escaping @Sendable (Double, String) -> Void,
     ) async throws -> SystemSymbolSet {
         try await extract(only: images, maximumImages: nil, openImage: openImage, progress: progress)
     }
@@ -268,7 +268,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
     func extractCurrentSystem(
         openImage: @escaping ImageOpener,
         maximumImages: Int?,
-        progress: @escaping @Sendable (Double, String) -> Void
+        progress: @escaping @Sendable (Double, String) -> Void,
     ) async throws -> SystemSymbolSet {
         try await extract(only: nil, maximumImages: maximumImages, openImage: openImage, progress: progress)
     }
@@ -279,7 +279,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
         only wanted: Set<UUID>?,
         maximumImages: Int?,
         openImage: @escaping ImageOpener,
-        progress: @escaping @Sendable (Double, String) -> Void
+        progress: @escaping @Sendable (Double, String) -> Void,
     ) async throws -> SystemSymbolSet {
         guard let cacheURL = Self.sharedCacheURL() else { throw SymbolStoreFailure.noSharedCache }
         // The cache files are root 0755, so a path is enough and MachOKit —
@@ -347,7 +347,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
     private static func extractedSet(build: String, in destination: URL) -> SystemSymbolSet {
         let files = (try? FileManager.default.contentsOfDirectory(
             at: destination,
-            includingPropertiesForKeys: [.fileSizeKey]
+            includingPropertiesForKeys: [.fileSizeKey],
         )) ?? []
         let tables = files.filter { $0.pathExtension == "symbols" }
         return SystemSymbolSet(
@@ -356,7 +356,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
             byteCount: tables.reduce(0) { total, url in
                 total + UInt64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
             },
-            extracted: Date()
+            extracted: Date(),
         )
     }
 
@@ -402,7 +402,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
         }
 
         private static func ranges(
-            _ entries: AnyRandomAccessCollection<any DyldCacheLocalSymbolsEntryProtocol>
+            _ entries: AnyRandomAccessCollection<any DyldCacheLocalSymbolsEntryProtocol>,
         ) -> [UInt64: Range<Int>] {
             var ranges = [UInt64: Range<Int>]()
             for entry in entries where entry.nlistCount > 0 {
@@ -453,7 +453,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
                 guard type & symbolStabMask == 0, type & symbolTypeMask == symbolTypeSection else { return nil }
                 return (
                     Int(bytes.loadUnaligned(fromByteOffset: at, as: UInt32.self)),
-                    bytes.loadUnaligned(fromByteOffset: at + 8, as: UInt64.self)
+                    bytes.loadUnaligned(fromByteOffset: at + 8, as: UInt64.self),
                 )
             }
         }
@@ -471,7 +471,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
     private static func symbolTable(
         for machO: MachOFile,
         locals: LocalSymbols,
-        strings: StringPool
+        strings: StringPool,
     ) -> SymbolTable? {
         guard let text = machO.loadCommands
             .infos(of: LoadCommand.segment64)

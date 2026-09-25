@@ -55,7 +55,7 @@ enum NoticeDescriber {
         _ path: String,
         roots: [String],
         queue: DispatchQueue,
-        completion: @escaping (NoticeDetail?) -> Void
+        completion: @escaping (NoticeDetail?) -> Void,
     ) {
         guard let child = spawn(path: path, roots: roots) else {
             return queue.async { completion(nil) }

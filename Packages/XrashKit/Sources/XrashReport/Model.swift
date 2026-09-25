@@ -81,7 +81,7 @@ public struct ReportSummary: Codable, Hashable, Sendable, Identifiable {
         group: ReportGroup,
         date: Date,
         byteCount: UInt64,
-        isSynced: Bool
+        isSynced: Bool,
     ) {
         self.id = id
         self.fileName = fileName

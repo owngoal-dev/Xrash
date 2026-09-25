@@ -56,14 +56,14 @@ public enum Demangler {
         Int,
         UnsafeMutablePointer<CChar>?,
         UnsafeMutablePointer<Int>?,
-        UInt32
+        UInt32,
     ) -> UnsafeMutablePointer<CChar>?
 
     private typealias CXXDemangle = @convention(c) (
         UnsafePointer<CChar>?,
         UnsafeMutablePointer<CChar>?,
         UnsafeMutablePointer<Int>?,
-        UnsafeMutablePointer<Int32>?
+        UnsafeMutablePointer<Int32>?,
     ) -> UnsafeMutablePointer<CChar>?
 
     private static let swiftDemangle: SwiftDemangle? = load("swift_demangle")

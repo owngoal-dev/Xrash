@@ -102,7 +102,7 @@ enum ReportListArrangement {
                 latest: latest.summary,
                 latestReason: latest.reason,
                 count: rows.count,
-                hasUnread: rows.contains(where: \.isUnread)
+                hasUnread: rows.contains(where: \.isUnread),
             )
         }
         .sorted { isBefore($0, $1, input.filter.order) }
@@ -202,7 +202,7 @@ enum ReportListArrangement {
                     group: .app,
                     date: Date(timeIntervalSinceReferenceDate: Double(-minutesAgo) * 60),
                     byteCount: 1,
-                    isSynced: false
+                    isSynced: false,
                 )
                 summary.bundleID = bundleID
                 return summary
@@ -216,7 +216,7 @@ enum ReportListArrangement {
                 unread: ["/SpringBoard-10.ips"],
                 reasons: ["/Fila-30.ips": "EXC_BAD_ACCESS"],
                 filter: ReportFilter(),
-                searchText: ""
+                searchText: "",
             )
             input.filter.grouping = .process
 

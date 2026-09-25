@@ -34,7 +34,7 @@ final class HiddenProcessesViewController: UITableViewController, UITextFieldDel
         navigationItem.backButtonDisplayMode = .minimal
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             systemItem: .add,
-            primaryAction: UIAction { [weak self] _ in self?.addName() }
+            primaryAction: UIAction { [weak self] _ in self?.addName() },
         )
         navigationItem.rightBarButtonItem?.accessibilityLabel = String(localized: "Add Process")
         tableView.register(FormTextFieldCell.self, forCellReuseIdentifier: FormTextFieldCell.reuseIdentifier)
@@ -57,7 +57,7 @@ final class HiddenProcessesViewController: UITableViewController, UITextFieldDel
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(
             withIdentifier: FormTextFieldCell.reuseIdentifier,
-            for: indexPath
+            for: indexPath,
         ) as! FormTextFieldCell
         cell.textField.text = names[indexPath.row]
         cell.textField.placeholder = String(localized: "Process name (case-sensitive)")
@@ -75,7 +75,7 @@ final class HiddenProcessesViewController: UITableViewController, UITextFieldDel
     override func tableView(
         _: UITableView,
         commit editingStyle: UITableViewCell.EditingStyle,
-        forRowAt indexPath: IndexPath
+        forRowAt indexPath: IndexPath,
     ) {
         guard editingStyle == .delete else { return }
         remove(at: indexPath)

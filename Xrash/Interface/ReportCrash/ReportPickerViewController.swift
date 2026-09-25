@@ -28,7 +28,7 @@ final class ReportPickerViewController: UITableViewController, UISearchResultsUp
         title = String(localized: "Add Other Report")
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: String(localized: "Add"),
-            primaryAction: UIAction { [weak self] _ in self?.add() }
+            primaryAction: UIAction { [weak self] _ in self?.add() },
         )
         navigationItem.rightBarButtonItem?.isEnabled = false
 
@@ -44,7 +44,7 @@ final class ReportPickerViewController: UITableViewController, UISearchResultsUp
         dataSource = UITableViewDiffableDataSource(tableView: tableView) { [weak self] table, indexPath, id in
             let cell = table.dequeueReusableCell(
                 withIdentifier: BundleReportCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             )
             if let self, let summary = shown[id], let cell = cell as? BundleReportCell {
                 cell.configure(with: summary)
@@ -100,14 +100,14 @@ final class ReportPickerViewController: UITableViewController, UISearchResultsUp
                 symbolName: "tray",
                 title: String(localized: "No Reports"),
                 description: String(localized: "There are no other reports to add."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         } else {
             tableView.setEmptyState(.message(
                 symbolName: "magnifyingglass",
                 title: String(localized: "No Results"),
                 description: String(localized: "No other reports match “\(query)”. Try a different search."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         }
     }

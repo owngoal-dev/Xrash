@@ -55,18 +55,18 @@ final class WelcomePreparingController: UIViewController {
 
     private lazy var helperRow = WelcomeStageRow(
         symbol: "gearshape.2",
-        title: String(localized: "Helper")
+        title: String(localized: "Helper"),
     )
     private lazy var reportsRow = WelcomeStageRow(
         symbol: "list.bullet.rectangle",
-        title: String(localized: "Reading Reports")
+        title: String(localized: "Reading Reports"),
     )
     private lazy var symbolsRow = WelcomeStageRow(
         symbol: "cpu",
         title: String(localized: "System Symbols"),
         // The running detail is an image name, whose tail is the telling half.
         truncation: .byTruncatingMiddle,
-        control: symbolsSwitch
+        control: symbolsSwitch,
     )
 
     private let bar = UIProgressView(progressViewStyle: .default)
@@ -340,7 +340,7 @@ final class WelcomePreparingController: UIViewController {
                     openImage: { try await backend.openImage(at: $0) },
                     progress: { fraction, image in
                         Task { @MainActor in onProgress(fraction, image) }
-                    }
+                    },
                 )
                 self?.symbolsSet = set
                 self?.symbolsState = .done

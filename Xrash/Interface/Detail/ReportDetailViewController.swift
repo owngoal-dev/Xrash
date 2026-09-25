@@ -53,7 +53,7 @@ final class ReportDetailViewController: UIViewController {
             UIAction(
                 title: title,
                 image: UIImage(systemName: symbol),
-                state: choice == segment ? .on : .off
+                state: choice == segment ? .on : .off,
             ) { [weak self] _ in self?.select(choice) }
         }
     }
@@ -175,7 +175,7 @@ final class ReportDetailViewController: UIViewController {
         let child = ReportTextViewController(
             title: title ?? String(localized: "Report"),
             text: text,
-            language: language
+            language: language,
         )
         // The container owns the bar; a child that installed its own would
         // fight it for the same navigation item.
@@ -243,7 +243,7 @@ final class ReportDetailViewController: UIViewController {
                 group: report.crash?.process.bundleID == nil ? .service : .app,
                 date: report.header.timestamp ?? Date(),
                 byteCount: UInt64(report.rawText.utf8.count),
-                isSynced: false
+                isSynced: false,
             )
             made.bundleID = report.crash?.process.bundleID ?? report.header.bundleID
             made.appVersion = report.header.appVersion
@@ -323,7 +323,7 @@ final class ReportDetailViewController: UIViewController {
         guard reportID != nil, content?.report.crash != nil, !isSymbolicating else { return nil }
         return UIAction(
             title: hasSymbolicated ? String(localized: "Re-symbolicate") : String(localized: "Symbolicate"),
-            image: UIImage(systemName: "function")
+            image: UIImage(systemName: "function"),
         ) { [weak self] _ in
             Task { await self?.symbolicate(force: self?.hasSymbolicated == true, announces: true) }
         }
@@ -340,7 +340,7 @@ final class ReportDetailViewController: UIViewController {
                 UIDeferredMenuElement.uncached { [weak self] completion in
                     completion(self?.moreElements() ?? [])
                 },
-            ])
+            ]),
         )
         more.accessibilityLabel = String(localized: "More")
         navigationItem.rightBarButtonItems = isSymbolicating ? [more, spinnerItem] : [more]

@@ -72,7 +72,7 @@ actor ApplicationIconProvider {
 
     private nonisolated static func loadIcon(
         bundleID: String?,
-        applicationPath: String?
+        applicationPath: String?,
     ) -> UIImage? {
         autoreleasepool {
             let registered = bundleID.flatMap(registeredBundlePath)
@@ -90,7 +90,7 @@ actor ApplicationIconProvider {
     private typealias ApplicationProxyImplementation = @convention(c) (
         AnyObject,
         Selector,
-        NSString
+        NSString,
     ) -> Unmanaged<NSObject>?
 
     /// Resolve metadata only. No icon method is called on the proxy, and the
@@ -105,7 +105,7 @@ actor ApplicationIconProvider {
               let method = class_getClassMethod(proxyClass, selector) else { return nil }
         let implementation = unsafeBitCast(
             method_getImplementation(method),
-            to: ApplicationProxyImplementation.self
+            to: ApplicationProxyImplementation.self,
         )
         let bundleURL = NSSelectorFromString("bundleURL")
         guard let proxy = implementation(proxyClass as AnyObject, selector, identifier as NSString)?.takeUnretainedValue(),

@@ -17,7 +17,7 @@ enum MaintainerMail {
     private static func compose(
         owner: PackageOwner,
         report: Report,
-        stem: String
+        stem: String,
     ) -> MFMailComposeViewController? {
         guard let address = owner.maintainerAddress else { return nil }
         let composer = MFMailComposeViewController()
@@ -26,18 +26,18 @@ enum MaintainerMail {
         let name = owner.name ?? owner.identifier
         composer.setSubject(
             owner.version.map { String(localized: "Crash Report: \(name) (\($0))") }
-                ?? String(localized: "Crash Report: \(name)")
+                ?? String(localized: "Crash Report: \(name)"),
         )
         // A suspect is a suspect: the mail says where the package turned up,
         // not that it is to blame. The blank lines are where the sender writes.
         let appears = String(
-            localized: "Your package (\(owner.identifier)) appears on the crashed thread’s stack in the attached report."
+            localized: "Your package (\(owner.identifier)) appears on the crashed thread’s stack in the attached report.",
         )
         composer.setMessageBody(appears + "\n\n" + String(localized: "Additional details:") + "\n\n", isHTML: false)
         composer.addAttachmentData(
             Data(ReportRenderer.crashText(report).utf8),
             mimeType: "text/plain",
-            fileName: stem + ".crash"
+            fileName: stem + ".crash",
         )
         return composer
     }
@@ -48,7 +48,7 @@ enum MaintainerMail {
         guard MFMailComposeViewController.canSendMail() else {
             return controller.presentMessage(
                 String.LocalizationValue("Unable to Send Mail"),
-                message: String.LocalizationValue("No mail account is set up. Set one up in Mail.")
+                message: String.LocalizationValue("No mail account is set up. Set one up in Mail."),
             )
         }
         guard let composer = compose(owner: owner, report: report, stem: stem) else { return }
@@ -64,7 +64,7 @@ private final class MailComposeDismisser: NSObject, MFMailComposeViewControllerD
     func mailComposeController(
         _ controller: MFMailComposeViewController,
         didFinishWith _: MFMailComposeResult,
-        error _: Error?
+        error _: Error?,
     ) {
         controller.dismiss(animated: true)
     }

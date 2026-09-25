@@ -7,7 +7,7 @@ extension LegacyCrashDecoder {
         NSRegularExpression(literal: "^[ \t]*(\\d+)[ \t]+(.+?)[ \t]+(0x[0-9a-fA-F]+)[ \t]*(.*)$")
     private static let imagePattern = NSRegularExpression(
         literal: "^[ \t]*(0x[0-9a-fA-F]+)[ \t]*-[ \t]*(0x[0-9a-fA-F]+)[ \t]+(.+?)[ \t]+"
-            + "<([0-9a-fA-F-]{32,36})>[ \t]+(.*)$"
+            + "<([0-9a-fA-F-]{32,36})>[ \t]+(.*)$",
     )
     private static let registerPattern = NSRegularExpression(literal: "([a-z][a-z0-9]{0,4}): +(0x[0-9a-fA-F]+)")
     private static let bracketedPID = NSRegularExpression(literal: "^(.*?)[ \t]*\\[(\\d+)\\]$")
@@ -70,7 +70,7 @@ extension LegacyCrashDecoder {
             uuid: uuidString(groups[4]),
             base: base,
             // An end below the base is a corrupt line, not a zero-length image.
-            size: end >= base ? end &- base &+ 1 : 0
+            size: end >= base ? end &- base &+ 1 : 0,
         )
         image.arch = arch
         return image

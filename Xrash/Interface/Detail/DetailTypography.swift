@@ -24,7 +24,7 @@ enum DetailTypography {
     /// Monospaced footnote: one size for every line a machine wrote.
     static func mono(_ weight: UIFont.Weight = .regular) -> UIFont {
         UIFontMetrics(forTextStyle: .footnote).scaledFont(
-            for: .monospacedSystemFont(ofSize: monoSize, weight: weight)
+            for: .monospacedSystemFont(ofSize: monoSize, weight: weight),
         )
     }
 

@@ -41,7 +41,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     init(
         lockedProcessName: String? = nil,
         library: ReportLibrary = AppEnvironment.shared.library,
-        backend: ReportBackend = AppEnvironment.shared.backend
+        backend: ReportBackend = AppEnvironment.shared.backend,
     ) {
         self.lockedProcessName = lockedProcessName
         self.library = library
@@ -65,7 +65,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         page.openReport = { [weak page] summary in
             page?.navigationController?.pushViewController(
                 ReportDetailViewController(reportID: summary.id),
-                animated: true
+                animated: true,
             )
         }
         return page
@@ -107,14 +107,14 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             if let row = self?.shownProcesses[id] {
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: ProcessInboxCell.reuseIdentifier,
-                    for: indexPath
+                    for: indexPath,
                 )
                 (cell as? ProcessInboxCell)?.configure(with: row)
                 return cell
             }
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ReportRowCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             )
             if let state = self?.shown[id] {
                 (cell as? ReportRowCell)?.configure(with: state)
@@ -171,7 +171,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             reasons: reasons.value,
             filter: settings.filter.value,
             searchText: searchText.value,
-            lockedProcessName: lockedProcessName
+            lockedProcessName: lockedProcessName,
         )
     }
 
@@ -186,7 +186,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
                     reasons: combined.2,
                     filter: combined.3,
                     searchText: text,
-                    lockedProcessName: locked
+                    lockedProcessName: locked,
                 )
             }
             .removeDuplicates()
@@ -232,7 +232,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         shownProcesses = [:]
         let states = Dictionary(
             groups.flatMap(\.rows).map { ($0.summary.id, $0) },
-            uniquingKeysWith: { first, _ in first }
+            uniquingKeysWith: { first, _ in first },
         )
         var snapshot = NSDiffableDataSourceSnapshot<ReportSection, String>()
         for group in groups {
@@ -266,7 +266,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
 
     private func commit(
         _ snapshot: NSDiffableDataSourceSnapshot<ReportSection, String>,
-        reconfiguring changed: [String]
+        reconfiguring changed: [String],
     ) {
         var snapshot = snapshot
         if !changed.isEmpty {
@@ -379,7 +379,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
                 symbolName: "magnifyingglass",
                 title: String(localized: "No Results"),
                 description: String(localized: "No report matches “\(needle)”."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         }
         if !library.summaries.value.isEmpty {
@@ -388,9 +388,9 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
                     symbolName: "line.3.horizontal.decrease.circle",
                     title: String(localized: "Nothing to Show"),
                     description: String(localized: "Every report is hidden by the current filter."),
-                    actionTitle: String(localized: "Show All")
+                    actionTitle: String(localized: "Show All"),
                 ),
-                action: { [weak self] in self?.settings.changeFilter { $0 = ReportFilter() } }
+                action: { [weak self] in self?.settings.changeFilter { $0 = ReportFilter() } },
             )
             return
         }
@@ -398,9 +398,9 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             symbolName: "checkmark.circle",
             title: String(localized: "No Reports"),
             description: String(
-                localized: "Reports appear here when the system writes one."
+                localized: "Reports appear here when the system writes one.",
             ),
-            actionTitle: nil
+            actionTitle: nil,
         ))
     }
 
@@ -494,7 +494,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
                 UIDeferredMenuElement.uncached { [weak self] completion in
                     completion(self?.filterElements() ?? [])
                 },
-            ])
+            ]),
         )
         item.accessibilityLabel = String(localized: "Filter")
         return item
@@ -506,7 +506,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             primaryAction: UIAction { [weak self] _ in
                 guard let self, let lockedProcessName else { return }
                 confirmDeleteProcess(lockedProcessName)
-            }
+            },
         )
         item.tintColor = .systemRed
         item.accessibilityLabel = String(localized: "Delete All Reports")

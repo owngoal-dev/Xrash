@@ -32,7 +32,7 @@ final class ReportSummaryViewController: UITableViewController {
         }
         tableView.register(
             CollapsibleSectionHeaderView.self,
-            forHeaderFooterViewReuseIdentifier: CollapsibleSectionHeaderView.reuseIdentifier
+            forHeaderFooterViewReuseIdentifier: CollapsibleSectionHeaderView.reuseIdentifier,
         )
         rebuild()
     }
@@ -45,7 +45,7 @@ final class ReportSummaryViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, viewForHeaderInSection index: Int) -> UIView? {
         guard let section = dataSource.sectionIdentifier(for: index), let title = section.title else { return nil }
         let header = tableView.dequeueReusableHeaderFooterView(
-            withIdentifier: CollapsibleSectionHeaderView.reuseIdentifier
+            withIdentifier: CollapsibleSectionHeaderView.reuseIdentifier,
         ) as? CollapsibleSectionHeaderView
         header?.configure(title: title, isCollapsed: collapsed.contains(section))
         header?.onToggle = { [weak self, weak header] in
@@ -77,14 +77,14 @@ final class ReportSummaryViewController: UITableViewController {
             symbolName: "exclamationmark.triangle",
             title: String(localized: "Unable to Read This Report"),
             description: String(localized: "This file is not a report Xrash can read."),
-            actionTitle: nil
+            actionTitle: nil,
         ))
     }
 
     /// The icon, above the first section. Made once and reconfigured, so a
     /// symbolicated report does not blink it.
     private let iconHeader = ReportIconHeaderView(
-        frame: CGRect(x: 0, y: 0, width: 0, height: ReportIconHeaderView.height)
+        frame: CGRect(x: 0, y: 0, width: 0, height: ReportIconHeaderView.height),
     )
 
     private func rebuild(animated: Bool = false) {
@@ -116,7 +116,7 @@ final class ReportSummaryViewController: UITableViewController {
         case .header:
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ReportHeaderCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             )
             if let summary {
                 (cell as? ReportHeaderCell)?.configure(with: content.report, summary: summary)
@@ -132,8 +132,8 @@ final class ReportSummaryViewController: UITableViewController {
                     emphasis: FrameCell.emphasis(
                         of: frame,
                         in: crash,
-                        suspectPaths: Set(content.suspects.map(\.id))
-                    )
+                        suspectPaths: Set(content.suspects.map(\.id)),
+                    ),
                 )
                 (cell as? FrameCell)?.menuProvider = { [weak self] in self?.frameActions(frame, in: crash) ?? [] }
             }
@@ -195,7 +195,7 @@ final class ReportSummaryViewController: UITableViewController {
         case .date:
             configuration.text = String(localized: "Date")
             configuration.secondaryText = ReportFormat.fullDate(
-                report.header.timestamp ?? summary?.date ?? Date()
+                report.header.timestamp ?? summary?.date ?? Date(),
             )
         case .system:
             configuration.text = String(localized: "System")
@@ -244,7 +244,7 @@ final class ReportSummaryViewController: UITableViewController {
         case .binaryImages:
             configuration.text = String(localized: "Binary Images")
             configuration.secondaryText = String(
-                inflecting: "^[\(report.crash?.images.count ?? 0) image](inflect: true)"
+                inflecting: "^[\(report.crash?.images.count ?? 0) image](inflect: true)",
             )
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
@@ -390,7 +390,7 @@ final class ReportSummaryViewController: UITableViewController {
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let item = dataSource.itemIdentifier(for: indexPath), let content else { return nil }
         let elements: [UIMenuElement]
@@ -474,7 +474,7 @@ extension UIViewController {
         if let symbol = frame.symbol {
             actions.append(RowMenuAction(
                 title: String(localized: "Copy Symbol"),
-                symbolName: "doc.on.doc"
+                symbolName: "doc.on.doc",
             ) {
                 UIPasteboard.general.string = symbol
                 Toast.show(String(localized: "Copied"))
@@ -482,7 +482,7 @@ extension UIViewController {
         }
         actions.append(RowMenuAction(
             title: String(localized: "Copy Address"),
-            symbolName: "number"
+            symbolName: "number",
         ) {
             UIPasteboard.general.string = ReportFormat.address(frame.address)
             Toast.show(String(localized: "Copied"))
@@ -491,7 +491,7 @@ extension UIViewController {
             let image = crash.images[index]
             actions.append(RowMenuAction(
                 title: String(localized: "Show Image"),
-                symbolName: "shippingbox"
+                symbolName: "shippingbox",
             ) { [weak self] in
                 guard let self else { return }
                 let images = ImagesViewController(crash: crash, packages: AppEnvironment.shared.packages)

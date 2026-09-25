@@ -19,7 +19,7 @@ final class RegisterNotesTests: XCTestCase {
             path: "/usr/lib/system/libsystem_kernel.dylib",
             uuid: "",
             base: 0x2_3A9B_0000,
-            size: 0x40000
+            size: 0x40000,
         )]
         return crash
     }

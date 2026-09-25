@@ -53,7 +53,7 @@ final class ProgressCoverViewController: UIViewController {
     static func present(
         _ source: Source,
         from presenter: UIViewController,
-        dismissed: @escaping () -> Void
+        dismissed: @escaping () -> Void,
     ) -> Task<Void, Never> {
         Task { @MainActor [weak presenter] in
             try? await Task.sleep(nanoseconds: UInt64(revealDelay * 1_000_000_000))

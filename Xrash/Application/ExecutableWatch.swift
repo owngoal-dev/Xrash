@@ -23,7 +23,7 @@ enum ExecutableWatch {
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
             eventMask: [.delete, .link],
-            queue: .main
+            queue: .main,
         )
         // The handler holds the source, so the watch outlives this call;
         // cancelling releases both.

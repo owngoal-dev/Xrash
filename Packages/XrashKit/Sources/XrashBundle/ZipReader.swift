@@ -68,7 +68,7 @@ enum ZipReader {
         do {
             try FileManager.default.createDirectory(
                 at: destination.deletingLastPathComponent(),
-                withIntermediateDirectories: true
+                withIntermediateDirectories: true,
             )
         } catch {
             throw BundleArchiveError.cannotRead

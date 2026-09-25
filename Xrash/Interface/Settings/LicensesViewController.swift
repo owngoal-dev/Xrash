@@ -25,7 +25,7 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
 
     /// Rows by position: two notices may read the same.
     private lazy var dataSource = UITableViewDiffableDataSource<Int, Int>(
-        tableView: tableView
+        tableView: tableView,
     ) { [weak self] tableView, indexPath, index in
         let cell = tableView.dequeueReusableCell(withIdentifier: "license", for: indexPath)
         guard let entry = self?.entries[index] else { return cell }
@@ -93,14 +93,14 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
                 symbolName: "doc.text",
                 title: String(localized: "No Licenses"),
                 description: String(localized: "License information is not available."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         } else {
             tableView.setEmptyState(shown.isEmpty ? .message(
                 symbolName: "magnifyingglass",
                 title: String(localized: "No Results"),
                 description: String(localized: "No license matches “\(needle)”."),
-                actionTitle: nil
+                actionTitle: nil,
             ) : nil)
         }
     }

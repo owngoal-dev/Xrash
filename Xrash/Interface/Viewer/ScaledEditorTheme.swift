@@ -18,7 +18,7 @@ final class ScaledEditorTheme: EditorTheme {
         ScaledEditorTheme(
             base: traits.userInterfaceStyle == .dark ? OneDarkTheme() : TomorrowTheme(),
             pointSize: UIFontMetrics(forTextStyle: .body)
-                .scaledValue(for: baseSize * scale, compatibleWith: traits)
+                .scaledValue(for: baseSize * scale, compatibleWith: traits),
         )
     }
 

@@ -12,26 +12,26 @@ final class SymbolicatorTests: XCTestCase {
             path: Fixture.dylib.path,
             uuid: uuid.uuidString,
             base: base,
-            size: 0x4000
+            size: 0x4000,
         )]
         var thread = ReportThread(index: 0)
         thread.frames = [Frame(
             imageIndex: 0,
             imageOffset: Fixture.insideBeta,
-            address: base + Fixture.insideBeta
+            address: base + Fixture.insideBeta,
         )]
         crash.threads = [thread]
         crash.lastExceptionBacktrace = [Frame(
             imageIndex: 0,
             imageOffset: Fixture.insideAlpha,
-            address: base + Fixture.insideAlpha
+            address: base + Fixture.insideAlpha,
         )]
         return crash
     }
 
     private func symbolicator(
         dsyms: DSYMStore? = nil,
-        systemSymbols: SystemSymbolStore? = nil
+        systemSymbols: SystemSymbolStore? = nil,
     ) -> Symbolicator {
         Symbolicator(
             dsyms: dsyms ?? DSYMStore(directory: Fixture.temporaryDirectory(self)),
@@ -41,7 +41,7 @@ final class SymbolicatorTests: XCTestCase {
                     throw CocoaError(.fileNoSuchFile)
                 }
                 return handle
-            }
+            },
         )
     }
 
@@ -119,7 +119,7 @@ final class SymbolicatorTests: XCTestCase {
         let uuid = UUID()
         try FileManager.default.createDirectory(
             at: directory.appendingPathComponent(build),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
         let table = SymbolTable(entries: [
             SymbolTable.Entry(offset: 0x100, name: "$s4main3fooyyF"),
@@ -136,7 +136,7 @@ final class SymbolicatorTests: XCTestCase {
             path: "/nowhere/Nowhere.dylib",
             uuid: uuid.uuidString,
             base: 0x1_0000_0000,
-            size: 0x4000
+            size: 0x4000,
         )]
         var thread = ReportThread(index: 0)
         thread.frames = [Frame(imageIndex: 0, imageOffset: 0x140, address: 0x1_0000_0140)]

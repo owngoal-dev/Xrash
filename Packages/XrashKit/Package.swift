@@ -61,7 +61,7 @@ let package = Package(
             dependencies: [
                 "XrashReport",
                 .product(name: "MachOKit", package: "MachOKit"),
-            ]
+            ],
         ),
 
         // Which tweak or package a crash points at.
@@ -73,7 +73,7 @@ let package = Package(
             dependencies: [
                 "XrashReport",
                 .product(name: "ArchiveKit", package: "libarchive.xcframework"),
-            ]
+            ],
         ),
 
         // What is installed and running, as the JSON files a bundle carries.
@@ -85,7 +85,7 @@ let package = Package(
             dependencies: [
                 "XrashBlame",
                 .product(name: "IcliSystem", package: "icli", condition: .when(platforms: [.iOS])),
-            ]
+            ],
         ),
 
         .testTarget(name: "XrashProtocolTests", dependencies: ["XrashProtocol"]),
@@ -95,5 +95,5 @@ let package = Package(
         .testTarget(name: "XrashBlameTests", dependencies: ["XrashBlame"]),
         .testTarget(name: "XrashBundleTests", dependencies: ["XrashBundle"]),
         .testTarget(name: "XrashSystemStateTests", dependencies: ["XrashSystemState"]),
-    ]
+    ],
 )

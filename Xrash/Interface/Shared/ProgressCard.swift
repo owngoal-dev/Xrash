@@ -20,11 +20,11 @@ enum ProgressCard {
         from presenter: UIViewController,
         title: String,
         operation: @escaping @MainActor (
-            _ report: @escaping @MainActor (_ fraction: Double?, _ detail: String) -> Void
-        ) async throws -> T
+            _ report: @escaping @MainActor (_ fraction: Double?, _ detail: String) -> Void,
+        ) async throws -> T,
     ) async throws -> T {
         let state = CurrentValueSubject<ProgressCoverViewController.Source.Snapshot?, Never>(
-            .init(title: title, detail: "", fraction: nil, isCancellable: true)
+            .init(title: title, detail: "", fraction: nil, isCancellable: true),
         )
         let work = Task { @MainActor in
             try await operation { fraction, detail in
@@ -40,10 +40,10 @@ enum ProgressCard {
             .init(
                 snapshot: { state.value },
                 changes: state.map { _ in }.eraseToAnyPublisher(),
-                cancel: { work.cancel() }
+                cancel: { work.cancel() },
             ),
             from: presenter,
-            dismissed: { settlement.settle() }
+            dismissed: { settlement.settle() },
         )
 
         let result = await withTaskCancellationHandler {

@@ -42,7 +42,7 @@ final class ProcessInboxCell: UITableViewCell {
         countLabel.do {
             // Monospaced, so a column of capsules does not jitter by a digit.
             $0.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(
-                for: .monospacedDigitSystemFont(ofSize: 13, weight: .semibold)
+                for: .monospacedDigitSystemFont(ofSize: 13, weight: .semibold),
             )
             $0.textAlignment = .center
         }

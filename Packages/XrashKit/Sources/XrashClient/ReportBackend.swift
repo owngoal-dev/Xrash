@@ -114,7 +114,7 @@
 
         private func perform<Value>(
             _ privileged: (DaemonClient) async throws -> Value,
-            locally: () throws -> Value
+            locally: () throws -> Value,
         ) async throws -> Value {
             // Twice: the daemon exits when idle, so the first failure may only
             // mean the connection it answered on is gone.

@@ -201,7 +201,7 @@ final class RendererTests: XCTestCase {
         namespace: String? = nil,
         code: UInt64? = nil,
         info: [String] = [],
-        reasons: [String] = []
+        reasons: [String] = [],
     ) -> String {
         var crash = CrashReport()
         var exception = ExceptionDetails(type: type)

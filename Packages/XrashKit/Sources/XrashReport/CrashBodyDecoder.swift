@@ -75,7 +75,7 @@ enum CrashBodyDecoder {
         return SharedCacheDetails(
             uuid: cache.string("uuid")?.uppercased() ?? "",
             base: cache.uint64("base") ?? 0,
-            size: cache.uint64("size") ?? 0
+            size: cache.uint64("size") ?? 0,
         )
     }
 
@@ -113,7 +113,7 @@ enum CrashBodyDecoder {
                 path: path,
                 uuid: entry.string("uuid")?.uppercased() ?? "",
                 base: entry.uint64("base") ?? 0,
-                size: entry.uint64("size") ?? 0
+                size: entry.uint64("size") ?? 0,
             )
             image.arch = entry.string("arch")
             image.source = entry.string("source")

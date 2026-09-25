@@ -12,7 +12,7 @@ final class NoticeLedgerTests: XCTestCase {
             path: "\(directory)/\(name)",
             byteCount: 1,
             modified: start.addingTimeInterval(seconds),
-            ownerUserID: 0
+            ownerUserID: 0,
         )
     }
 
@@ -20,7 +20,7 @@ final class NoticeLedgerTests: XCTestCase {
         isEnabled: Bool = true,
         kinds: Set<String> = ["crash", "jetsam", "panic", "hang", "resource"],
         hidden: Set<String> = [],
-        unread: Int = 0
+        unread: Int = 0,
     ) -> NoticePolicy {
         NoticePolicy(isEnabled: isEnabled, kinds: kinds, hiddenProcessNames: hidden, unreadCount: unread)
     }
@@ -63,7 +63,7 @@ final class NoticeLedgerTests: XCTestCase {
         _ = ledger.take([entry("Fila-2026-09-21-195211.ips", after: 10)], now: start.addingTimeInterval(11))
         let renamed = ledger.take(
             [entry("Fila-2026-09-21-195211.ips.synced", after: 10)],
-            now: start.addingTimeInterval(600)
+            now: start.addingTimeInterval(600),
         )
         XCTAssertEqual(renamed, [])
     }
@@ -76,7 +76,7 @@ final class NoticeLedgerTests: XCTestCase {
                 entry("JetsamEvent-2026-09-21-195212.ips", after: 11),
                 entry("Irisin-2026-09-21-195213.ips", after: 12),
             ],
-            now: start.addingTimeInterval(20)
+            now: start.addingTimeInterval(20),
         )
         XCTAssertEqual(notices.map(\.processName), ["Irisin"])
         XCTAssertEqual(notices.map(\.badge), [1])
@@ -109,7 +109,7 @@ final class NoticeLedgerTests: XCTestCase {
         XCTAssertEqual(ledger.take([entry("Odd-2026-09-21-195211.ips", after: 86400)], now: now).count, 1)
         XCTAssertEqual(
             ledger.take([entry("Fila-2026-09-21-195300.ips", after: 30)], now: now.addingTimeInterval(20)).count,
-            1
+            1,
         )
     }
 

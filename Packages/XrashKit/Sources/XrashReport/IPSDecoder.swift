@@ -79,7 +79,7 @@ enum IPSDecoder {
         report.processes = body.objects("processes").map { entry in
             var process = JetsamProcess(
                 name: entry.string("name") ?? "",
-                residentPages: entry.uint64("rpages") ?? 0
+                residentPages: entry.uint64("rpages") ?? 0,
             )
             process.pid = entry.int32("pid")
             process.reason = entry.string("reason")

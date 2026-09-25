@@ -49,8 +49,8 @@ final class EmptyStateView: UIView {
             let symbol = UIImageView(
                 image: UIImage(
                     systemName: symbolName,
-                    withConfiguration: UIImage.SymbolConfiguration(font: titleFont)
-                )
+                    withConfiguration: UIImage.SymbolConfiguration(font: titleFont),
+                ),
             ).then {
                 $0.tintColor = .secondaryLabel
                 // The title below says what the symbol stands for.

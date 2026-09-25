@@ -17,7 +17,7 @@ extension CrashCorrelation {
     public static func suggestions(
         for primary: ReportSummary,
         primaryCrash: CrashReport?,
-        among candidates: [ReportSummary]
+        among candidates: [ReportSummary],
     ) -> [LinkSuggestion] {
         var suggestions = [LinkSuggestion]()
         for candidate in candidates where candidate.id != primary.id {
@@ -61,7 +61,7 @@ extension CrashCorrelation {
 
             guard let best else { continue }
             suggestions.append(
-                LinkSuggestion(summary: candidate, relation: best.relation, score: best.score)
+                LinkSuggestion(summary: candidate, relation: best.relation, score: best.score),
             )
         }
         let ranked = suggestions.sorted {

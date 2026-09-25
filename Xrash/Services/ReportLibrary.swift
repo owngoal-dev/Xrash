@@ -131,7 +131,7 @@ final class ReportLibrary {
     func symbolicatedReport(
         for id: String,
         force: Bool = false,
-        progress: (@Sendable (SymbolicationProgress) -> Void)? = nil
+        progress: (@Sendable (SymbolicationProgress) -> Void)? = nil,
     ) async throws -> Report {
         if !force, let report = symbolicated[id] {
             return report

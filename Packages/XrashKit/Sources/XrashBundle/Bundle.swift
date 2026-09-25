@@ -147,7 +147,7 @@ public enum BundleArchive {
         _ manifest: BundleManifest,
         files: [BundleFile],
         to destination: URL,
-        progress: (@Sendable (Double) -> Void)? = nil
+        progress: (@Sendable (Double) -> Void)? = nil,
     ) throws {
         try ZipWriter.write(manifest, files: files, to: destination, progress: progress)
     }

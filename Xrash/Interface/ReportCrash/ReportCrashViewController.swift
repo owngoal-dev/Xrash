@@ -83,11 +83,11 @@ final class ReportCrashViewController: UITableViewController {
         title = String(localized: "Report Crash")
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             title: String(localized: "Cancel"),
-            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
+            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) },
         )
         let create = UIBarButtonItem(
             title: String(localized: "Create"),
-            primaryAction: UIAction { [weak self] _ in self?.create() }
+            primaryAction: UIAction { [weak self] _ in self?.create() },
         )
         create.style = .done
         create.isEnabled = false
@@ -130,7 +130,7 @@ final class ReportCrashViewController: UITableViewController {
         suggestions = CrashCorrelation.suggestions(
             for: summary,
             primaryCrash: primaryReport?.crash,
-            among: library.summaries.value
+            among: library.summaries.value,
         )
         if let crash = primaryReport?.crash {
             hasMatchingDSYM = crash.images.contains { environment.dsyms.url(forUUID: $0.uuid) != nil }
@@ -190,13 +190,13 @@ final class ReportCrashViewController: UITableViewController {
         case .primary:
             let cell = table.dequeueReusableCell(
                 withIdentifier: BundleReportCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! BundleReportCell
             if let primarySummary {
                 let reason = primaryReport.flatMap(ReportFormat.reason)
                 cell.configure(
                     with: primarySummary,
-                    detail: ReportFormat.subtitle(for: primarySummary, reason: reason)
+                    detail: ReportFormat.subtitle(for: primarySummary, reason: reason),
                 )
             }
             cell.selectionStyle = .none
@@ -206,7 +206,7 @@ final class ReportCrashViewController: UITableViewController {
         case let .linked(id):
             let cell = table.dequeueReusableCell(
                 withIdentifier: BundleReportCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! BundleReportCell
             let relation = linked.first { $0.id == id }?.relation ?? .manual
             if let summary = summary(for: id) {
@@ -219,13 +219,13 @@ final class ReportCrashViewController: UITableViewController {
         case let .suggestion(id):
             let cell = table.dequeueReusableCell(
                 withIdentifier: BundleReportCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! BundleReportCell
             let suggestion = suggestions.first { $0.id == id }
             if let suggestion {
                 cell.configure(
                     with: suggestion.summary,
-                    detail: RelationText.label(for: suggestion.relation)
+                    detail: RelationText.label(for: suggestion.relation),
                 )
                 // The plus is the whole of what the row offers and an image
                 // view says nothing: the cell's own line has to carry it.
@@ -255,7 +255,7 @@ final class ReportCrashViewController: UITableViewController {
         case .title:
             let cell = table.dequeueReusableCell(
                 withIdentifier: FormTextFieldCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! FormTextFieldCell
             cell.textField.text = bundleTitle
             cell.textField.placeholder = String(localized: "Title")
@@ -269,11 +269,11 @@ final class ReportCrashViewController: UITableViewController {
         case .notes:
             let cell = table.dequeueReusableCell(
                 withIdentifier: FormTextViewCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! FormTextViewCell
             cell.configure(
                 text: notes,
-                placeholder: String(localized: "What were you doing when it happened?")
+                placeholder: String(localized: "What were you doing when it happened?"),
             )
             cell.onChange = { [weak self] text in
                 guard let self else { return }
@@ -287,12 +287,12 @@ final class ReportCrashViewController: UITableViewController {
         case let .include(include):
             let cell = table.dequeueReusableCell(
                 withIdentifier: FormSwitchCell.reuseIdentifier,
-                for: indexPath
+                for: indexPath,
             ) as! FormSwitchCell
             cell.configure(
                 title: title(for: include),
                 detail: detail(for: include),
-                isOn: isOn(include)
+                isOn: isOn(include),
             )
             cell.onChange = { [weak self] isOn in self?.set(include, to: isOn) }
             return cell
@@ -370,7 +370,7 @@ final class ReportCrashViewController: UITableViewController {
 
     override func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard case let .linked(id) = dataSource.itemIdentifier(for: indexPath) else { return nil }
         let remove = UIContextualAction(style: .destructive, title: String(localized: "Remove")) {
@@ -393,7 +393,7 @@ final class ReportCrashViewController: UITableViewController {
         excluded.insert(primaryID)
         let picker = ReportPickerViewController(
             candidates: environment.library.summaries.value,
-            excluding: excluded
+            excluding: excluded,
         ) { [weak self] ids in
             guard let self else { return }
             linked.append(contentsOf: ids.map { .init(id: $0, relation: .manual) })
@@ -408,7 +408,7 @@ final class ReportCrashViewController: UITableViewController {
         guard let files = await collectedSystemFiles() else { return }
         navigationController?.pushViewController(
             SystemStateViewController(files: files),
-            animated: true
+            animated: true,
         )
     }
 
@@ -429,7 +429,7 @@ final class ReportCrashViewController: UITableViewController {
         do {
             let collected = try await ProgressCard.run(
                 from: self,
-                title: String(localized: "Collecting System State…")
+                title: String(localized: "Collecting System State…"),
             ) { report in
                 await Self.collect(into: directory, packages: packages) { name in
                     Task { @MainActor in report(nil, name) }
@@ -471,7 +471,7 @@ final class ReportCrashViewController: UITableViewController {
     @concurrent private nonisolated static func collect(
         into directory: URL,
         packages: DpkgDatabase?,
-        progress: @escaping @Sendable (String) -> Void
+        progress: @escaping @Sendable (String) -> Void,
     ) async -> [SystemStateFile] {
         SystemState.collect(into: directory, packages: packages, progress: progress)
     }
@@ -504,12 +504,12 @@ final class ReportCrashViewController: UITableViewController {
                 notes: notes,
                 options: options,
                 includesDSYMs: includesDSYMs,
-                systemFiles: collected
+                systemFiles: collected,
             )
             do {
                 let bundle = try await ProgressCard.run(
                     from: self,
-                    title: String(localized: "Creating Report…")
+                    title: String(localized: "Creating Report…"),
                 ) { report in
                     try await ReportBundleBuilder.build(request, environment: self.environment) { fraction, stage in
                         report(fraction, stage)

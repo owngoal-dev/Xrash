@@ -109,7 +109,7 @@ final class SystemSymbolStoreTests: XCTestCase {
         let store = SystemSymbolStore(directory: Fixture.temporaryDirectory(self))
         let set = try await store.extractCurrentSystem(
             openImage: { FileHandle(forReadingAtPath: $0) ?? FileHandle.nullDevice },
-            progress: { _, _ in }
+            progress: { _, _ in },
         )
         XCTAssertGreaterThan(set.imageCount, 1000)
     }
@@ -125,7 +125,7 @@ final class SystemSymbolStoreTests: XCTestCase {
         let set = try await store.extractCurrentSystem(
             openImage: { FileHandle(forReadingAtPath: $0) ?? FileHandle.nullDevice },
             maximumImages: 4,
-            progress: { fraction, _ in reported.record(fraction) }
+            progress: { fraction, _ in reported.record(fraction) },
         )
 
         XCTAssertEqual(set.id, SystemSymbolStore.osBuild())
@@ -164,7 +164,7 @@ final class SystemSymbolStoreTests: XCTestCase {
         let seeded = try await seed.extractCurrentSystem(
             openImage: open,
             maximumImages: 2,
-            progress: { _, _ in }
+            progress: { _, _ in },
         )
         let names = try FileManager.default
             .contentsOfDirectory(atPath: seedDirectory.appendingPathComponent(seeded.id).path)

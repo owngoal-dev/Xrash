@@ -36,24 +36,24 @@ final class SettingsViewController: UITableViewController {
             Section(
                 title: String(localized: "Reports"),
                 footer: String(
-                    localized: "Most reports the system writes are analytics and logs, not crashes."
+                    localized: "Most reports the system writes are analytics and logs, not crashes.",
                 ),
-                rows: [.defaultView, .showAnalytics, .hiddenProcesses]
+                rows: [.defaultView, .showAnalytics, .hiddenProcesses],
             ),
             Section(
                 title: String(localized: "Notifications"),
                 footer: ReportFormat.announcementSummary,
-                rows: [.crashNotifications]
+                rows: [.crashNotifications],
             ),
             Section(
                 title: String(localized: "Cleanup"),
                 footer: nil,
-                rows: [.deleteAll, .storage]
+                rows: [.deleteAll, .storage],
             ),
             Section(
                 title: String(localized: "About"),
                 footer: nil,
-                rows: [.version, .source, .licenses, .welcome]
+                rows: [.version, .source, .licenses, .welcome],
             ),
         ]
     }
@@ -133,7 +133,7 @@ final class SettingsViewController: UITableViewController {
             configuration.text = String(localized: "Show Analytics & Logs")
             cell.accessoryView = toggle(
                 isOn: settings.filter.value.showsAnalytics,
-                action: #selector(toggleAnalytics)
+                action: #selector(toggleAnalytics),
             )
         case .hiddenProcesses:
             configuration.text = String(localized: "Hidden Processes")
@@ -145,7 +145,7 @@ final class SettingsViewController: UITableViewController {
             configuration.text = String(localized: "Crash Notifications")
             cell.accessoryView = toggle(
                 isOn: settings.preferences.value.notifiesOnNewReports,
-                action: #selector(toggleNotifications)
+                action: #selector(toggleNotifications),
             )
         case .deleteAll:
             configuration.text = String(localized: "Delete All Reports…")
@@ -154,7 +154,7 @@ final class SettingsViewController: UITableViewController {
         case .storage:
             configuration.text = String(localized: "Storage Used")
             configuration.secondaryText = ReportFormat.byteCount(
-                library.summaries.value.reduce(0) { $0 + $1.byteCount }
+                library.summaries.value.reduce(0) { $0 + $1.byteCount },
             )
         case .version:
             configuration.text = String(localized: "Version")
@@ -230,8 +230,8 @@ final class SettingsViewController: UITableViewController {
         let alert = AlertViewController(
             title: String.LocalizationValue("Notifications Are Turned Off"),
             message: String.LocalizationValue(
-                "Allow notifications for Xrash in Settings to know when a new report arrives."
-            )
+                "Allow notifications for Xrash in Settings to know when a new report arrives.",
+            ),
         ) { context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Open Settings"), attribute: .accent) {
@@ -264,7 +264,7 @@ final class SettingsViewController: UITableViewController {
         ChoiceViewController(
             title: String(localized: "Default View"),
             choices: ReportPreferences.DefaultView.allCases.map { (label(for: $0), $0) },
-            selected: settings.preferences.value.defaultView
+            selected: settings.preferences.value.defaultView,
         ) { [weak self] choice in
             self?.settings.changePreferences { $0.defaultView = choice }
         }
@@ -275,14 +275,14 @@ final class SettingsViewController: UITableViewController {
         guard !ids.isEmpty else {
             return presentMessage(
                 String.LocalizationValue("Nothing to Delete"),
-                message: String.LocalizationValue("There are no reports to delete.")
+                message: String.LocalizationValue("There are no reports to delete."),
             )
         }
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete All Reports?"),
             message: String.LocalizationValue(
-                "All reports are deleted. This cannot be undone."
-            )
+                "All reports are deleted. This cannot be undone.",
+            ),
         ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete All"), attribute: .accent) {
@@ -296,7 +296,7 @@ final class SettingsViewController: UITableViewController {
                     } else {
                         self.presentMessage(
                             String.LocalizationValue("Unable to Delete Some Reports"),
-                            message: String.LocalizationValue("\(failed.count) of the reports could not be deleted.")
+                            message: String.LocalizationValue("\(failed.count) of the reports could not be deleted."),
                         )
                     }
                 }
@@ -317,7 +317,7 @@ private final class ChoiceViewController<Choice: Equatable>: UITableViewControll
         title: String,
         choices: [(String, Choice)],
         selected: Choice,
-        onChoose: @escaping (Choice) -> Void
+        onChoose: @escaping (Choice) -> Void,
     ) {
         self.choices = choices.map { (title: $0.0, value: $0.1) }
         self.selected = selected

@@ -41,7 +41,7 @@ enum ReportShare {
     static func present(
         _ bundle: SavedBundleStore.SavedBundle,
         from controller: UIViewController,
-        source: UIView?
+        source: UIView?,
     ) {
         guard let systemFiles = bundle.manifest.systemFiles, !systemFiles.isEmpty else {
             return share(bundle, from: controller, source: source)
@@ -51,7 +51,7 @@ enum ReportShare {
             message: String.LocalizationValue("""
             Installed apps, packages, tweaks, running processes and services are included. \
             Review them before sharing.
-            """)
+            """),
         ) { [weak controller] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Share"), attribute: .accent) {
@@ -67,7 +67,7 @@ enum ReportShare {
     private static func share(
         _ bundle: SavedBundleStore.SavedBundle,
         from controller: UIViewController,
-        source: UIView?
+        source: UIView?,
     ) {
         present([AppEnvironment.shared.savedBundles.shareURL(for: bundle)], from: controller, source: source)
     }

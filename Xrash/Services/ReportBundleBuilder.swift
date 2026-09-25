@@ -57,7 +57,7 @@ enum ReportBundleBuilder {
     static func build(
         _ request: Request,
         environment: AppEnvironment = .shared,
-        progress: @escaping @MainActor (Double, String) -> Void
+        progress: @escaping @MainActor (Double, String) -> Void,
     ) async throws -> SavedBundleStore.SavedBundle {
         let working = FileManager.default.temporaryDirectory
             .appendingPathComponent("BundleBuild", isDirectory: true)
@@ -68,7 +68,7 @@ enum ReportBundleBuilder {
         let library = environment.library
         let summaries = Dictionary(
             library.summaries.value.map { ($0.id, $0) },
-            uniquingKeysWith: { first, _ in first }
+            uniquingKeysWith: { first, _ in first },
         )
         let wanted: [(id: String, relation: BundleManifest.Relation?)] =
             [(request.primaryID, nil)] + request.linked.map { ($0.id, $0.relation) }
@@ -80,14 +80,14 @@ enum ReportBundleBuilder {
             guard let summary = summaries[entry.id] else { throw Failure.reportUnavailable(entry.id) }
             progress(
                 0.05 + 0.35 * Double(offset) / Double(wanted.count),
-                String(localized: "Reading \(summary.processName)…")
+                String(localized: "Reading \(summary.processName)…"),
             )
             let report = try await report(for: entry.id, in: library)
             var member = BundleManifest.Member(
                 id: UUID().uuidString,
                 summary: summary,
                 relation: entry.relation,
-                report: report
+                report: report,
             )
             let raw = request.options.includesReports ? try? await library.data(for: entry.id) : nil
             let written = try await write(member, raw: raw, options: request.options, into: working)
@@ -105,7 +105,7 @@ enum ReportBundleBuilder {
             title: request.title,
             notes: request.notes,
             generator: DeviceInfo.generator,
-            primary: primary
+            primary: primary,
         )
         manifest.linked = Array(members.dropFirst())
         manifest.deviceModel = DeviceInfo.model
@@ -118,7 +118,7 @@ enum ReportBundleBuilder {
             let copied = await copyImages(
                 includedImages(in: crash),
                 into: working,
-                backend: environment.backend
+                backend: environment.backend,
             ) { fraction, name in
                 Task { @MainActor in progress(0.4 + 0.3 * fraction, String(localized: "Copying \(name)…")) }
             }
@@ -159,7 +159,7 @@ enum ReportBundleBuilder {
                 BundleManifest.SystemFile(
                     name: $0.name,
                     archivePath: BundleLayout.systemFile(name: $0.name),
-                    byteCount: $0.byteCount
+                    byteCount: $0.byteCount,
                 )
             }
             files.append(contentsOf: request.systemFiles.map {
@@ -250,7 +250,7 @@ enum ReportBundleBuilder {
         _ member: BundleManifest.Member,
         raw: Data?,
         options: BundleOptions,
-        into working: URL
+        into working: URL,
     ) async throws -> MemberFiles {
         var result = MemberFiles()
         // One option covers all three forms of a report, so nothing to write
@@ -261,7 +261,7 @@ enum ReportBundleBuilder {
             let url = working.appendingPathComponent(archivePath)
             try FileManager.default.createDirectory(
                 at: url.deletingLastPathComponent(),
-                withIntermediateDirectories: true
+                withIntermediateDirectories: true,
             )
             try data.write(to: url, options: .atomic)
             result.files.append(BundleFile(source: url, archivePath: archivePath))
@@ -291,7 +291,7 @@ enum ReportBundleBuilder {
         _ images: [BinaryImage],
         into working: URL,
         backend: ReportBackend,
-        progress: @escaping @Sendable (Double, String) -> Void
+        progress: @escaping @Sendable (Double, String) -> Void,
     ) async -> (binaries: [BundleManifest.IncludedBinary], files: [BundleFile], skipped: [String]) {
         let directory = working.appendingPathComponent("binaries", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -309,20 +309,20 @@ enum ReportBundleBuilder {
             do {
                 try FileManager.default.createDirectory(
                     at: destination.deletingLastPathComponent(),
-                    withIntermediateDirectories: true
+                    withIntermediateDirectories: true,
                 )
                 let copied = try await copy(
                     imageAt: image.path,
                     to: destination,
                     backend: backend,
-                    byteLimit: binaryByteLimit - total
+                    byteLimit: binaryByteLimit - total,
                 )
                 total += copied
                 binaries.append(BundleManifest.IncludedBinary(
                     uuid: image.uuid,
                     originalPath: image.path,
                     archivePath: archivePath,
-                    byteCount: copied
+                    byteCount: copied,
                 ))
                 files.append(BundleFile(source: destination, archivePath: archivePath))
             } catch {
@@ -337,7 +337,7 @@ enum ReportBundleBuilder {
         imageAt path: String,
         to destination: URL,
         backend: ReportBackend,
-        byteLimit: UInt64
+        byteLimit: UInt64,
     ) async throws -> UInt64 {
         let source = try await backend.openImage(at: path)
         defer { try? source.close() }
@@ -376,7 +376,7 @@ enum ReportBundleBuilder {
         _ manifest: BundleManifest,
         packages: DpkgDatabase?,
         icon: UIImage?,
-        into working: URL
+        into working: URL,
     ) async -> BundleFile? {
         let url = working.appendingPathComponent(BundleLayout.pdf)
         let data = ReportPDFRenderer.pdf(for: manifest, packages: packages, icon: icon)
@@ -388,11 +388,11 @@ enum ReportBundleBuilder {
         _ manifest: BundleManifest,
         files: [BundleFile],
         to destination: URL,
-        progress: @escaping @Sendable (Double) -> Void
+        progress: @escaping @Sendable (Double) -> Void,
     ) async throws {
         try FileManager.default.createDirectory(
             at: destination.deletingLastPathComponent(),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
         try? FileManager.default.removeItem(at: destination)
         try BundleArchive.write(manifest, files: files, to: destination, progress: progress)

@@ -12,7 +12,7 @@ final class DaemonServer {
     private let queue = DispatchQueue(
         label: "wiki.qaq.xrashd.server",
         qos: .userInitiated,
-        autoreleaseFrequency: .workItem
+        autoreleaseFrequency: .workItem,
     )
     private let authenticator = PeerAuthenticator()
     /// Held, never read: releasing the last reference to an activated listener

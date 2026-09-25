@@ -13,7 +13,7 @@ enum ZipWriter {
         _ manifest: BundleManifest,
         files: [BundleFile],
         to destination: URL,
-        progress: (@Sendable (Double) -> Void)?
+        progress: (@Sendable (Double) -> Void)?,
     ) throws {
         let encoder = PropertyListEncoder()
         // XML rather than binary: a bundle someone mails to a developer should
@@ -97,7 +97,7 @@ enum ZipWriter {
                 path: path,
                 source: file.source,
                 byteCount: size,
-                modified: attributes[.modificationDate] as? Date ?? Date()
+                modified: attributes[.modificationDate] as? Date ?? Date(),
             )
         }
     }
@@ -106,7 +106,7 @@ enum ZipWriter {
         _ handle: OpaquePointer,
         path: String,
         data: Data,
-        modified: Date
+        modified: Date,
     ) throws {
         try header(handle, path: path, byteCount: Int64(data.count), modified: modified)
         try data.withUnsafeBytes { try writeBytes(handle, $0) }
@@ -116,7 +116,7 @@ enum ZipWriter {
     private static func addFile(
         _ handle: OpaquePointer,
         member: Member,
-        report: (Int64) -> Void
+        report: (Int64) -> Void,
     ) throws {
         guard let reader = try? FileHandle(forReadingFrom: member.source) else {
             throw BundleArchiveError.cannotWrite
@@ -143,7 +143,7 @@ enum ZipWriter {
         _ handle: OpaquePointer,
         path: String,
         byteCount: Int64,
-        modified: Date
+        modified: Date,
     ) throws {
         guard let entry = archive_entry_new() else {
             throw BundleArchiveError.cannotWrite

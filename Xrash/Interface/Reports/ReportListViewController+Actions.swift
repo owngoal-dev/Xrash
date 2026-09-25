@@ -29,7 +29,7 @@ extension ReportListViewController {
             children: [
                 action(String(localized: "All"), on: !filter.unreadOnly) { $0.unreadOnly = false },
                 action(String(localized: "Unread"), on: filter.unreadOnly) { $0.unreadOnly = true },
-            ]
+            ],
         )
         let kinds = UIMenu(
             title: String(localized: "Kinds"),
@@ -39,7 +39,7 @@ extension ReportListViewController {
                 return action(choice.title, on: isOn) {
                     isOn ? $0.kinds.subtract(choice.kinds) : $0.kinds.formUnion(choice.kinds)
                 }
-            }
+            },
         )
         let grouping = UIMenu(
             title: String(localized: "Group By"),
@@ -49,7 +49,7 @@ extension ReportListViewController {
                 action(String(localized: "Category"), on: filter.grouping == .category) { $0.grouping = .category },
                 action(String(localized: "Process"), on: filter.grouping == .process) { $0.grouping = .process },
                 action(String(localized: "Day"), on: filter.grouping == .day) { $0.grouping = .day },
-            ]
+            ],
         )
         let order = UIMenu(
             title: String(localized: "Sort"),
@@ -59,7 +59,7 @@ extension ReportListViewController {
                 action(String(localized: "Newest First"), on: filter.order == .newest) { $0.order = .newest },
                 action(String(localized: "Oldest First"), on: filter.order == .oldest) { $0.order = .oldest },
                 action(String(localized: "Name"), on: filter.order == .name) { $0.order = .name },
-            ]
+            ],
         )
         return [show, kinds, grouping, order]
     }
@@ -67,7 +67,7 @@ extension ReportListViewController {
     private func action(
         _ title: String,
         on isOn: Bool,
-        change: @escaping (inout ReportFilter) -> Void
+        change: @escaping (inout ReportFilter) -> Void,
     ) -> UIAction {
         UIAction(title: title, state: isOn ? .on : .off) { [weak self] _ in
             self?.settings.changeFilter(change)
@@ -78,13 +78,13 @@ extension ReportListViewController {
 
     override func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
         if let row = process(for: id) {
             let deleteAll = UIContextualAction(
                 style: .destructive,
-                title: String(localized: "Delete")
+                title: String(localized: "Delete"),
             ) { [weak self] _, _, completion in
                 self?.confirmDeleteProcess(row.name)
                 completion(false)
@@ -93,7 +93,7 @@ extension ReportListViewController {
         }
         let delete = UIContextualAction(
             style: .destructive,
-            title: String(localized: "Delete")
+            title: String(localized: "Delete"),
         ) { [weak self] _, _, completion in
             self?.confirmDelete([id])
             // The row goes when the file does, not when the finger lifts.
@@ -104,13 +104,13 @@ extension ReportListViewController {
 
     override func tableView(
         _: UITableView,
-        leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
         if let row = process(for: id) {
             let hide = UIContextualAction(
                 style: .normal,
-                title: String(localized: "Hide")
+                title: String(localized: "Hide"),
             ) { [weak self] _, _, completion in
                 self?.hideProcess(row.name)
                 completion(true)
@@ -124,7 +124,7 @@ extension ReportListViewController {
         guard library.unreadIDs.value.contains(id) else { return nil }
         let markRead = UIContextualAction(
             style: .normal,
-            title: String(localized: "Mark Read")
+            title: String(localized: "Mark Read"),
         ) { [weak self] _, _, completion in
             self?.library.markRead(id)
             completion(true)
@@ -139,7 +139,7 @@ extension ReportListViewController {
     override func tableView(
         _ tableView: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard !isEditing, let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
         if let row = process(for: id) {
@@ -164,7 +164,7 @@ extension ReportListViewController {
                 },
                 UIAction(
                     title: String(localized: "Report Crash…"),
-                    image: UIImage(systemName: "paperplane")
+                    image: UIImage(systemName: "paperplane"),
                 ) { _ in
                     self.presentReportCrash(for: id)
                 },
@@ -172,7 +172,7 @@ extension ReportListViewController {
                 UIAction(
                     title: String(localized: "Hide Process"),
                     image: UIImage(systemName: "eye.slash"),
-                    attributes: lockedProcessName == nil ? [] : .hidden
+                    attributes: lockedProcessName == nil ? [] : .hidden,
                 ) { _ in
                     self.hideProcess(summary.processName)
                 },
@@ -180,7 +180,7 @@ extension ReportListViewController {
                     UIAction(
                         title: String(localized: "Delete"),
                         image: UIImage(systemName: "trash"),
-                        attributes: .destructive
+                        attributes: .destructive,
                     ) { _ in
                         self.confirmDelete([id])
                     },
@@ -198,7 +198,7 @@ extension ReportListViewController {
             },
             UIAction(
                 title: String(localized: "Hide Process"),
-                image: UIImage(systemName: "eye.slash")
+                image: UIImage(systemName: "eye.slash"),
             ) { [weak self] _ in
                 self?.hideProcess(row.name)
             },
@@ -207,17 +207,17 @@ extension ReportListViewController {
             children.append(
                 UIAction(
                     title: String(localized: "Show App in Fila"),
-                    image: UIImage(systemName: "folder")
+                    image: UIImage(systemName: "folder"),
                 ) { _ in
                     SiblingApps.open(url)
-                }
+                },
             )
         }
         children.append(UIMenu(options: .displayInline, children: [
             UIAction(
                 title: String(localized: "Delete All Reports"),
                 image: UIImage(systemName: "trash"),
-                attributes: .destructive
+                attributes: .destructive,
             ) { [weak self] _ in
                 self?.confirmDeleteProcess(row.name)
             },
@@ -249,7 +249,7 @@ extension ReportListViewController {
                 primaryAction: UIAction { [weak self] _ in
                     guard let self else { return }
                     confirmDelete(shownReportIDs)
-                }
+                },
             )
             deleteAll.tintColor = .systemRed
             deleteAll.isEnabled = dataSource.snapshot().numberOfItems > 0
@@ -262,12 +262,12 @@ extension ReportListViewController {
                             tableView.selectRow(
                                 at: IndexPath(row: row, section: section),
                                 animated: false,
-                                scrollPosition: .none
+                                scrollPosition: .none,
                             )
                         }
                     }
                     renderSelectionItems()
-                }
+                },
             )
             selectAll.isEnabled = dataSource.snapshot().numberOfItems > 0
             toolbarItems = [deleteAll, .flexibleSpace(), selectAll]
@@ -275,19 +275,19 @@ extension ReportListViewController {
         }
         let delete = UIBarButtonItem(
             title: String(localized: "Delete"),
-            primaryAction: UIAction { [weak self] _ in self?.confirmDelete(ids) }
+            primaryAction: UIAction { [weak self] _ in self?.confirmDelete(ids) },
         )
         delete.tintColor = .systemRed
         let share = UIBarButtonItem(
             title: String(localized: "Share"),
-            primaryAction: UIAction { [weak self] _ in self?.share(ids, from: nil) }
+            primaryAction: UIAction { [weak self] _ in self?.share(ids, from: nil) },
         )
         let markRead = UIBarButtonItem(
             title: String(localized: "Mark Read"),
             primaryAction: UIAction { [weak self] _ in
                 ids.forEach { self?.library.markRead($0) }
                 self?.setEditing(false, animated: true)
-            }
+            },
         )
         toolbarItems = [delete, .flexibleSpace(), share, .flexibleSpace(), markRead]
     }
@@ -313,7 +313,7 @@ extension ReportListViewController {
             guard !urls.isEmpty else {
                 return presentMessage(
                     String.LocalizationValue("Nothing to Share"),
-                    message: String.LocalizationValue("No report could be read. Try again.")
+                    message: String.LocalizationValue("No report could be read. Try again."),
                 )
             }
             ReportShare.present(urls, from: self, source: source)
@@ -330,14 +330,14 @@ extension ReportListViewController {
         guard !ids.isEmpty else {
             return presentMessage(
                 String.LocalizationValue("Nothing to Delete"),
-                message: String.LocalizationValue("There are no reports to delete.")
+                message: String.LocalizationValue("There are no reports to delete."),
             )
         }
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete All Reports from \(name)?"),
             message: String.LocalizationValue(
-                "The report files are removed. This cannot be undone."
-            )
+                "The report files are removed. This cannot be undone.",
+            ),
         ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete All"), attribute: .accent) {
@@ -355,8 +355,8 @@ extension ReportListViewController {
         let alert = AlertViewController(
             title: title,
             message: String.LocalizationValue(
-                "The report files are removed. This cannot be undone."
-            )
+                "The report files are removed. This cannot be undone.",
+            ),
         ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete"), attribute: .accent) {
@@ -374,7 +374,7 @@ extension ReportListViewController {
         guard !failed.isEmpty else { return }
         presentMessage(
             String.LocalizationValue("Unable to Delete Some Reports"),
-            message: String.LocalizationValue("\(failed.count) of the reports could not be deleted.")
+            message: String.LocalizationValue("\(failed.count) of the reports could not be deleted."),
         )
     }
 }
@@ -388,7 +388,7 @@ extension ReportListViewController: UITableViewDragDelegate {
     func tableView(
         _: UITableView,
         itemsForBeginning _: UIDragSession,
-        at indexPath: IndexPath
+        at indexPath: IndexPath,
     ) -> [UIDragItem] {
         guard !isEditing,
               let id = dataSource.itemIdentifier(for: indexPath),
@@ -399,7 +399,7 @@ extension ReportListViewController: UITableViewDragDelegate {
         provider.registerFileRepresentation(
             forTypeIdentifier: UTType.diagnosticReport.identifier,
             fileOptions: [],
-            visibility: .all
+            visibility: .all,
         ) { [library] completion in
             Task { @MainActor in
                 do {

@@ -70,7 +70,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 String(localized: "A dSYM names the addresses in your own code.")
             case .system:
                 String(
-                    localized: "Extracted once per system version, so system frames have names in every report."
+                    localized: "Extracted once per system version, so system frames have names in every report.",
                 )
             }
         }
@@ -99,14 +99,14 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             (environment.dsyms.records.isEmpty ? [] : [.importedDSYMs])
                 + (missing.isEmpty ? [] : [.missingSymbols])
                 + [.importDSYM, .importFromGitHub],
-            toSection: .dsyms
+            toSection: .dsyms,
         )
         // Extracting again is only worth a row once what is stored is gone.
         snapshot.appendItems(
             (store.sets.isEmpty ? [.noSymbolSet] : store.sets.map { Row.symbolSet($0.id) })
                 + (isCurrentSystemExtracted ? [] : [.extractAll])
                 + (store.sets.isEmpty ? [] : [.deleteSystem]),
-            toSection: .system
+            toSection: .system,
         )
         // The counts on the link rows are not part of their identity.
         snapshot.reconfigureItems([.importedDSYMs, .missingSymbols].filter(snapshot.itemIdentifiers.contains))
@@ -129,7 +129,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         _ indexPath: IndexPath,
         title: String,
         count: Int,
-        symbol: String
+        symbol: String,
     ) -> UITableViewCell {
         let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
         var content = UIListContentConfiguration.valueCell()
@@ -150,7 +150,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 indexPath,
                 title: String(localized: "Imported dSYMs"),
                 count: environment.dsyms.records.count,
-                symbol: "doc.text.magnifyingglass"
+                symbol: "doc.text.magnifyingglass",
             )
 
         case .missingSymbols:
@@ -159,7 +159,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 indexPath,
                 title: String(localized: "Missing Symbols"),
                 count: missing.count,
-                symbol: "questionmark.square.dashed"
+                symbol: "questionmark.square.dashed",
             )
 
         case .importDSYM:
@@ -167,7 +167,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 table,
                 indexPath,
                 title: String(localized: "Import dSYM…"),
-                symbol: "arrow.down.doc"
+                symbol: "arrow.down.doc",
             )
 
         case .importFromGitHub:
@@ -175,7 +175,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 table,
                 indexPath,
                 title: String(localized: "Import from GitHub Release…"),
-                symbol: "shippingbox"
+                symbol: "shippingbox",
             )
 
         case let .symbolSet(build):
@@ -213,7 +213,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 table,
                 indexPath,
                 title: String(localized: "Extract System Symbols"),
-                symbol: "square.and.arrow.down"
+                symbol: "square.and.arrow.down",
             )
 
         case .deleteSystem:
@@ -222,7 +222,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 indexPath,
                 title: String(localized: "Delete System Symbols"),
                 symbol: "trash",
-                tint: .systemRed
+                tint: .systemRed,
             )
         }
     }
@@ -232,7 +232,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         _ indexPath: IndexPath,
         title: String,
         symbol: String,
-        tint: UIColor? = nil
+        tint: UIColor? = nil,
     ) -> UITableViewCell {
         let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
         var content = cell.defaultContentConfiguration()
@@ -278,7 +278,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                     ].joined(separator: " · "))
                 }
             },
-            delete: { try? store.remove(uuid: $0) }
+            delete: { try? store.remove(uuid: $0) },
         ), animated: true)
     }
 
@@ -289,13 +289,13 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             footer: String(localized: "Images in recent reports that no dSYM covers."),
             symbolName: "questionmark.square.dashed",
             isMonospaced: true,
-            entries: { missing }
+            entries: { missing },
         ), animated: true)
     }
 
     override func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         let delete = UIContextualAction(style: .destructive, title: String(localized: "Delete")) {
             [weak self] _, _, done in
@@ -314,7 +314,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         switch dataSource.itemIdentifier(for: indexPath) {
         case .importFromGitHub:
@@ -339,18 +339,18 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         let alert = AlertInputViewController(
             title: String.LocalizationValue("Import from GitHub Release"),
             message: String.LocalizationValue(
-                "Enter the repository whose releases carry the debug symbols, as owner/repo."
+                "Enter the repository whose releases carry the debug symbols, as owner/repo.",
             ),
             placeholder: String.LocalizationValue("owner/repo"),
             text: GitHubReleaseSymbols.recentRepositories.first?.slug ?? "",
-            doneButtonText: String.LocalizationValue("Continue")
+            doneButtonText: String.LocalizationValue("Continue"),
         ) { [weak self] text in
             guard let repository = GitHubReleaseSymbols.repository(from: text) else {
                 self?.presentMessage(
                     "Invalid Repository",
                     message: String.LocalizationValue(
-                        "Enter it as owner/repo, or paste the repository's GitHub address."
-                    )
+                        "Enter it as owner/repo, or paste the repository's GitHub address.",
+                    ),
                 )
                 return
             }
@@ -365,7 +365,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             GitHubReleasesViewController(repository: repository, store: environment.dsyms) { [weak self] in
                 self?.render()
             },
-            animated: true
+            animated: true,
         )
     }
 
@@ -396,7 +396,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             do {
                 let imported = try await ProgressCard.run(
                     from: self,
-                    title: String(localized: "Importing Symbols")
+                    title: String(localized: "Importing Symbols"),
                 ) { report in
                     var count = 0
                     for (offset, url) in urls.enumerated() {
@@ -440,13 +440,13 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             do {
                 _ = try await ProgressCard.run(
                     from: self,
-                    title: String(localized: "Extracting System Symbols")
+                    title: String(localized: "Extracting System Symbols"),
                 ) { report in
                     try await store.extractCurrentSystem(
                         openImage: { try await backend.openImage(at: $0) },
                         progress: { fraction, image in
                             Task { @MainActor in report(fraction, image) }
-                        }
+                        },
                     )
                 }
                 render()
@@ -464,8 +464,8 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         let alert = AlertViewController(
             title: String.LocalizationValue("Extract System Symbols"),
             message: String.LocalizationValue(
-                "Extracting every system image takes several minutes and more than a gigabyte of storage."
-            )
+                "Extracting every system image takes several minutes and more than a gigabyte of storage.",
+            ),
         ) { [weak self] context in
             context.allowSimpleDispose()
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
@@ -482,8 +482,8 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete System Symbols"),
             message: String.LocalizationValue(
-                "System frames go back to addresses until you extract them again."
-            )
+                "System frames go back to addresses until you extract them again.",
+            ),
         ) { [weak self] context in
             context.allowSimpleDispose()
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }

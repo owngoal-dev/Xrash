@@ -32,10 +32,10 @@ struct RowMenuAction {
 @MainActor
 extension [RowMenuAction] {
     var menuElements: [UIMenuElement] {
-        map { $0.menuElement }
+        map(\.menuElement)
     }
 
     var accessibilityActions: [UIAccessibilityCustomAction] {
-        map { $0.accessibilityAction }
+        map(\.accessibilityAction)
     }
 }

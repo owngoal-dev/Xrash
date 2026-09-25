@@ -23,7 +23,7 @@ extension ReportDetailViewController {
                 [weak self] _ in
                 guard let self else { return }
                 presentAsFormSheet(
-                    SheetNavigationController(rootViewController: ReportCrashViewController(primaryID: reportID))
+                    SheetNavigationController(rootViewController: ReportCrashViewController(primaryID: reportID)),
                 )
             },
             reportFileMenu(revealing: reportID),
@@ -35,11 +35,11 @@ extension ReportDetailViewController {
                 UIAction(
                     title: String(localized: "Delete"),
                     image: UIImage(systemName: "trash"),
-                    attributes: .destructive
+                    attributes: .destructive,
                 ) { [weak self] _ in
                     self?.confirmDelete(reportID)
                 },
-            ])
+            ]),
         )
         return elements
     }
@@ -53,7 +53,7 @@ extension ReportDetailViewController {
             title: String(localized: "View As"),
             image: UIImage(systemName: "eye"),
             options: .singleSelection,
-            children: segmentElements
+            children: segmentElements,
         )
         menu.subtitle = chosen?.title
         return menu
@@ -74,7 +74,7 @@ extension ReportDetailViewController {
         return UIMenu(
             title: String(localized: "Report File"),
             image: UIImage(systemName: "doc"),
-            children: children
+            children: children,
         )
     }
 
@@ -93,13 +93,13 @@ extension ReportDetailViewController {
                 UIAction(title: String(localized: "Original File (.ips)"), image: UIImage(systemName: "doc")) {
                     [weak self] _ in
                     self?.shareOriginal(reportID, named: "\(stem).ips")
-                }
+                },
             )
         }
         elements.append(contentsOf: [
             UIAction(
                 title: String(localized: "Report Data (.json)"),
-                image: UIImage(systemName: "curlybraces")
+                image: UIImage(systemName: "curlybraces"),
             ) { [weak self] _ in
                 guard let data = try? ReportRenderer.modelJSON(report) else { return }
                 self?.shareFile(named: "\(stem).json", contents: data)
@@ -122,7 +122,7 @@ extension ReportDetailViewController {
         guard let url = try? ReportShare.file(named: name, contents: contents) else {
             return presentMessage(
                 String.LocalizationValue("Unable to Share"),
-                message: String.LocalizationValue("The file could not be created. Try again.")
+                message: String.LocalizationValue("The file could not be created. Try again."),
             )
         }
         ReportShare.present([url], from: self, source: view)
@@ -134,7 +134,7 @@ extension ReportDetailViewController {
             guard let data = try? await AppEnvironment.shared.library.data(for: reportID) else {
                 return presentMessage(
                     String.LocalizationValue("Unable to Share"),
-                    message: String.LocalizationValue("The report could not be read. Try again.")
+                    message: String.LocalizationValue("The report could not be read. Try again."),
                 )
             }
             shareFile(named: name, contents: data)
@@ -145,8 +145,8 @@ extension ReportDetailViewController {
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete This Report?"),
             message: String.LocalizationValue(
-                "The report file is removed. This cannot be undone."
-            )
+                "The report file is removed. This cannot be undone.",
+            ),
         ) { [weak self] context in
             context.addAction(title: String.LocalizationValue("Cancel")) { context.dispose() }
             context.addAction(title: String.LocalizationValue("Delete"), attribute: .accent) {

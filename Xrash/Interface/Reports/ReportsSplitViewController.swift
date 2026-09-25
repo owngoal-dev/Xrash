@@ -16,7 +16,7 @@ final class ReportsSplitViewController: UISplitViewController {
         list.openReport = { [weak self] summary in
             self?.setViewController(
                 UINavigationController(rootViewController: ReportDetailViewController(reportID: summary.id)),
-                for: .secondary
+                for: .secondary,
             )
         }
         // The process page is the secondary column's own stack, so a report
@@ -24,7 +24,7 @@ final class ReportsSplitViewController: UISplitViewController {
         list.openProcess = { [weak self] name in
             self?.setViewController(
                 UINavigationController(rootViewController: ReportListViewController.processPage(for: name)),
-                for: .secondary
+                for: .secondary,
             )
         }
         list.navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -33,7 +33,7 @@ final class ReportsSplitViewController: UISplitViewController {
                 pageAction("heart.text.square", String(localized: "Saved")) { SavedReportsViewController() },
                 pageAction("function", String(localized: "Symbols")) { SymbolsViewController() },
                 pageAction("gearshape", String(localized: "Settings")) { SettingsViewController() },
-            ])
+            ]),
         )
         list.navigationItem.leftBarButtonItem?.accessibilityLabel = String(localized: "More")
         let primary = UINavigationController(rootViewController: list)
@@ -111,7 +111,7 @@ final class ReportsSplitViewController: UISplitViewController {
     private func pageAction(
         _ symbol: String,
         _ title: String,
-        _ make: @escaping () -> UIViewController
+        _ make: @escaping () -> UIViewController,
     ) -> UIAction {
         UIAction(title: title, image: UIImage(systemName: symbol)) { [weak self] _ in
             guard let self else { return }
@@ -119,7 +119,7 @@ final class ReportsSplitViewController: UISplitViewController {
             let navigation = SheetNavigationController(rootViewController: page)
             page.navigationItem.leftBarButtonItem = UIBarButtonItem(
                 image: UIImage(systemName: "xmark"),
-                primaryAction: UIAction { [weak navigation] _ in navigation?.dismiss(animated: true) }
+                primaryAction: UIAction { [weak navigation] _ in navigation?.dismiss(animated: true) },
             )
             page.navigationItem.leftBarButtonItem?.accessibilityLabel = String(localized: "Close")
             presentAsFormSheet(navigation)
@@ -157,7 +157,7 @@ private final class ReportPlaceholderViewController: UIViewController {
             symbolName: "doc.text.magnifyingglass",
             title: String(localized: "Select a Report"),
             description: String(localized: "Choose a report to see what happened."),
-            actionTitle: nil
+            actionTitle: nil,
         ))
         view.backgroundColor = .systemGroupedBackground
         self.view = view

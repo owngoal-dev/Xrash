@@ -35,7 +35,7 @@ final class BundleArchiveTests: XCTestCase {
         let old = try encoder.encode(manifest())
         XCTAssertFalse(
             String(decoding: old, as: UTF8.self).contains("systemFiles"),
-            "nil must not be written at all, or an old reader would meet a key it has no type for"
+            "nil must not be written at all, or an old reader would meet a key it has no type for",
         )
         XCTAssertNil(try PropertyListDecoder().decode(BundleManifest.self, from: old).systemFiles)
 
@@ -44,12 +44,12 @@ final class BundleArchiveTests: XCTestCase {
             BundleManifest.SystemFile(
                 name: "launchd-services.json",
                 archivePath: BundleLayout.systemFile(name: "launchd-services.json"),
-                byteCount: 2_915_842
+                byteCount: 2_915_842,
             ),
         ]
         let decoded = try PropertyListDecoder().decode(
             BundleManifest.self,
-            from: encoder.encode(withState)
+            from: encoder.encode(withState),
         )
         XCTAssertEqual(decoded, withState)
         XCTAssertEqual(decoded.systemFiles?.first?.archivePath, "system/launchd-services.json")
@@ -68,14 +68,14 @@ final class BundleArchiveTests: XCTestCase {
             BundleManifest.SystemFile(
                 name: "device.json",
                 archivePath: archivePath,
-                byteCount: UInt64(contents.count)
+                byteCount: UInt64(contents.count),
             ),
         ]
         let destination = directory.appendingPathComponent("System.xrashreport")
         try BundleArchive.write(
             manifest,
             files: [BundleFile(source: source, archivePath: archivePath)],
-            to: destination
+            to: destination,
         )
 
         let unpacked = directory.appendingPathComponent("unpacked-system")
@@ -83,7 +83,7 @@ final class BundleArchiveTests: XCTestCase {
         let declared = try XCTUnwrap(read.systemFiles?.first)
         XCTAssertEqual(
             try Data(contentsOf: unpacked.appendingPathComponent(declared.archivePath)),
-            contents
+            contents,
         )
         XCTAssertEqual(try headers(of: destination).map(\.name), [BundleLayout.manifest, archivePath])
     }
@@ -100,7 +100,7 @@ final class BundleArchiveTests: XCTestCase {
             manifest(),
             files: [BundleFile(source: source, archivePath: archivePath)],
             to: destination,
-            progress: { log.append($0) }
+            progress: { log.append($0) },
         )
 
         XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path + ".partial"))
@@ -114,7 +114,7 @@ final class BundleArchiveTests: XCTestCase {
         XCTAssertEqual(
             try Data(contentsOf: unpacked.appendingPathComponent(archivePath)),
             payload,
-            "the archived binary came back different"
+            "the archived binary came back different",
         )
 
         // The manifest comes first so a reader knows what it has before the
@@ -122,7 +122,7 @@ final class BundleArchiveTests: XCTestCase {
         let listing = try headers(of: destination)
         XCTAssertEqual(listing.map(\.name), [BundleLayout.manifest, archivePath])
         let modified = try XCTUnwrap(
-            FileManager.default.attributesOfItem(atPath: source.path)[.modificationDate] as? Date
+            FileManager.default.attributesOfItem(atPath: source.path)[.modificationDate] as? Date,
         )
         XCTAssertEqual(listing.last?.modified, time_t(modified.timeIntervalSince1970))
     }
@@ -170,11 +170,11 @@ final class BundleArchiveTests: XCTestCase {
         try BundleArchive.write(newer, files: [], to: destination)
 
         XCTAssertThrowsError(
-            try BundleArchive.read(destination, extractingInto: directory.appendingPathComponent("newer"))
+            try BundleArchive.read(destination, extractingInto: directory.appendingPathComponent("newer")),
         ) { error in
             XCTAssertEqual(
                 error as? BundleArchiveError,
-                .unsupportedSchema(BundleManifest.currentSchemaVersion + 7)
+                .unsupportedSchema(BundleManifest.currentSchemaVersion + 7),
             )
         }
     }
@@ -184,7 +184,7 @@ final class BundleArchiveTests: XCTestCase {
         try craft(archive, entries: [Entry(name: "notes.txt", contents: Data("hello".utf8))])
 
         XCTAssertThrowsError(
-            try BundleArchive.read(archive, extractingInto: directory.appendingPathComponent("plain"))
+            try BundleArchive.read(archive, extractingInto: directory.appendingPathComponent("plain")),
         ) { error in
             XCTAssertEqual(error as? BundleArchiveError, .missingManifest)
         }
@@ -194,7 +194,7 @@ final class BundleArchiveTests: XCTestCase {
         let destination = directory.appendingPathComponent("Doomed.xrashreport")
         let missing = BundleFile(
             source: directory.appendingPathComponent("was-never-there"),
-            archivePath: BundleLayout.crashText(member: "M1")
+            archivePath: BundleLayout.crashText(member: "M1"),
         )
         XCTAssertThrowsError(try BundleArchive.write(manifest(), files: [missing], to: destination))
         XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path + ".partial"))
@@ -208,8 +208,8 @@ final class BundleArchiveTests: XCTestCase {
             try BundleArchive.write(
                 manifest(),
                 files: [BundleFile(source: unreadable, archivePath: BundleLayout.crashText(member: "M1"))],
-                to: destination
-            )
+                to: destination,
+            ),
         )
         XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path + ".partial"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
@@ -225,9 +225,9 @@ final class BundleArchiveTests: XCTestCase {
                 try BundleArchive.write(
                     manifest(),
                     files: [BundleFile(source: source, archivePath: path)],
-                    to: destination
+                    to: destination,
                 ),
-                path
+                path,
             )
         }
         let duplicated = BundleFile(source: source, archivePath: BundleLayout.crashText(member: "M1"))
@@ -248,7 +248,7 @@ final class BundleArchiveTests: XCTestCase {
             group: .app,
             date: Date(timeIntervalSince1970: 1_757_355_437),
             byteCount: 40960,
-            isSynced: false
+            isSynced: false,
         )
         summary.bundleID = "wiki.qaq.fila"
         summary.incidentID = "00000000-0000-0000-0000-000000000001"
@@ -263,7 +263,7 @@ final class BundleArchiveTests: XCTestCase {
             title: "Fila crashed on launch",
             notes: "Happens every time after installing the tweak.",
             generator: "Xrash 0.1.0 (1)",
-            primary: member
+            primary: member,
         )
         manifest.deviceModel = "iPhone14,2"
         manifest.osVersion = "iPhone OS 26.6.1 (23G83)"

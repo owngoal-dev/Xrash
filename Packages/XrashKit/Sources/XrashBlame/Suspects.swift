@@ -89,7 +89,7 @@ extension Blame {
                 imageName: image.name,
                 reasons: reasons,
                 owner: owner,
-                score: score
+                score: score,
             ))
         }
         return suspects.sorted {

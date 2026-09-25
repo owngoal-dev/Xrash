@@ -14,7 +14,7 @@ final class DpkgDatabaseTests: XCTestCase {
 
         try write(
             "/usr/lib/relative.dylib\n/Library/MobileSubstrate/DynamicLibraries/Relative.dylib\n",
-            to: info.appendingPathComponent("com.example.relative.list")
+            to: info.appendingPathComponent("com.example.relative.list"),
         )
         try write("/var/jb/usr/lib/prefixed.dylib\n", to: info.appendingPathComponent("com.example.prefixed.list"))
         try write("/var/mobile/Documents/thing\n", to: info.appendingPathComponent("com.example.private.list"))
@@ -31,7 +31,7 @@ final class DpkgDatabaseTests: XCTestCase {
             Version: 0.9
 
             """,
-            to: root.appendingPathComponent("var/lib/dpkg/status")
+            to: root.appendingPathComponent("var/lib/dpkg/status"),
         )
     }
 
@@ -64,7 +64,7 @@ final class DpkgDatabaseTests: XCTestCase {
         let database = DpkgDatabase(installRoot: root.path)
         XCTAssertEqual(
             database.owner(ofPath: "/private/var/mobile/Documents/thing")?.identifier,
-            "com.example.private"
+            "com.example.private",
         )
     }
 
@@ -74,11 +74,11 @@ final class DpkgDatabaseTests: XCTestCase {
         let database = DpkgDatabase(installRoot: root.path)
         XCTAssertEqual(
             database.owner(ofPath: "/var/jb/usr/lib/relative.dylib")?.identifier,
-            "com.example.relative"
+            "com.example.relative",
         )
         XCTAssertEqual(
             database.owner(ofPath: "/var/jb/Library/MobileSubstrate/DynamicLibraries/Relative.dylib")?.identifier,
-            "com.example.relative"
+            "com.example.relative",
         )
     }
 
@@ -93,7 +93,7 @@ final class DpkgDatabaseTests: XCTestCase {
         let database = DpkgDatabase(installRoot: root.path)
         XCTAssertEqual(
             database.owner(ofPath: "/usr/lib/relative.dylib")?.maintainer,
-            "Jane <jane@example.com>"
+            "Jane <jane@example.com>",
         )
         XCTAssertNil(database.owner(ofPath: "/var/jb/usr/lib/prefixed.dylib")?.maintainer)
     }
@@ -126,7 +126,7 @@ final class DpkgDatabaseTests: XCTestCase {
     func testNoRootAndNoDatabaseFindNothing() {
         XCTAssertNil(DpkgDatabase(installRoot: nil).owner(ofPath: "/usr/lib/relative.dylib"))
         XCTAssertNil(
-            DpkgDatabase(installRoot: "/var/empty/not-a-bootstrap").owner(ofPath: "/usr/lib/relative.dylib")
+            DpkgDatabase(installRoot: "/var/empty/not-a-bootstrap").owner(ofPath: "/usr/lib/relative.dylib"),
         )
     }
 
@@ -134,7 +134,7 @@ final class DpkgDatabaseTests: XCTestCase {
         let database = DpkgDatabase(installRoot: root.path + "/")
         XCTAssertEqual(
             database.owner(ofPath: root.appendingPathComponent("usr/lib/relative.dylib").path)?.identifier,
-            "com.example.relative"
+            "com.example.relative",
         )
     }
 }

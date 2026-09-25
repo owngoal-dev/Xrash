@@ -71,7 +71,7 @@ public enum SystemState {
     public static func collect(
         into directory: URL,
         packages: DpkgDatabase?,
-        progress: (String) -> Void = { _ in }
+        progress: (String) -> Void = { _ in },
     ) -> [SystemStateFile] {
         // ponytail: one lock around the whole collection. The icli calls are
         // synchronous and not audited for concurrency, and nothing here is hot
@@ -92,7 +92,7 @@ public enum SystemState {
             let url = directory.appendingPathComponent(collector.name)
             guard (try? data.write(to: url, options: .atomic)) != nil else { continue }
             collected.append(
-                SystemStateFile(name: collector.name, url: url, byteCount: UInt64(data.count))
+                SystemStateFile(name: collector.name, url: url, byteCount: UInt64(data.count)),
             )
         }
         return collected
@@ -244,7 +244,7 @@ public enum SystemState {
         }
     #else
         private static let off = SystemStateFailure(
-            reason: "system state can only be collected on the device"
+            reason: "system state can only be collected on the device",
         )
     #endif
 }

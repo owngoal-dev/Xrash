@@ -17,7 +17,7 @@ final class PeerSession {
         connection: xpc_connection_t,
         installRoot: String,
         announcer: ReportAnnouncer?,
-        onInvalidation: @escaping () -> Void
+        onInvalidation: @escaping () -> Void,
     ) {
         self.connection = connection
         self.installRoot = installRoot
@@ -43,7 +43,7 @@ final class PeerSession {
         xpc_dictionary_set_uint64(reply, XrashWireKey.version, XrashWire.version)
         guard xpc_dictionary_get_uint64(request, XrashWireKey.version) == XrashWire.version,
               let operation = XrashOperation(
-                  rawValue: xpc_dictionary_get_uint64(request, XrashWireKey.operation)
+                  rawValue: xpc_dictionary_get_uint64(request, XrashWireKey.operation),
               ),
               handshakeComplete != (operation == .hello)
         else {
@@ -171,7 +171,7 @@ final class PeerSession {
         guard let path = PathGuard.regularFile(candidate, below: roots) else { return false }
         let directory = open(
             (path as NSString).deletingLastPathComponent,
-            O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC
+            O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC,
         )
         guard directory >= 0 else { return false }
         defer { close(directory) }

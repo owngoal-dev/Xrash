@@ -34,7 +34,7 @@ final class SavedBundleStore {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let contents = (try? FileManager.default.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: nil
+            includingPropertiesForKeys: nil,
         )) ?? []
         let found = contents
             .filter { $0.pathExtension == Self.archiveExtension }

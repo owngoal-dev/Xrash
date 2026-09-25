@@ -133,7 +133,7 @@ final class MachOInspectorViewController: UITableViewController {
                     return try Architecture(
                         slice: slice,
                         inspection: image.inspect(slice),
-                        entitlements: image.entitlements(of: slice).map(Entitlements.init)
+                        entitlements: image.entitlements(of: slice).map(Entitlements.init),
                     )
                 }
             }
@@ -159,7 +159,7 @@ final class MachOInspectorViewController: UITableViewController {
                 for: architecture.slice,
                 inspection: architecture.inspection,
                 entitlements: architecture.entitlements,
-                isUniversal: architectures.count > 1
+                isUniversal: architectures.count > 1,
             )
             let items = built.map { Item(slice: index, label: $0.label) }
             for (item, row) in zip(items, built) {
@@ -175,7 +175,7 @@ final class MachOInspectorViewController: UITableViewController {
             symbolName: "doc.text.magnifyingglass",
             title: String(localized: "Nothing to Show"),
             description: String(localized: "This file has no architecture Xrash can read."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
@@ -186,7 +186,7 @@ final class MachOInspectorViewController: UITableViewController {
             symbolName: "exclamationmark.triangle",
             title: String(localized: "Unable to Read This Binary"),
             description: String(localized: "The file is not a Mach-O binary, or the part that describes it is damaged."),
-            actionTitle: nil
+            actionTitle: nil,
         ))
     }
 
@@ -223,7 +223,7 @@ final class MachOInspectorViewController: UITableViewController {
         for architecture: MachOImage.Slice,
         inspection: MachOImage.Inspection,
         entitlements: Entitlements?,
-        isUniversal: Bool
+        isUniversal: Bool,
     ) -> [Row] {
         var rows: [Row] = [
             .fact(String(localized: "Type"), fileType(architecture.fileType)),
@@ -253,7 +253,7 @@ final class MachOInspectorViewController: UITableViewController {
         rows.append(.list(String(localized: "Details"), detailLines(
             for: architecture,
             inspection: inspection,
-            isUniversal: isUniversal
+            isUniversal: isUniversal,
         )))
         return rows
     }
@@ -263,7 +263,7 @@ final class MachOInspectorViewController: UITableViewController {
     private static func detailLines(
         for architecture: MachOImage.Slice,
         inspection: MachOImage.Inspection,
-        isUniversal: Bool
+        isUniversal: Bool,
     ) -> [String] {
         var details: [String] = []
         if isUniversal {
@@ -338,7 +338,7 @@ final class MachOInspectorViewController: UITableViewController {
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let item = dataSource.itemIdentifier(for: indexPath),
               case let .fact(_, value) = rows[item] else { return nil }
@@ -363,14 +363,14 @@ final class MachOInspectorViewController: UITableViewController {
                 ReportTextViewController(
                     title: String(localized: "Entitlements"),
                     text: entitlements.text,
-                    language: .plain
+                    language: .plain,
                 ),
-                animated: true
+                animated: true,
             )
         case let .list(label, items):
             navigationController?.pushViewController(
                 InspectorListViewController(title: label, rows: items),
-                animated: true
+                animated: true,
             )
         }
     }
@@ -387,7 +387,7 @@ extension UIViewController {
         guard image.source != "S" else {
             return presentMessage(
                 "Binary Not Available",
-                message: "This image lives in the system’s shared cache and has no file of its own."
+                message: "This image lives in the system’s shared cache and has no file of its own.",
             )
         }
         Task { [weak self] in
@@ -398,12 +398,12 @@ extension UIViewController {
                     message: """
                     This binary could not be opened. It may belong to another device, or to software \
                     that is no longer installed.
-                    """
+                    """,
                 )
             }
             navigationController?.pushViewController(
                 MachOInspectorViewController(name: image.name, file: file),
-                animated: true
+                animated: true,
             )
         }
     }

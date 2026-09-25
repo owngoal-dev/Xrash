@@ -59,7 +59,7 @@ import XrashReport
             if notice.kind == .crash {
                 content.title = NSString.localizedUserNotificationString(
                     forKey: Self.crashedTitleKey,
-                    arguments: [name]
+                    arguments: [name],
                 )
                 content.body = detail?.line ?? ""
             } else {

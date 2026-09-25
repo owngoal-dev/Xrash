@@ -154,7 +154,7 @@ enum GitHubReleaseSymbols {
     static func download(
         _ asset: Asset,
         to destination: URL,
-        progress: @escaping @Sendable (Double?, Int64) -> Void
+        progress: @escaping @Sendable (Double?, Int64) -> Void,
     ) async throws {
         guard asset.byteCount <= downloadByteLimit else { throw Failure.tooLarge }
         let downloader = Downloader(destination: destination, progress: progress)
@@ -187,7 +187,7 @@ enum GitHubReleaseSymbols {
             downloadTask: URLSessionDownloadTask,
             didWriteData _: Int64,
             totalBytesWritten: Int64,
-            totalBytesExpectedToWrite: Int64
+            totalBytesExpectedToWrite: Int64,
         ) {
             guard totalBytesWritten <= GitHubReleaseSymbols.downloadByteLimit else { return downloadTask.cancel() }
             let fraction = totalBytesExpectedToWrite > 0
@@ -199,7 +199,7 @@ enum GitHubReleaseSymbols {
         func urlSession(
             _: URLSession,
             downloadTask: URLSessionDownloadTask,
-            didFinishDownloadingTo location: URL
+            didFinishDownloadingTo location: URL,
         ) {
             let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
             guard status == 200 else { return finish(.failure(Failure.unreadable)) }
@@ -267,7 +267,7 @@ enum GitHubReleaseSymbols {
                 isPrerelease: prerelease ?? false,
                 assets: (assets ?? []).map {
                     Asset(name: $0.name, downloadURL: $0.browser_download_url, byteCount: $0.size)
-                }
+                },
             )
         }
 

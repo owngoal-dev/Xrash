@@ -93,7 +93,7 @@ enum ExternalFileRouter {
         present(
             "Unable to Open File",
             String(localized: "“\(url.lastPathComponent)” is not a crash report, a dSYM, or an Xrash report."),
-            from: root
+            from: root,
         )
     }
 
@@ -121,7 +121,7 @@ enum ExternalFileRouter {
     private static func present(
         _ title: String.LocalizationValue,
         _ message: String,
-        from root: UIViewController?
+        from root: UIViewController?,
     ) {
         var top = root
         while let presented = top?.presentedViewController {

@@ -57,7 +57,7 @@ final class ThreadViewController: UITableViewController, UISearchResultsUpdating
                     with: frame,
                     index: index,
                     in: crash,
-                    emphasis: FrameCell.emphasis(of: frame, in: crash)
+                    emphasis: FrameCell.emphasis(of: frame, in: crash),
                 )
                 (cell as? FrameCell)?.menuProvider = { [weak self] in
                     guard let self else { return [] }
@@ -69,7 +69,7 @@ final class ThreadViewController: UITableViewController, UISearchResultsUpdating
                 let cell = tableView.dequeueReusableCell(withIdentifier: RegisterCell.reuseIdentifier, for: indexPath)
                 (cell as? RegisterCell)?.configure(
                     with: register,
-                    note: RegisterNotes.note(for: register, thread: thread, in: crash)
+                    note: RegisterNotes.note(for: register, thread: thread, in: crash),
                 )
                 return cell
             }
@@ -107,7 +107,7 @@ final class ThreadViewController: UITableViewController, UISearchResultsUpdating
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
             description: String(localized: "No frame in this thread matches “\(needle)”."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
     }
 

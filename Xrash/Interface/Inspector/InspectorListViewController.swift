@@ -84,14 +84,14 @@ final class InspectorListViewController: UITableViewController, UISearchResultsU
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
             description: String(localized: "Nothing in this list matches “\(searchText)”."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
     }
 
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let entry = dataSource.itemIdentifier(for: indexPath) else { return nil }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in

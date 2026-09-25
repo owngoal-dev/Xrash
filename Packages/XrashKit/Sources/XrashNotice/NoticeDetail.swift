@@ -31,7 +31,7 @@ public struct NoticeDetail: Codable, Equatable, Sendable {
         let row = ReportDecoder.enrich(
             ReportDecoder.summary(path: fileName, byteCount: UInt64(data.count), modified: Date()),
             header: report.header,
-            executablePath: report.crash?.process.path
+            executablePath: report.crash?.process.path,
         )
         processName = row.processName
         reason = report.reason

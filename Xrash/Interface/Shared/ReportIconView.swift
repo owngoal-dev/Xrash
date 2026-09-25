@@ -64,7 +64,7 @@ final class ReportIconView: UIView {
         loadTask = Task { [weak self] in
             let icon = await ApplicationIconProvider.shared.icon(
                 bundleID: bundleID,
-                executablePath: executablePath
+                executablePath: executablePath,
             )
             guard !Task.isCancelled, let self, let icon, shownKey == key else { return }
             showPicture(icon)

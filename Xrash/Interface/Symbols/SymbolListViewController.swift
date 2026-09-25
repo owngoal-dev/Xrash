@@ -30,7 +30,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
         symbolName: String,
         isMonospaced: Bool = false,
         entries: @escaping () -> [Entry],
-        delete: ((String) -> Void)? = nil
+        delete: ((String) -> Void)? = nil,
     ) {
         self.footer = footer
         self.symbolName = symbolName
@@ -103,7 +103,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
             symbolName: "magnifyingglass",
             title: String(localized: "No Results"),
             description: String(localized: "Nothing here matches “\(query)”."),
-            actionTitle: nil
+            actionTitle: nil,
         ) : nil)
     }
 
@@ -114,7 +114,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
 
     override func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard let delete, let entry = dataSource.itemIdentifier(for: indexPath) else { return nil }
         return UISwipeActionsConfiguration(actions: [
@@ -129,7 +129,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let uuid = dataSource.itemIdentifier(for: indexPath)?.id else { return nil }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in

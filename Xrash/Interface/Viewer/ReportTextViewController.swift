@@ -99,7 +99,7 @@ final class ReportTextViewController: UIViewController {
         }
         spinner.snp.makeConstraints { $0.center.equalToSuperview() }
         textView.addGestureRecognizer(
-            UIPinchGestureRecognizer(target: self, action: #selector(pinchToScale))
+            UIPinchGestureRecognizer(target: self, action: #selector(pinchToScale)),
         )
         if #unavailable(iOS 26.0) {
             navigationItem.scrollEdgeAppearance = UINavigationBarAppearance().then {
@@ -167,7 +167,7 @@ final class ReportTextViewController: UIViewController {
     private func currentTheme() -> ScaledEditorTheme {
         ScaledEditorTheme.theme(
             for: traitCollection,
-            scale: CGFloat(settings.preferences.value.textScale)
+            scale: CGFloat(settings.preferences.value.textScale),
         )
     }
 
@@ -180,7 +180,7 @@ final class ReportTextViewController: UIViewController {
                 UIDeferredMenuElement.uncached { [weak self] completion in
                     completion(self?.menuElements() ?? [])
                 },
-            ])
+            ]),
         )
         more.accessibilityLabel = String(localized: "More")
         navigationItem.rightBarButtonItem = more
@@ -198,7 +198,7 @@ final class ReportTextViewController: UIViewController {
             title: String(localized: "Wrap Lines"),
             // `text.word.spacing` is an iOS 16 symbol and draws nothing on 15.
             image: UIImage(systemName: "arrow.turn.down.left"),
-            state: preferences.wrapsLines ? .on : .off
+            state: preferences.wrapsLines ? .on : .off,
         ) { [weak self] _ in
             self?.settings.changePreferences { $0.wrapsLines.toggle() }
             self?.textView.isLineWrappingEnabled = self?.settings.preferences.value.wrapsLines ?? false
@@ -232,7 +232,7 @@ final class ReportTextViewController: UIViewController {
         let format = UIAction(
             title: String(localized: "Format JSON"),
             image: UIImage(systemName: "curlybraces"),
-            state: isFormatted ? .on : .off
+            state: isFormatted ? .on : .off,
         ) { [weak self] _ in
             self?.toggleFormatted()
         }
@@ -273,7 +273,7 @@ final class ReportTextViewController: UIViewController {
         let name = (title ?? "Report").replacingOccurrences(of: "/", with: "-")
         guard let url = try? ReportShare.file(
             named: "\(name).\(language == .json ? "json" : "txt")",
-            text: text
+            text: text,
         ) else {
             return presentMessage("Unable to Share", message: "The file could not be created. Try again.")
         }
@@ -305,7 +305,7 @@ final class ReportTextViewController: UIViewController {
             let match = text.range(
                 of: term,
                 options: [.caseInsensitive],
-                range: NSRange(location: position, length: text.length - position)
+                range: NSRange(location: position, length: text.length - position),
             )
             guard match.location != NSNotFound, match.length > 0 else { break }
             count += 1

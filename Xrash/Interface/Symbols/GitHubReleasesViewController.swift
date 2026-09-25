@@ -21,7 +21,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
     init(
         repository: GitHubReleaseSymbols.Repository,
         store: DSYMStore,
-        onImport: @escaping () -> Void
+        onImport: @escaping () -> Void,
     ) {
         self.repository = repository
         self.store = store
@@ -63,7 +63,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             content.secondaryTextProperties.numberOfLines = 2
             let isImported = hasSymbols && imported.isSuperset(of: release.symbolAssets)
             content.image = UIImage(
-                systemName: isImported ? "checkmark.circle.fill" : hasSymbols ? "arrow.down.circle" : "tag"
+                systemName: isImported ? "checkmark.circle.fill" : hasSymbols ? "arrow.down.circle" : "tag",
             )
             content.imageProperties.tintColor = hasSymbols ? view.tintColor : .secondaryLabel
             cell.contentConfiguration = content
@@ -117,21 +117,21 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
                 symbolName: "exclamationmark.triangle",
                 title: String(localized: "Unable to Load Releases"),
                 description: failure.localizedDescription,
-                actionTitle: String(localized: "Try Again")
+                actionTitle: String(localized: "Try Again"),
             )) { [weak self] in self?.load() }
         } else if !query.isEmpty {
             tableView.setEmptyState(.message(
                 symbolName: "magnifyingglass",
                 title: String(localized: "No Results"),
                 description: String(localized: "No release matches “\(query)”."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         } else {
             tableView.setEmptyState(.message(
                 symbolName: "tag",
                 title: String(localized: "No Releases"),
                 description: String(localized: "That repository has no releases."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         }
     }
@@ -176,7 +176,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
                 GitHubAssetsViewController(assets: assets, imported: imported) { [weak self] asset, done in
                     self?.download(asset, done: done)
                 },
-                animated: true
+                animated: true,
             )
         }
     }
@@ -199,11 +199,11 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
                 let imported = try await ProgressCard.run(
                     // The archive list may be the page on top.
                     from: navigationController ?? self,
-                    title: String(localized: "Importing Symbols")
+                    title: String(localized: "Importing Symbols"),
                 ) { report in
                     try FileManager.default.createDirectory(
                         at: destination.deletingLastPathComponent(),
-                        withIntermediateDirectories: true
+                        withIntermediateDirectories: true,
                     )
                     report(0, String(localized: "Downloading \(asset.name)…"))
                     try await GitHubReleaseSymbols.download(asset, to: destination) { fraction, bytes in
@@ -242,7 +242,7 @@ private final class GitHubAssetsViewController: UITableViewController {
     init(
         assets: [GitHubReleaseSymbols.Asset],
         imported: Set<GitHubReleaseSymbols.Asset>,
-        onPick: @escaping (GitHubReleaseSymbols.Asset, @escaping () -> Void) -> Void
+        onPick: @escaping (GitHubReleaseSymbols.Asset, @escaping () -> Void) -> Void,
     ) {
         self.assets = assets
         self.imported = imported
@@ -279,7 +279,7 @@ private final class GitHubAssetsViewController: UITableViewController {
         content.secondaryText = ReportFormat.byteCount(UInt64(max(asset.byteCount, 0)))
         content.secondaryTextProperties.color = .secondaryLabel
         content.image = UIImage(
-            systemName: imported.contains(asset) ? "checkmark.circle.fill" : "arrow.down.circle"
+            systemName: imported.contains(asset) ? "checkmark.circle.fill" : "arrow.down.circle",
         )
         cell.contentConfiguration = content
         // The glyph is the whole difference between a downloaded archive and

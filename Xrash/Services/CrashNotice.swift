@@ -63,7 +63,7 @@ final class CrashNotice {
         in summaries: [ReportSummary],
         accounted: Set<String>,
         since start: Date,
-        filter: ReportFilter
+        filter: ReportFilter,
     ) -> [ReportSummary] {
         summaries.filter { $0.date > start && !accounted.contains($0.id) && filter.admits($0) }
     }
@@ -139,7 +139,7 @@ final class CrashNotice {
             in: summaries,
             accounted: accounted,
             since: startedAt,
-            filter: filter
+            filter: filter,
         )
         accounted.formUnion(summaries.map(\.id))
         sendPolicy()
@@ -169,7 +169,7 @@ final class CrashNotice {
             isEnabled: settings.preferences.value.notifiesOnNewReports,
             kinds: Set(filter.kinds.map(\.rawValue)),
             hiddenProcessNames: filter.hiddenProcessNames,
-            unreadCount: unreadCount(library.summaries.value, unread: library.unreadIDs.value, filter: filter)
+            unreadCount: unreadCount(library.summaries.value, unread: library.unreadIDs.value, filter: filter),
         )
         guard policy != sentPolicy else { return }
         policyTask = Task { [weak self, backend] in
@@ -201,7 +201,7 @@ final class CrashNotice {
         content.sound = .default
         content.userInfo = [Self.reportIDKey: summary.id]
         UNUserNotificationCenter.current().add(
-            UNNotificationRequest(identifier: summary.id, content: content, trigger: nil)
+            UNNotificationRequest(identifier: summary.id, content: content, trigger: nil),
         ) { _ in }
     }
 
@@ -242,7 +242,7 @@ final class CrashNotice {
             let source = DispatchSource.makeFileSystemObjectSource(
                 fileDescriptor: descriptor,
                 eventMask: .write,
-                queue: .main
+                queue: .main,
             )
             source.setEventHandler { [weak self] in self?.scheduleRefresh() }
             source.setCancelHandler { close(descriptor) }
@@ -291,7 +291,7 @@ enum UnreadBadge {
                     group: .app,
                     date: start.addingTimeInterval(Double(secondsFromStart)),
                     byteCount: 1,
-                    isSynced: false
+                    isSynced: false,
                 )
             }
             let old = report("Fila", secondsFromStart: -60)
@@ -309,7 +309,7 @@ enum UnreadBadge {
                 in: [old, new, known, hidden, analytics],
                 accounted: [known.id],
                 since: start,
-                filter: filter
+                filter: filter,
             )
             assert(found.map(\.id) == [new.id], "only the new, unaccounted, admitted report notifies")
             return true

@@ -10,11 +10,11 @@ final class PathGuardTests: XCTestCase {
             .appendingPathComponent("xrash-guard-\(UUID().uuidString)")
         try FileManager.default.createDirectory(
             at: directory.appendingPathComponent("CrashReporter/Retired"),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
         try FileManager.default.createDirectory(
             at: directory.appendingPathComponent("CrashReporterEvil"),
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
         )
         root = try XCTUnwrap(PathGuard.canonical(directory.path))
         for name in ["CrashReporter/a.ips", "CrashReporter/Retired/b.ips.synced", "CrashReporterEvil/c.ips", "secret"] {
@@ -22,7 +22,7 @@ final class PathGuardTests: XCTestCase {
         }
         try FileManager.default.createSymbolicLink(
             atPath: "\(root!)/CrashReporter/escape.ips",
-            withDestinationPath: "\(root!)/secret"
+            withDestinationPath: "\(root!)/secret",
         )
     }
 
@@ -55,7 +55,7 @@ final class PathGuardTests: XCTestCase {
     func testARootPointedAtAnotherTreeIsDropped() throws {
         try FileManager.default.createSymbolicLink(
             atPath: "\(root!)/Redirected",
-            withDestinationPath: "\(root!)/CrashReporterEvil"
+            withDestinationPath: "\(root!)/CrashReporterEvil",
         )
         XCTAssertNil(ReportRoots.canonicalRoot("\(root!)/Redirected"))
         XCTAssertEqual(ReportRoots.canonicalRoot("\(root!)/CrashReporter"), "\(root!)/CrashReporter")
@@ -84,7 +84,7 @@ final class PathGuardTests: XCTestCase {
             path: "/x/a.ips",
             byteCount: 2,
             modified: Date(timeIntervalSince1970: 1),
-            ownerUserID: 0
+            ownerUserID: 0,
         )
         XCTAssertEqual(try XrashWire.decode([ReportEntry].self, from: XrashWire.encode([entry])), [entry])
     }

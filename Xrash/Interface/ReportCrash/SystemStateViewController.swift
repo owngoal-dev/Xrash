@@ -75,19 +75,19 @@ final class SystemStateViewController: UITableViewController {
         guard let text = try? String(contentsOf: file.url, encoding: .utf8) else {
             return controller.presentMessage(
                 "Unable to Open File",
-                message: "“\(file.name)” could not be opened. The file may be damaged."
+                message: "“\(file.name)” could not be opened. The file may be damaged.",
             )
         }
         controller.navigationController?.pushViewController(
             ReportTextViewController(title: file.name, text: text, language: .json),
-            animated: true
+            animated: true,
         )
     }
 
     override func tableView(
         _: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         let file = files[indexPath.row]
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
@@ -95,14 +95,14 @@ final class SystemStateViewController: UITableViewController {
             if let fila = SiblingApps.viewInFila(path: file.url.path) {
                 actions.append(UIAction(
                     title: String(localized: "Open in Fila"),
-                    image: UIImage(systemName: "folder")
+                    image: UIImage(systemName: "folder"),
                 ) { _ in
                     SiblingApps.open(fila)
                 })
             }
             actions.append(UIAction(
                 title: String(localized: "Copy"),
-                image: UIImage(systemName: "doc.on.doc")
+                image: UIImage(systemName: "doc.on.doc"),
             ) { _ in
                 guard let text = try? String(contentsOf: file.url, encoding: .utf8) else { return }
                 UIPasteboard.general.string = text

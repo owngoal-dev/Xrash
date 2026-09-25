@@ -63,29 +63,29 @@ final class WelcomeController: UIViewController {
             symbol: "doc.text.magnifyingglass",
             title: String.LocalizationValue("Read Reports"),
             detail: String.LocalizationValue(
-                "Crashes, hangs, kernel panics and out-of-memory reports, as the system wrote them."
-            )
+                "Crashes, hangs, kernel panics and out-of-memory reports, as the system wrote them.",
+            ),
         ),
         .init(
             symbol: "function",
             title: String.LocalizationValue("Name the Frames"),
             detail: String.LocalizationValue(
-                "System symbols and imported dSYMs turn a stack of addresses into function names."
-            )
+                "System symbols and imported dSYMs turn a stack of addresses into function names.",
+            ),
         ),
         .init(
             symbol: "shippingbox",
             title: String.LocalizationValue("Spot the Suspect"),
             detail: String.LocalizationValue(
-                "The packages whose code sits in a crashing stack are named beside it."
-            )
+                "The packages whose code sits in a crashing stack are named beside it.",
+            ),
         ),
         .init(
             symbol: "hand.raised",
             title: String.LocalizationValue("Nothing Injected"),
             detail: String.LocalizationValue(
-                "Xrash opens files and reads them. Nothing is hooked, patched or installed."
-            )
+                "Xrash opens files and reads them. Nothing is hooked, patched or installed.",
+            ),
         ),
     ]
 
@@ -93,7 +93,7 @@ final class WelcomeController: UIViewController {
         top: 28,
         left: WelcomeStyle.horizontalMargin,
         bottom: 28,
-        right: WelcomeStyle.horizontalMargin
+        right: WelcomeStyle.horizontalMargin,
     )
     private let scrollView = UIScrollView().then { $0.alwaysBounceVertical = true }
     private let contentView = UIView()
@@ -144,7 +144,7 @@ final class WelcomeController: UIViewController {
                 delay: 0.1 * Double(index),
                 usingSpringWithDamping: 0.9,
                 initialSpringVelocity: 0.4,
-                options: [.curveEaseInOut]
+                options: [.curveEaseInOut],
             ) {
                 row.alpha = 1
             }
@@ -221,7 +221,7 @@ final class WelcomeController: UIViewController {
         titleText.addAttribute(
             .foregroundColor,
             value: WelcomeStyle.accent,
-            range: (title as NSString).range(of: "Xrash")
+            range: (title as NSString).range(of: "Xrash"),
         )
         stackView.addArrangedSubview(UILabel().then {
             $0.numberOfLines = 0
@@ -271,7 +271,7 @@ final class WelcomeController: UIViewController {
             guard let self else { return }
             let asks = status == .notDetermined
             let page = WelcomePreparingController(
-                finishTitle: asks ? String(localized: "Continue") : String(localized: "Get Started")
+                finishTitle: asks ? String(localized: "Continue") : String(localized: "Get Started"),
             ) { [weak self] in
                 asks ? self?.showNotificationsPage() : self?.finish()
             }

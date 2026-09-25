@@ -60,7 +60,7 @@ public struct NoticeLedger: Codable, Equatable, Sendable {
             let summary = ReportDecoder.summary(
                 path: entry.path,
                 byteCount: entry.byteCount,
-                modified: entry.modified
+                modified: entry.modified,
             )
             guard policy.kinds.contains(summary.kind.rawValue),
                   !policy.hiddenProcessNames.contains(summary.processName) else { continue }
@@ -70,7 +70,7 @@ public struct NoticeLedger: Codable, Equatable, Sendable {
                 path: entry.path,
                 processName: summary.processName,
                 kind: summary.kind,
-                badge: policy.unreadCount + announcedSincePolicy
+                badge: policy.unreadCount + announcedSincePolicy,
             ))
         }
         announced.removeFirst(max(announced.count - Self.maximumRememberedPaths, 0))

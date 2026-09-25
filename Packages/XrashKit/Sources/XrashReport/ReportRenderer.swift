@@ -45,7 +45,7 @@ public enum ReportRenderer {
         guard let object = try? JSONSerialization.jsonObject(with: Data(text.utf8)),
               let data = try? JSONSerialization.data(
                   withJSONObject: object,
-                  options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+                  options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes],
               ) else { return nil }
         return String(decoding: data, as: UTF8.self)
     }

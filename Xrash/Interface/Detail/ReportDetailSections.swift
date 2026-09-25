@@ -119,14 +119,14 @@ enum DetailLayout {
                 sections.append((.crashedThread, frameItems(
                     .crashedThread,
                     count: faulting.frames.count,
-                    expanded: content.expanded.contains(.crashedThread)
+                    expanded: content.expanded.contains(.crashedThread),
                 )))
             }
             if !crash.lastExceptionBacktrace.isEmpty {
                 sections.append((.lastException, frameItems(
                     .lastException,
                     count: crash.lastExceptionBacktrace.count,
-                    expanded: content.expanded.contains(.lastException)
+                    expanded: content.expanded.contains(.lastException),
                 )))
             }
             let others = crash.threads.indices.filter { $0 != crash.faultingThreadIndex }

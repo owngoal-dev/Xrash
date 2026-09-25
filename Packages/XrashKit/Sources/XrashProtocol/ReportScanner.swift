@@ -148,9 +148,9 @@ public struct ReportScanner {
                     byteCount: UInt64(max(metadata.st_size, 0)),
                     modified: Date(
                         timeIntervalSince1970: TimeInterval(metadata.st_mtimespec.tv_sec)
-                            + TimeInterval(metadata.st_mtimespec.tv_nsec) / 1_000_000_000
+                            + TimeInterval(metadata.st_mtimespec.tv_nsec) / 1_000_000_000,
                     ),
-                    ownerUserID: metadata.st_uid
+                    ownerUserID: metadata.st_uid,
                 ))
             default:
                 continue

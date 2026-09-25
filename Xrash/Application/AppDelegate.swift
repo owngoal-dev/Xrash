@@ -5,7 +5,7 @@ import UserNotifications
 final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _: UIApplication,
-        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?
+        didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?,
     ) -> Bool {
         UpdateNotice.shared.startWatching()
         // The delegate has to be in place before this method returns, or a
@@ -25,7 +25,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     func application(
         _: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
-        options _: UIScene.ConnectionOptions
+        options _: UIScene.ConnectionOptions,
     ) -> UISceneConfiguration {
         let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
         configuration.delegateClass = SceneDelegate.self
@@ -37,7 +37,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void,
     ) {
         completionHandler(CrashNotice.shared.presentationOptions(for: Self.reportID(in: notification)))
     }
@@ -45,7 +45,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
+        withCompletionHandler completionHandler: @escaping () -> Void,
     ) {
         Self.reportID(in: response.notification).map { CrashNotice.shared.show(reportID: $0) }
         completionHandler()

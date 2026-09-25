@@ -249,7 +249,7 @@ final class MacLaunchAgent {
 
         private static var registrationFailure: String {
             String(
-                localized: "Unable to turn on the Xrash helper. Open Login Items in System Settings to allow it."
+                localized: "Unable to turn on the Xrash helper. Open Login Items in System Settings to allow it.",
             )
         }
 

@@ -27,7 +27,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         title = String(localized: "Saved")
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "plus"),
-            primaryAction: UIAction { [weak self] _ in self?.importArchive() }
+            primaryAction: UIAction { [weak self] _ in self?.importArchive() },
         )
         navigationItem.rightBarButtonItem?.accessibilityLabel = String(localized: "Import Report")
 
@@ -48,7 +48,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
                 icon: primary.summary,
                 executablePath: primary.report.crash?.process.path,
                 title: bundle.manifest.title,
-                subtitle: Self.subtitle(of: bundle)
+                subtitle: Self.subtitle(of: bundle),
             )
             return cell
         }
@@ -71,7 +71,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         navigationController?.popToRootViewController(animated: false)
         navigationController?.pushViewController(
             BundleDetailViewController(bundle: bundle, store: store),
-            animated: true
+            animated: true,
         )
     }
 
@@ -95,14 +95,14 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
                 description: String(localized: """
                 Use Report Crash on any report to bundle it with related crashes.
                 """),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         } else {
             tableView.setEmptyState(.message(
                 symbolName: "magnifyingglass",
                 title: String(localized: "No Results"),
                 description: String(localized: "No saved report matches “\(query)”."),
-                actionTitle: nil
+                actionTitle: nil,
             ))
         }
     }
@@ -125,13 +125,13 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         guard let id = dataSource.itemIdentifier(for: indexPath), let bundle = shown[id] else { return }
         navigationController?.pushViewController(
             BundleDetailViewController(bundle: bundle, store: store),
-            animated: true
+            animated: true,
         )
     }
 
     override func tableView(
         _: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath,
     ) -> UISwipeActionsConfiguration? {
         guard let id = dataSource.itemIdentifier(for: indexPath) else { return nil }
         let delete = UIContextualAction(style: .destructive, title: String(localized: "Delete")) {
@@ -145,7 +145,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
     override func tableView(
         _ tableView: UITableView,
         contextMenuConfigurationForRowAt indexPath: IndexPath,
-        point _: CGPoint
+        point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
         guard let id = dataSource.itemIdentifier(for: indexPath), let bundle = shown[id] else { return nil }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
@@ -153,7 +153,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             var actions = [UIAction]()
             actions.append(UIAction(
                 title: String(localized: "Share"),
-                image: UIImage(systemName: "square.and.arrow.up")
+                image: UIImage(systemName: "square.and.arrow.up"),
             ) { [weak self] _ in
                 guard let self else { return }
                 ReportShare.present(bundle, from: self, source: tableView.cellForRow(at: indexPath))
@@ -161,7 +161,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             if bundle.manifest.pdfPath != nil {
                 actions.append(UIAction(
                     title: String(localized: "Open PDF"),
-                    image: UIImage(systemName: "doc.richtext")
+                    image: UIImage(systemName: "doc.richtext"),
                 ) { [weak self] _ in
                     self?.openPDF(bundle)
                 })
@@ -169,7 +169,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             actions.append(UIAction(
                 title: String(localized: "Delete"),
                 image: UIImage(systemName: "trash"),
-                attributes: .destructive
+                attributes: .destructive,
             ) { [weak self] _ in
                 self?.delete(id)
             })
@@ -196,7 +196,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             BundlePDFPreview.present(
                 directory.appendingPathComponent(BundleLayout.pdf),
                 title: bundle.manifest.title,
-                from: self
+                from: self,
             )
         } catch {
             presentFailure("Could Not Open the PDF", error)
@@ -206,7 +206,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
     private func importArchive() {
         let picker = UIDocumentPickerViewController(
             forOpeningContentTypes: [.xrashReport, .zip],
-            asCopy: true
+            asCopy: true,
         )
         picker.delegate = self
         present(picker, animated: true)
@@ -220,7 +220,7 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             do {
                 let imported = try await ProgressCard.run(
                     from: self,
-                    title: String(localized: "Importing Report…")
+                    title: String(localized: "Importing Report…"),
                 ) { report in
                     var ids = [String]()
                     for (offset, url) in urls.enumerated() {
