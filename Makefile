@@ -215,7 +215,9 @@ sim:
 	xcrun simctl install "$(SIMULATOR)" "$(SIMULATOR_APP)"
 	xcrun simctl launch "$(SIMULATOR)" wiki.qaq.xrash
 
+# No package is cut from a build that cannot launch on the floor it claims.
 deb: build
+	"$(FLOOR_AUDIT)" "$(MINIMUM_IOS_VERSION)" "$(APP_BUNDLE)" "$(DAEMON_BINARY)"
 	"$(DEB_PACKAGER)" \
 		"$(APP_BUNDLE)" \
 		"$(DAEMON_BINARY)" \
@@ -244,7 +246,8 @@ deb-rootless:
 
 deb-all: deb-roothide deb-rootless
 
-# The four static floor audits over what was actually built. Run after `build`.
+# The static floor audits over what was actually built. Run after `build`;
+# `deb` runs them itself before packaging.
 audit-floor:
 	"$(FLOOR_AUDIT)" "$(MINIMUM_IOS_VERSION)" "$(APP_BUNDLE)" "$(DAEMON_BINARY)"
 

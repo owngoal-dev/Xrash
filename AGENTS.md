@@ -196,7 +196,12 @@ handshake.
 - `make mac-zip-check` / `make mac-zip` — the macOS packaging inputs, and the
   signed, zipped app. `make check` runs `mac-zip-check`; `mac-zip` needs
   nothing but Xcode, so it stands alone.
-- `make audit-floor` — the static floor audits over the built app and daemon.
+- `make audit-floor` — the static floor audits over the built app and daemon:
+  late libraries, build versions, weak imports, and Swift runtime symbols
+  imported non-weakly (a listed one such as `_swift_initBorrow`, iOS 27, and
+  everything the oldest installed iOS simulator runtime at or above the floor
+  with its Swift libraries as files does not export). `make deb` runs them
+  before it packages anything.
 - `make vphone` — rootless package installed on the vphone over `iproxy 2222 22`
   (`sudo dpkg -i` as `mobile`; root login is refused there).
 
@@ -234,7 +239,7 @@ anything else.
 
 The Mac harness first, the simulator for the visuals, `make mac-run` for the
 macOS half, a vphone or a custom firmware device for anything privileged, and
-the four floor audits (or an actual device) for the oldest OS this app claims.
+the floor audits (or an actual device) for the oldest OS this app claims.
 Report which of those actually ran.
 
 ## Gotchas that bit us

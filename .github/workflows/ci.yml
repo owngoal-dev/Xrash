@@ -106,7 +106,6 @@ jobs:
           test "$(lipo -archs "$APP_PATH/Xrash")" = "arm64"
           test "$(lipo -archs "$DAEMON_PATH")" = "arm64"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName' "$APP_PATH/Info.plist")" = "AppIcon"
-          make audit-floor CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA"
           DEB_PATH="$(make --no-print-directory print-deb-path FLAVOR=${{ matrix.flavor }})"
           ARCHITECTURE="$(dpkg-deb -f "$DEB_PATH" Architecture)"
           ./Scripts/verify-deb.sh "$DEB_PATH" wiki.qaq.xrash "$VERSION" "$ARCHITECTURE" "${{ matrix.prefix }}"
