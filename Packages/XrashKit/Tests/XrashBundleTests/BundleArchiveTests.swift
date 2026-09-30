@@ -127,6 +127,43 @@ final class BundleArchiveTests: XCTestCase {
         XCTAssertEqual(listing.last?.modified, time_t(modified.timeIntervalSince1970))
     }
 
+    /// The app and xrashd never call `setlocale`, so they run in "C", where
+    /// libarchive cannot convert a UTF-8 name. A process name is not ASCII often
+    /// enough (`フィラ`, `Café`) that the member file carrying it must survive
+    /// both ends, and the entry must carry the zip UTF-8 flag so other readers
+    /// decode it too.
+    func testANonASCIINameRoundTripsInTheCLocale() throws {
+        let source = directory.appendingPathComponent("report.ips")
+        let contents = Data("thread 0".utf8)
+        try contents.write(to: source)
+        let archivePath = BundleLayout.rawReport(member: "M1", fileName: "フィラ-Café-2026-09-08.ips")
+        let destination = directory.appendingPathComponent("Unicode.xrashreport")
+        let unpacked = directory.appendingPathComponent("unpacked-unicode")
+
+        let cLocale = try XCTUnwrap(newlocale(LC_CTYPE_MASK, "C", nil))
+        let previous = uselocale(cLocale)
+        defer {
+            uselocale(previous)
+            freelocale(cLocale)
+        }
+        try BundleArchive.write(
+            manifest(),
+            files: [BundleFile(source: source, archivePath: archivePath)],
+            to: destination,
+        )
+        XCTAssertEqual(try BundleArchive.read(destination, extractingInto: unpacked), manifest())
+        XCTAssertEqual(try Data(contentsOf: unpacked.appendingPathComponent(archivePath)), contents)
+
+        // The second local header is the member's; general purpose flags sit
+        // at +6, and bit 11 is "name is UTF-8".
+        let bytes = try [UInt8](Data(contentsOf: destination))
+        let signature: [UInt8] = [0x50, 0x4B, 0x03, 0x04]
+        let headers = (0 ..< bytes.count - 8).filter { Array(bytes[$0 ..< $0 + 4]) == signature }
+        XCTAssertEqual(headers.count, 2)
+        let flags = UInt16(bytes[headers[1] + 6]) | UInt16(bytes[headers[1] + 7]) << 8
+        XCTAssertNotEqual(flags & 0x0800, 0, "the member name is not marked as UTF-8")
+    }
+
     func testAnEntryThatClimbsOutOfTheDirectoryIsRefused() throws {
         let archive = directory.appendingPathComponent("escape.zip")
         try craft(archive, entries: [Entry(name: "../escaped.txt", contents: Data("no".utf8))])
