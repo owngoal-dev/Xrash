@@ -469,11 +469,12 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         navigationItem.rightBarButtonItems = editing ? [editButtonItem] : [editButtonItem, accessoryItem]
         // The tab bar floats over the bottom of the screen and covers the
         // toolbar, which is where Delete, Share and Mark as Read are: while
-        // selecting, the toolbar has that place to itself.
+        // selecting, the toolbar has that place to itself. Before iOS 18 the
+        // bar is docked and the toolbar stacks above it; `tabBar.isHidden`
+        // there keeps the bar's inset, and the toolbar floats a bar's height
+        // up with rows showing through beneath it (#6).
         if #available(iOS 18.0, *) {
             tabBarController?.setTabBarHidden(editing, animated: animated)
-        } else {
-            tabBarController?.tabBar.isHidden = editing
         }
         navigationController?.setToolbarHidden(!editing, animated: animated)
         renderSelectionItems()
