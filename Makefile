@@ -136,6 +136,7 @@ check:
 	@command -v ldid >/dev/null || { echo "error: ldid is required" >&2; exit 69; }
 	@command -v dpkg-deb >/dev/null || { echo "error: dpkg-deb is required" >&2; exit 69; }
 	@test -d "$(PROJECT)" || { echo "error: Xrash.xcodeproj is missing" >&2; exit 66; }
+	@"$(ROOT_DIR)/Scripts/check-gpu-entitlements.py" "$(ROOT_DIR)/Packaging/Xrash.entitlements"
 	@test -f "$(CONTROL_TEMPLATE)" || { echo "error: Debian control template is missing" >&2; exit 66; }
 	@for script in "$(DEB_PACKAGER)" "$(VERSION_APPLIER)" "$(DEB_VERIFIER)" "$(FLOOR_AUDIT)" "$(SYMBOL_CHECK)" "$(ACCESSIBILITY_CHECK)" "$(MAC_PACKAGER)" "$(MAC_DAEMON_LOADER)" "$(ROOT_DIR)/Scripts/sign-frameworks.sh" "$(ROOT_DIR)/Scripts/check-ui-libraries.sh" "$(ROOT_DIR)/Scripts/check-localization.sh"; do \
 		test -x "$$script" || { echo "error: $$script is not executable" >&2; exit 66; }; \
