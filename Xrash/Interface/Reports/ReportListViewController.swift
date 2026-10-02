@@ -283,9 +283,9 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         scheduleReasonPass()
     }
 
-    /// A header is asked for its title when its section is laid out and never
-    /// again, so the counts in "Apps · 12" would freeze at whatever the first
-    /// publish of a refresh happened to hold.
+    /// A header or footer is asked for its title when its section is laid out
+    /// and never again, so the footer's note would freeze at whatever the
+    /// first publish of a refresh happened to hold.
     private func refreshVisibleSectionText() {
         for section in 0 ..< tableView.numberOfSections {
             guard let identifier = dataSource.sectionIdentifier(for: section) else { continue }
@@ -409,7 +409,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     private func headerTitle(for section: ReportSection) -> String? {
         guard lockedProcessName == nil,
               let group = groups.first(where: { $0.section == section }) else { return nil }
-        return String(localized: "\(ReportListArrangement.title(for: section)) · \(group.rows.count)")
+        return ReportListArrangement.title(for: group.section)
     }
 
     /// Said once, under the last section, and only when the daemon never

@@ -80,7 +80,7 @@ enum ReportListArrangement {
         }
         return bySection
             .map { ReportListGroup(section: $0.key, rows: $0.value.sorted { isBefore($0, $1, input.filter.order) }) }
-            .sorted { isBefore($0.section, $1.section, input.filter.order) }
+            .sorted { isBefore($0, $1, input.filter.order) }
     }
 
     /// One row per process name. A search keeps a process when its name, its
@@ -168,6 +168,19 @@ enum ReportListArrangement {
         }
     }
 
+    /// A date order puts the section with the newest (or oldest) report
+    /// first, the same question its rows answer — the rows are already
+    /// sorted, so a section's first row is the one it is judged by. A name
+    /// order, and a tie, fall back to the sections' own order.
+    private static func isBefore(_ lhs: ReportListGroup, _ rhs: ReportListGroup, _ order: ReportFilter.Order) -> Bool {
+        if order != .name, let left = lhs.rows.first?.summary.date, let right = rhs.rows.first?.summary.date,
+           left != right
+        {
+            return order == .oldest ? left < right : left > right
+        }
+        return isBefore(lhs.section, rhs.section, order)
+    }
+
     /// Categories keep their written order; processes read alphabetically
     /// whatever the row order is, and days follow the rows.
     private static func isBefore(_ lhs: ReportSection, _ rhs: ReportSection, _ order: ReportFilter.Order) -> Bool {
@@ -193,13 +206,18 @@ enum ReportListArrangement {
         /// lives in the app target, where the package tests cannot reach it.
         /// A `static let` runs its closure exactly once.
         static let inboxSelfCheckPassed: Bool = {
-            func report(_ name: String, minutesAgo: Int, bundleID: String? = nil) -> ReportSummary {
+            func report(
+                _ name: String,
+                minutesAgo: Int,
+                bundleID: String? = nil,
+                group: ReportGroup = .app,
+            ) -> ReportSummary {
                 var summary = ReportSummary(
                     id: "/\(name)-\(minutesAgo).ips",
                     fileName: "\(name)-\(minutesAgo).ips",
                     processName: name,
                     kind: .crash,
-                    group: .app,
+                    group: group,
                     date: Date(timeIntervalSinceReferenceDate: Double(-minutesAgo) * 60),
                     byteCount: 1,
                     isSynced: false,
@@ -242,6 +260,19 @@ enum ReportListArrangement {
             input.searchText = ""
             input.filter.hiddenProcessNames = ["Fila"]
             assert(inbox(for: input).map(\.name) == ["SpringBoard"], "a hidden process is not in the inbox")
+
+            input.summaries.append(report("dtdeviceinfod", minutesAgo: 5, group: .service))
+            input.filter.hiddenProcessNames = []
+            input.filter.grouping = .category
+            input.filter.order = .newest
+            assert(groups(for: input).map(\.section) == [.group(.app), .group(.service)],
+                   "the section with the newest report comes first")
+            input.summaries.removeFirst()
+            assert(groups(for: input).map(\.section) == [.group(.service), .group(.app)],
+                   "sections follow their newest report, not the category order")
+            input.filter.order = .oldest
+            assert(groups(for: input).map(\.section) == [.group(.app), .group(.service)],
+                   "oldest puts the section with the oldest report first")
             return true
         }()
     }
