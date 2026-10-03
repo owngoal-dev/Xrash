@@ -249,6 +249,17 @@ Report which of those actually ran.
   `bootout system/wiki.qaq.xrashd2>/dev/null` — valid sh. The hooks now assign
   `label=wiki.qaq.xrashd` once on its own line; `make check`,
   `verify-deb.sh` and the XrashKit tests all reject an id next to a redirect.
+- **Roothide's launchctl moves `WatchPaths` into the bootstrap.** It prefixes
+  every watched path with the jbroot, as it does the program, so a roothide
+  install watched `<jbroot>/private/var/mobile/…`, which never exists, and
+  `xrashd` was never started for a report: notifications came only when the
+  app next opened (found 2026-10-03). The plist spells them `@ROOTFS@/…`;
+  packaging writes `/rootfs` for roothide, which launchctl strips, and nothing
+  for rootless. `launchctl print` shows the paths launchd really watches.
+- **Leaving before launchd's minimum runtime is throttled.** The job shows
+  `minimum runtime = 10` and exponential throttling, and every report
+  directory change is a launch; `DaemonServer` does not take its idle exit in
+  the first ten seconds.
 - **MachOKit's symbol iterator traps on a real dyld cache.** It casts every
   `n_value` to `Int`; one entry above `Int.max` kills the app, and a test
   capped at four images never meets one. `SystemSymbolStore` reads the nlist

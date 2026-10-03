@@ -31,9 +31,18 @@ done
 [[ "$package_id" =~ ^[a-z0-9][a-z0-9+.-]+$ ]] || { echo "error: invalid package id" >&2; exit 64; }
 [[ "$version" =~ ^[0-9A-Za-z.+:~_-]+$ ]] || { echo "error: invalid version" >&2; exit 64; }
 [[ "$architecture" =~ ^[A-Za-z0-9][A-Za-z0-9-]+$ ]] || { echo "error: invalid architecture" >&2; exit 64; }
+# How a path outside the bootstrap is spelled for launchd: roothide's
+# launchctl prefixes every WatchPaths entry with the bootstrap root unless it
+# starts with /rootfs/, which it strips instead.
 case "$flavor" in
-    roothide) [[ -z "$install_prefix" ]] || { echo "error: roothide packages install at rootful paths" >&2; exit 64; } ;;
-    rootless) [[ "$install_prefix" == /var/jb ]] || { echo "error: rootless packages install under /var/jb" >&2; exit 64; } ;;
+    roothide)
+        [[ -z "$install_prefix" ]] || { echo "error: roothide packages install at rootful paths" >&2; exit 64; }
+        rootfs_prefix=/rootfs
+        ;;
+    rootless)
+        [[ "$install_prefix" == /var/jb ]] || { echo "error: rootless packages install under /var/jb" >&2; exit 64; }
+        rootfs_prefix=
+        ;;
     *) echo "error: flavor must be roothide or rootless" >&2; exit 64 ;;
 esac
 
@@ -82,7 +91,7 @@ installed_plist="$staging$install_prefix/Library/LaunchDaemons/wiki.qaq.xrashd.p
 mkdir -p "$debian" "$(dirname "$installed_app")" "$(dirname "$installed_daemon")" "$(dirname "$installed_plist")"
 /usr/bin/ditto "$app_bundle" "$installed_app"
 /usr/bin/ditto "$daemon_binary" "$installed_daemon"
-sed -e "s|@PREFIX@|$install_prefix|g" "$launch_plist" >"$installed_plist"
+sed -e "s|@PREFIX@|$install_prefix|g" -e "s|@ROOTFS@|$rootfs_prefix|g" "$launch_plist" >"$installed_plist"
 rm -rf "$installed_app/_CodeSignature"
 rm -f "$installed_app/embedded.mobileprovision"
 chmod 0755 "$installed_daemon"
@@ -91,6 +100,17 @@ chmod 0644 "$installed_plist"
     echo "error: launch daemon plist does not point at the installed daemon" >&2
     exit 65
 }
+# A watched path launchd resolves into the bootstrap never changes, and the
+# daemon is then never started for a report.
+watch_index=0
+while watched="$(/usr/libexec/PlistBuddy -c "Print :WatchPaths:$watch_index" "$installed_plist" 2>/dev/null)"; do
+    [[ "$watched" == "$rootfs_prefix/"* && "$watched" != *@* ]] || {
+        echo "error: launch daemon watches '$watched', expected it under '$rootfs_prefix/'" >&2
+        exit 65
+    }
+    watch_index=$((watch_index + 1))
+done
+[[ "$watch_index" -gt 0 ]] || { echo "error: launch daemon plist watches no report directory" >&2; exit 65; }
 # The daemon is on-demand: launchd starts it for a Mach lookup and it exits
 # when idle. A KeepAlive or RunAtLoad that slipped in would pin a root process.
 for key in KeepAlive RunAtLoad; do

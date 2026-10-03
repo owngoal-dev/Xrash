@@ -8,6 +8,13 @@ import XrashProtocol
 /// the process leaves once the last session has been gone for a moment.
 final class DaemonServer {
     private static let idleExitDelay: DispatchTimeInterval = .seconds(3)
+    /// launchd's `minimum runtime` for the job. A process that leaves sooner
+    /// is throttled, exponentially when it keeps doing so, and every report
+    /// directory change starts one: the next crash would then wait out the
+    /// penalty before anything is announced.
+    private static let minimumRuntime: DispatchTimeInterval = .seconds(10)
+
+    private let launchedAt = DispatchTime.now()
 
     private let queue = DispatchQueue(
         label: "wiki.qaq.xrashd.server",
@@ -75,7 +82,8 @@ final class DaemonServer {
     private func scheduleIdleExit() {
         idleGeneration &+= 1
         let scheduledGeneration = idleGeneration
-        queue.asyncAfter(deadline: .now() + Self.idleExitDelay) { [weak self] in
+        let deadline = max(DispatchTime.now() + Self.idleExitDelay, launchedAt + Self.minimumRuntime)
+        queue.asyncAfter(deadline: deadline) { [weak self] in
             guard let self, sessions.isEmpty, idleGeneration == scheduledGeneration else { return }
             // A notification on its way out is not idleness.
             guard announcer?.isBusy != true else { return scheduleIdleExit() }

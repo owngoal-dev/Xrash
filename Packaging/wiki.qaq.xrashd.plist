@@ -15,6 +15,13 @@
 	its own when a report is written (OSAnalytics has no notify_post for it),
 	so the directory changing is the event. The paths are the fixed report
 	roots of `ReportRoots`; one that does not exist is ignored by launchd.
+
+	@ROOTFS@ is substituted at package time too: /rootfs for roothide, empty
+	for rootless. Roothide's launchctl puts the bootstrap root in front of
+	every WatchPaths entry as it does for the program, and launchd then
+	watches a directory inside the bootstrap that never exists, so the daemon
+	was never started for a report. `/rootfs/` is the one spelling it strips
+	instead of prefixing.
 -->
 <plist version="1.0">
 <dict>
@@ -39,9 +46,9 @@
 	</dict>
 	<key>WatchPaths</key>
 	<array>
-		<string>/private/var/mobile/Library/Logs/CrashReporter</string>
-		<string>/private/var/root/Library/Logs/CrashReporter</string>
-		<string>/Library/Logs/CrashReporter</string>
+		<string>@ROOTFS@/private/var/mobile/Library/Logs/CrashReporter</string>
+		<string>@ROOTFS@/private/var/root/Library/Logs/CrashReporter</string>
+		<string>@ROOTFS@/Library/Logs/CrashReporter</string>
 	</array>
 	<!-- Nothing may inject into the process that does privileged work. -->
 	<key>EnvironmentVariables</key>

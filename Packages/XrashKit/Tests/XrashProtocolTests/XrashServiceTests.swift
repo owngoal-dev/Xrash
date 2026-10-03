@@ -35,6 +35,13 @@ final class XrashServiceTests: XCTestCase {
         XCTAssertEqual(Array(services.keys), [XrashService.machServiceName])
         let arguments = try XCTUnwrap(job["ProgramArguments"] as? [String])
         XCTAssertEqual(arguments, ["@PREFIX@" + XrashService.daemonPathSuffix])
+        // Roothide's launchctl moves a watched path into the bootstrap unless
+        // packaging spells it under /rootfs/.
+        let watched = try XCTUnwrap(job["WatchPaths"] as? [String])
+        XCTAssertFalse(watched.isEmpty)
+        for path in watched {
+            XCTAssertTrue(path.hasPrefix("@ROOTFS@/"), path)
+        }
         XCTAssertNil(job["KeepAlive"])
         XCTAssertNil(job["RunAtLoad"])
     }

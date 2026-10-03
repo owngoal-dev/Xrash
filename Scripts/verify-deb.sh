@@ -70,6 +70,17 @@ expect "LaunchDaemon program" \
 expect "LaunchDaemon user" \
     "$(/usr/libexec/PlistBuddy -c 'Print :UserName' "$installed_plist")" \
     "root"
+# Roothide's launchctl moves every watched path into the bootstrap unless it
+# is spelled under /rootfs/; rootless leaves them alone.
+rootfs_prefix=/rootfs
+[[ -z "$install_prefix" ]] || rootfs_prefix=
+expect "LaunchDaemon watched report directory" \
+    "$(/usr/libexec/PlistBuddy -c 'Print :WatchPaths:0' "$installed_plist")" \
+    "$rootfs_prefix/private/var/mobile/Library/Logs/CrashReporter"
+if grep -F '@ROOTFS@' "$installed_plist" >/dev/null; then
+    echo "error: LaunchDaemon plist kept an unsubstituted rootfs prefix" >&2
+    exit 65
+fi
 # On-demand is the contract: no KeepAlive, no RunAtLoad.
 for key in KeepAlive RunAtLoad; do
     if /usr/libexec/PlistBuddy -c "Print :$key" "$installed_plist" >/dev/null 2>&1; then
