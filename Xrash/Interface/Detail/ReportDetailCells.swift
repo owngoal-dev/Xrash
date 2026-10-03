@@ -6,6 +6,10 @@ import XrashReport
 /// The report's icon, above the first section and outside every card: inside
 /// the top row it pushed that row's text off the margin the rows under it
 /// keep. Centred, with the kind's badge on its corner.
+///
+/// Centred in the safe area, not the bounds: from iOS 26 the detail column
+/// runs under the floating sidebar, the table's width with it, and only the
+/// safe area knows where the cards actually are.
 final class ReportIconHeaderView: UIView {
     static let iconSide: CGFloat = 80
     private static let badgeSide: CGFloat = 26
@@ -37,7 +41,7 @@ final class ReportIconHeaderView: UIView {
         addSubview(badgeView)
         iconView.snp.makeConstraints { make in
             make.size.equalTo(Self.iconSide)
-            make.centerX.equalToSuperview()
+            make.centerX.equalTo(safeAreaLayoutGuide)
             make.top.equalToSuperview().inset(Self.topPadding)
         }
         badgeView.snp.makeConstraints { make in

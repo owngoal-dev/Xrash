@@ -97,7 +97,8 @@ final class ReportTextViewController: UIViewController {
             make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
         }
-        spinner.snp.makeConstraints { $0.center.equalToSuperview() }
+        // The safe area's centre: from iOS 26 the view runs under the sidebar.
+        spinner.snp.makeConstraints { $0.center.equalTo(view.safeAreaLayoutGuide) }
         textView.addGestureRecognizer(
             UIPinchGestureRecognizer(target: self, action: #selector(pinchToScale)),
         )
