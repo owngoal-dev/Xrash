@@ -33,7 +33,7 @@ let package = Package(
         // private symbol it names at runtime, so it is safe on an iOS 15 floor.
         // Nothing here changes system state; the half that does stays in
         // `IcliKit`, which this does not link.
-        .package(url: "https://github.com/owngoal-dev/icli.git", from: "0.7.15"),
+        .package(url: "https://github.com/owngoal-dev/icli.git", from: "0.7.16"),
     ],
     targets: [
         // The wire vocabulary. Compiled into both sides, so it must stay free
