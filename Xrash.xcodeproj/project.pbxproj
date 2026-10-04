@@ -541,7 +541,7 @@
 			repositoryURL = "https://github.com/Lakr233/AlertController";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.2.3;
+				minimumVersion = 3.0.0;
 			};
 		};
 		A54000000000000000000004 /* XCRemoteSwiftPackageReference "SPIndicator" */ = {
