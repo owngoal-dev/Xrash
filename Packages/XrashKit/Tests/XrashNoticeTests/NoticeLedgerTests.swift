@@ -119,4 +119,52 @@ final class NoticeLedgerTests: XCTestCase {
         let restored = try XrashWire.decode(NoticeLedger.self, from: XrashWire.encode(ledger))
         XCTAssertEqual(restored, ledger)
     }
+
+    func testActualCategoriesOverrideMisleadingNamesAndRemainIndependent() throws {
+        let bugs = ["309", "298", "210", "228", "202", "142", "206", "145", "211", "999"]
+        let categories: [NoticeCategory] = [.crash, .jetsam, .panic, .hang, .cpu, .wakeups, .diskWrites, .diskWrites, .analytics, .other]
+        let entries = bugs.enumerated().map { entry("Test\($0.offset)-2026-09-21-195211.ips", after: Double($0.offset + 1)) }
+        let details = try Dictionary(uniqueKeysWithValues: zip(entries, bugs).map { entry, bug in
+            let bytes = Data("{\"bug_type\":\"\(bug)\",\"app_name\":\"ActualName\"}\n{}".utf8)
+            return try (entry.path, XCTUnwrap(NoticeDetail(report: bytes, fileName: "misleading.ips")))
+        })
+        for category in NoticeCategory.allCases {
+            var selection = policy(kinds: ["crash", "jetsam", "panic", "hang", "resource", "analytics", "other"])
+            selection.categories = [category.rawValue]
+            var ledger = ledger(selection)
+            let notices = ledger.take(entries, now: start.addingTimeInterval(30), details: details)
+            XCTAssertEqual(notices.map(\.path), zip(entries, categories).filter { $0.1 == category }.map(\.0.path))
+            XCTAssertTrue(notices.allSatisfy { $0.processName == "ActualName" })
+            selection.categories = Set(NoticeCategory.allCases.map(\.rawValue))
+            ledger.adopt(selection)
+            let rewritten = entries.map { item in
+                var item = item
+                item.modified = start.addingTimeInterval(40)
+                return item
+            }
+            XCTAssertEqual(ledger.take(rewritten, now: start.addingTimeInterval(50), details: details), [])
+        }
+        var selection = policy()
+        selection.categories = []
+        var muted = ledger(selection)
+        XCTAssertEqual(muted.take(entries, now: start.addingTimeInterval(30), details: details), [])
+    }
+
+    func testMutedNoiseDoesNotUseTheCrashLoopBudget() {
+        var ledger = ledger(policy(kinds: ["crash"]))
+        let crash = entry("Fila-2026-09-21-195211.ips", after: 1)
+        let noise = (2 ... 20).map { entry("Noise.cpu_resource-2026-09-21-1952\($0).ips", after: Double($0)) }
+        XCTAssertEqual(ledger.take([crash] + noise, now: start.addingTimeInterval(30)).map(\.path), [crash.path])
+    }
+
+    func testPolicyChangedWhileDescribingUsesLatestSwitchAndActualProcess() throws {
+        let entry = entry("Misleading-2026-09-21-195211.ips", after: 1)
+        let detail = try XCTUnwrap(NoticeDetail(report: Data("{\"bug_type\":\"309\",\"app_name\":\"Hidden\"}\n{}".utf8), fileName: "Misleading.ips"))
+        var ledger = ledger(policy())
+        XCTAssertEqual(ledger.candidates(in: [entry]), [entry])
+        ledger.adopt(policy(hidden: ["Hidden"]))
+        XCTAssertEqual(ledger.take([entry], now: start.addingTimeInterval(3), details: [entry.path: detail]), [])
+        ledger.adopt(policy(isEnabled: false))
+        XCTAssertEqual(ledger.take([self.entry("New.ips", after: 4)], now: start.addingTimeInterval(5)), [])
+    }
 }

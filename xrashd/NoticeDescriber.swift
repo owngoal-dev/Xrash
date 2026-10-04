@@ -38,7 +38,6 @@ enum NoticeDescriber {
 
         let report = FileHandle(fileDescriptor: reportDescriptor, closeOnDealloc: false)
         guard let data = try? report.read(upToCount: NoticeDetail.maximumReportByteCount + 1),
-              data.count <= NoticeDetail.maximumReportByteCount,
               let detail = NoticeDetail(report: data, fileName: fileName)?.clamped,
               let encoded = try? XrashWire.encode(detail),
               encoded.count <= NoticeDetail.maximumEncodedByteCount

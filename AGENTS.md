@@ -23,9 +23,13 @@ tested on the Mac) decides what is new, `NoticePoster` posts *as the app*
 through `UNUserNotificationCenter(bundleIdentifier:)` — the daemon carries
 `usernotifications.bundle-identifiers` for it — and the process idles out.
 
-- **The daemon has no settings.** The app sends a `NoticePolicy` (switch,
-  filter, unread count) over `setNoticePolicy` whenever one changes. A daemon
-  that takes it announces everything, app running or not, and the app then
+- **The daemon has no settings.** The app sends a `NoticePolicy` (master switch,
+  list filter, notification categories, unread count) over `setNoticePolicy`
+  whenever one changes. Category switches default to crashes and hangs; CPU,
+  wakeups and disk writes are separate. The category-aware wire operation
+  requires the unprivileged describer's actual report type before filtering;
+  an older daemon is sent a disabled legacy policy before the app takes over.
+  A daemon that takes it announces matching reports, app running or not, and the app then
   posts nothing; `refused` (the Mac's agent) or `invalidRequest` (an older
   daemon) leaves the app announcing on its own. Same identifier — the report's
   path — on both sides.

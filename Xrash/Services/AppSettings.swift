@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import XrashNotice
 import XrashReport
 
 /// How the list is filtered and arranged. One value, so the list's menu and
@@ -76,9 +77,9 @@ struct ReportPreferences: Codable, Equatable, Sendable {
     /// Off: a wrapped stack frame reads as two frames.
     var wrapsLines = false
     var textScale = 1.0
-    /// A notification for a report that arrives while the app is running.
-    /// Nothing is injected anywhere, so that is the whole of what it can see.
+    /// Master switch, preserved when upgrading from the crash-only wording.
     var notifiesOnNewReports = true
+    var notificationCategories: Set<NoticeCategory> = [.crash, .hang]
 
     init() {}
 
@@ -92,6 +93,8 @@ struct ReportPreferences: Codable, Equatable, Sendable {
         textScale = try values.decodeIfPresent(Double.self, forKey: .textScale) ?? textScale
         notifiesOnNewReports = try values.decodeIfPresent(Bool.self, forKey: .notifiesOnNewReports)
             ?? notifiesOnNewReports
+        notificationCategories = try values.decodeIfPresent(Set<NoticeCategory>.self, forKey: .notificationCategories)
+            ?? notificationCategories
     }
 }
 

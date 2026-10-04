@@ -19,6 +19,9 @@ public enum XrashOperation: UInt64, Sendable {
     /// for the app — the Mac's per-user agent — and `invalidRequest` from one
     /// that predates this; either way the app goes on announcing on its own.
     case setNoticePolicy = 7
+    /// Requires category-aware filtering after the unprivileged header read.
+    /// Old daemons reject it, leaving the app to apply its own category policy.
+    case setCategorizedNoticePolicy = 8
 }
 
 public enum XrashReplyCode: Int64, Sendable {
@@ -79,15 +82,21 @@ public struct NoticePolicy: Codable, Equatable, Sendable {
     /// `ReportKind` raw values. Strings, so the wire does not grow a
     /// dependency on the report model.
     public var kinds: Set<String>
+    /// `NoticeCategory` raw values. Nil preserves a policy from an older app.
+    public var categories: Set<String>?
     /// Case-sensitive process names that are never announced.
     public var hiddenProcessNames: Set<String>
     /// The app's unread count when this was sent. The badge a notification
     /// carries is this plus what the daemon has announced since.
     public var unreadCount: Int
 
-    public init(isEnabled: Bool, kinds: Set<String>, hiddenProcessNames: Set<String>, unreadCount: Int) {
+    public init(
+        isEnabled: Bool, kinds: Set<String>, hiddenProcessNames: Set<String>, unreadCount: Int,
+        categories: Set<String>? = nil,
+    ) {
         self.isEnabled = isEnabled
         self.kinds = kinds
+        self.categories = categories
         self.hiddenProcessNames = hiddenProcessNames
         self.unreadCount = unreadCount
     }

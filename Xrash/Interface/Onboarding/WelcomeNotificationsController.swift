@@ -80,7 +80,7 @@ final class WelcomeNotificationsController: UIViewController {
 
     private func setupLayout() {
         let heading = UILabel().then {
-            $0.text = String(localized: "Crash Notifications")
+            $0.text = String(localized: "Notifications")
             $0.font = WelcomeStyle.titleFont
             $0.textColor = WelcomeStyle.titleColor
             $0.numberOfLines = 1

@@ -2,7 +2,7 @@ import Foundation
 import XrashProtocol
 import XrashReport
 
-/// One report worth a notification, from its name alone — no file is opened.
+/// One report worth a notification, after applying the app's policy.
 public struct Notice: Equatable, Sendable {
     /// The report's path: the notification's identifier and what a tap opens.
     public var path: String
@@ -43,37 +43,50 @@ public struct NoticeLedger: Codable, Equatable, Sendable {
         announcedSincePolicy = 0
     }
 
+    /// The unprivileged describer reads these before any category decision.
+    public func candidates(in entries: [ReportEntry]) -> [ReportEntry] {
+        entries
+            .filter { $0.modified > cursor && !announced.contains($0.path) }
+            .sorted { $0.modified < $1.modified }
+    }
+
     /// The notices `entries` call for, oldest first. The cursor moves whether
     /// or not anything is announced, so turning notifications on later does
     /// not announce what arrived while they were off.
-    public mutating func take(_ entries: [ReportEntry], now: Date) -> [Notice] {
-        let fresh = entries
-            .filter { $0.modified > cursor && !announced.contains($0.path) }
-            .sorted { $0.modified < $1.modified }
+    public mutating func take(
+        _ entries: [ReportEntry], now: Date, details: [String: NoticeDetail] = [:],
+    ) -> [Notice] {
+        let fresh = candidates(in: entries)
         // A modification time in the future must not silence everything
         // between now and then.
         cursor = max(cursor, min(fresh.last?.modified ?? cursor, now))
+        defer {
+            // Muting also accounts for later writes of the same reports.
+            announced.append(contentsOf: fresh.map(\.path))
+            announced.removeFirst(max(announced.count - Self.maximumRememberedPaths, 0))
+        }
         guard let policy, policy.isEnabled else { return [] }
 
         var notices = [Notice]()
-        for entry in fresh.suffix(Self.maximumNoticesPerPass) {
+        for entry in fresh {
             let summary = ReportDecoder.summary(
                 path: entry.path,
                 byteCount: entry.byteCount,
                 modified: entry.modified,
             )
-            guard policy.kinds.contains(summary.kind.rawValue),
-                  !policy.hiddenProcessNames.contains(summary.processName) else { continue }
-            announcedSincePolicy += 1
-            announced.append(entry.path)
-            notices.append(Notice(
-                path: entry.path,
-                processName: summary.processName,
-                kind: summary.kind,
-                badge: policy.unreadCount + announcedSincePolicy,
-            ))
+            let kind = details[entry.path]?.kind ?? summary.kind
+            let category = details[entry.path]?.category ?? NoticeCategory(summary)
+            let processName = details[entry.path]?.processName ?? summary.processName
+            guard policy.kinds.contains(kind.rawValue),
+                  policy.categories?.contains(category.rawValue) ?? true,
+                  !policy.hiddenProcessNames.contains(processName) else { continue }
+            notices.append(Notice(path: entry.path, processName: processName, kind: kind, badge: 0))
         }
-        announced.removeFirst(max(announced.count - Self.maximumRememberedPaths, 0))
+        notices = Array(notices.suffix(Self.maximumNoticesPerPass))
+        for index in notices.indices {
+            announcedSincePolicy += 1
+            notices[index].badge = policy.unreadCount + announcedSincePolicy
+        }
         return notices
     }
 }

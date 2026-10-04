@@ -9,13 +9,15 @@ import XrashReport
 /// its privileges away; this is what that child sends back, and the parent
 /// treats it as text from a stranger — see `clamped`.
 public struct NoticeDetail: Codable, Equatable, Sendable {
-    /// A report larger than this is announced by its name alone.
+    /// Larger reports use only the header for classification and title.
     public static let maximumReportByteCount = 8 * 1024 * 1024
     /// What one encoded detail may weigh on its way back to the parent.
     public static let maximumEncodedByteCount = 4096
     private static let maximumFieldLength = 120
 
     public var processName: String
+    public var kind: ReportKind
+    public var category: NoticeCategory
     public var reason: String?
     public var appVersion: String?
 
@@ -27,14 +29,18 @@ public struct NoticeDetail: Codable, Equatable, Sendable {
 
     /// Decodes `data`, the whole of the file called `fileName`.
     public init?(report data: Data, fileName: String) {
-        guard let report = try? ReportDecoder.decode(data, fileName: fileName) else { return nil }
-        let row = ReportDecoder.enrich(
-            ReportDecoder.summary(path: fileName, byteCount: UInt64(data.count), modified: Date()),
-            header: report.header,
-            executablePath: report.crash?.process.path,
-        )
+        let header = ReportDecoder.header(fromPrefix: Data(data.prefix(8192)))
+        let report = data.count <= Self.maximumReportByteCount
+            ? try? ReportDecoder.decode(data, fileName: fileName) : nil
+        guard header != nil || report != nil else { return nil }
+        var row = ReportDecoder.summary(path: fileName, byteCount: UInt64(data.count), modified: Date())
+        if let header = header ?? report?.header {
+            row = ReportDecoder.enrich(row, header: header, executablePath: report?.crash?.process.path)
+        }
         processName = row.processName
-        reason = report.reason
+        kind = header != nil ? row.kind : report?.kind ?? row.kind
+        category = NoticeCategory(kind: kind, bugType: row.bugType, fileName: fileName)
+        reason = report?.reason
         appVersion = row.appVersion
     }
 

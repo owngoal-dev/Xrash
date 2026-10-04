@@ -13,7 +13,7 @@ import XrashProtocol
 /// process alive launchd has nothing to start, so the directories are watched
 /// from in here as well.
 ///
-/// Still nothing is read: a notice is a file's name and its modification time.
+/// Reports are read only by the child after it becomes mobile.
 /// Runs on the server's queue, like everything else in the daemon.
 final class ReportAnnouncer {
     /// One report is several writes, and each of them is an event.
@@ -26,11 +26,12 @@ final class ReportAnnouncer {
     private var watches = [DispatchSourceFileSystemObject]()
     private var passGeneration: UInt64 = 0
     private var pendingPosts = 0
+    private var passIsRunning = false
 
     /// True while a pass is owed or a post has not been answered; the idle
     /// exit waits for it.
     var isBusy: Bool {
-        pendingPosts > 0 || passIsScheduled
+        pendingPosts > 0 || passIsScheduled || passIsRunning
     }
 
     private var passIsScheduled = false
@@ -77,28 +78,50 @@ final class ReportAnnouncer {
         let scheduledGeneration = passGeneration
         queue.asyncAfter(deadline: .now() + Self.settleDelay) { [weak self] in
             guard let self, passGeneration == scheduledGeneration else { return }
+            guard !passIsRunning else { return }
             passIsScheduled = false
             pass()
         }
     }
 
     private func pass() {
+        passIsRunning = true
         let roots = ReportRoots.current()
+        let entries = ReportScanner(roots: roots).scan()
+        let now = Date()
+        let candidates = ledger.policy?.isEnabled == true ? ledger.candidates(in: entries) : []
+        var details = [String: NoticeDetail]()
+        /// One child at a time, including reports whose filename guesses the
+        /// wrong category. The latest policy is applied when all answers arrive.
+        func describe(_ index: Int) {
+            guard index < candidates.count else {
+                finish(entries, now: now, details: details)
+                return
+            }
+            let path = candidates[index].path
+            NoticeDescriber.describe(path, roots: roots, queue: queue) { detail in
+                details[path] = detail
+                describe(index + 1)
+            }
+        }
+        describe(0)
+    }
+
+    private func finish(_ entries: [ReportEntry], now: Date, details: [String: NoticeDetail]) {
         let before = ledger
-        let notices = ledger.take(ReportScanner(roots: roots).scan(), now: Date())
+        let notices = ledger.take(entries, now: now, details: details)
         if ledger != before {
             _ = save()
         }
         for notice in notices {
             pendingPosts += 1
-            // What the report says about itself, read by a child that is not
-            // root. Nil is an answer too: the name alone is then what is said.
-            NoticeDescriber.describe(notice.path, roots: roots, queue: queue) { [weak self] detail in
-                guard let self else { return }
-                poster.post(notice, detail: detail) { [weak self] in
-                    self?.queue.async { self?.pendingPosts -= 1 }
-                }
+            poster.post(notice, detail: details[notice.path]) { [weak self] in
+                self?.queue.async { self?.pendingPosts -= 1 }
             }
+        }
+        passIsRunning = false
+        if passIsScheduled {
+            schedulePass()
         }
     }
 

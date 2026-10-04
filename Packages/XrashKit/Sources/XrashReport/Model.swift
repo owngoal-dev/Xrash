@@ -63,6 +63,9 @@ public struct ReportSummary: Codable, Hashable, Sendable, Identifiable {
     /// `Fila` for `Fila-2026-09-08-191717.ips.synced`.
     public var processName: String
     public var kind: ReportKind
+    /// Present once the header has been read; resource notification switches
+    /// distinguish CPU, wakeups and disk writes using this value.
+    public var bugType: String?
     public var group: ReportGroup
     public var date: Date
     public var byteCount: UInt64

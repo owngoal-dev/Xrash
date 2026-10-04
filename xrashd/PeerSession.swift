@@ -65,7 +65,7 @@ final class PeerSession {
         case .goodbye:
             send(reply, .success)
             invalidate()
-        case .setNoticePolicy:
+        case .setNoticePolicy, .setCategorizedNoticePolicy:
             setNoticePolicy(request, reply)
         }
     }

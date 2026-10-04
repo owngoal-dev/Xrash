@@ -136,12 +136,30 @@
         /// Throws when this daemon does not announce: it answers `refused` when
         /// it cannot post for the app, `invalidRequest` when it is an older one.
         public func setNoticePolicy(_ policy: NoticePolicy) async throws {
+            _ = try await connect()
+            defer { scheduleGoodbye() }
             let payload = try XrashWire.encode(policy)
-            _ = try await request(.setNoticePolicy) { message in
+            let reply = try await send(.setCategorizedNoticePolicy) { message in
                 payload.withUnsafeBytes {
                     xpc_dictionary_set_data(message, XrashWireKey.payload, $0.baseAddress!, $0.count)
                 }
             }
+            if reply.descriptor >= 0 {
+                close(reply.descriptor)
+            }
+            if reply.code == .invalidRequest {
+                // An older daemon may still hold the previously enabled
+                // policy. Silence it before falling back to app-side posting.
+                var disabled = policy
+                disabled.isEnabled = false
+                let legacy = try XrashWire.encode(disabled)
+                _ = try? await request(.setNoticePolicy) { message in
+                    legacy.withUnsafeBytes {
+                        xpc_dictionary_set_data(message, XrashWireKey.payload, $0.baseAddress!, $0.count)
+                    }
+                }
+            }
+            guard reply.code == .success else { throw XrashClientError.failed }
         }
 
         public func disconnect() async {

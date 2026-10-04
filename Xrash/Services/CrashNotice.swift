@@ -3,6 +3,7 @@ import Foundation
 import UIKit
 import UserNotifications
 import XrashClient
+import XrashNotice
 import XrashProtocol
 import XrashReport
 
@@ -64,8 +65,12 @@ final class CrashNotice {
         accounted: Set<String>,
         since start: Date,
         filter: ReportFilter,
+        categories: Set<NoticeCategory>,
     ) -> [ReportSummary] {
-        summaries.filter { $0.date > start && !accounted.contains($0.id) && filter.admits($0) }
+        summaries.filter {
+            $0.date > start && !accounted.contains($0.id) && filter.admits($0)
+                && categories.contains(NoticeCategory($0))
+        }
     }
 
     // MARK: Starting
@@ -126,7 +131,12 @@ final class CrashNotice {
     /// the directory, and a report the list has not met yet is as unseen as
     /// they come.
     func presentationOptions(for reportID: String?) -> UNNotificationPresentationOptions {
-        guard let reportID else { return [] }
+        guard settings.preferences.value.notifiesOnNewReports, let reportID else { return [] }
+        if let summary = library.summaries.value.first(where: { $0.id == reportID }) {
+            guard settings.filter.value.admits(summary),
+                  settings.preferences.value.notificationCategories.contains(NoticeCategory(summary))
+            else { return [] }
+        }
         let isListed = library.summaries.value.contains { $0.id == reportID }
         guard !isListed || library.unreadIDs.value.contains(reportID) else { return [] }
         return [.banner, .list]
@@ -140,6 +150,7 @@ final class CrashNotice {
             accounted: accounted,
             since: startedAt,
             filter: filter,
+            categories: settings.preferences.value.notificationCategories,
         )
         accounted.formUnion(summaries.map(\.id))
         sendPolicy()
@@ -170,6 +181,7 @@ final class CrashNotice {
             kinds: Set(filter.kinds.map(\.rawValue)),
             hiddenProcessNames: filter.hiddenProcessNames,
             unreadCount: unreadCount(library.summaries.value, unread: library.unreadIDs.value, filter: filter),
+            categories: Set(settings.preferences.value.notificationCategories.map(\.rawValue)),
         )
         guard policy != sentPolicy else { return }
         policyTask = Task { [weak self, backend] in
@@ -310,8 +322,28 @@ enum UnreadBadge {
                 accounted: [known.id],
                 since: start,
                 filter: filter,
+                categories: [.crash],
             )
             assert(found.map(\.id) == [new.id], "only the new, unaccounted, admitted report notifies")
+            var cpu = report("Busy", secondsFromStart: 50, kind: .resource)
+            cpu.bugType = "202"
+            var wakeups = cpu
+            wakeups.id += "-wakeups"
+            wakeups.bugType = "142"
+            assert(CrashNotice.arrivals(
+                in: [new, cpu, wakeups], accounted: [], since: start,
+                filter: filter, categories: [.cpu],
+            ).map(\.id) == [cpu.id], "resource switches are independent in app-side posting")
+            let legacy = try! JSONDecoder().decode(
+                ReportPreferences.self,
+                from: Data(#"{"notifiesOnNewReports":false,"wrapsLines":true,"textScale":1.5}"#.utf8),
+            )
+            assert(!legacy.notifiesOnNewReports && legacy.wrapsLines && legacy.textScale == 1.5)
+            assert(legacy.notificationCategories == [.crash, .hang], "upgrades keep old settings and default to crashes and hangs")
+            var changed = legacy
+            changed.notificationCategories = []
+            let restored = try! JSONDecoder().decode(ReportPreferences.self, from: JSONEncoder().encode(changed))
+            assert(restored == changed, "an empty category selection survives relaunch")
             return true
         }()
     }

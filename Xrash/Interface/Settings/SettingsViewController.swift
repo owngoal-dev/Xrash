@@ -10,7 +10,8 @@ final class SettingsViewController: UITableViewController {
         case defaultView
         case showAnalytics
         case hiddenProcesses
-        case crashNotifications
+        case reportNotifications
+        case notificationCategories
         case deleteAll
         case storage
         case version
@@ -43,7 +44,7 @@ final class SettingsViewController: UITableViewController {
             Section(
                 title: String(localized: "Notifications"),
                 footer: ReportFormat.announcementSummary,
-                rows: [.crashNotifications],
+                rows: [.reportNotifications, .notificationCategories],
             ),
             Section(
                 title: String(localized: "Cleanup"),
@@ -141,12 +142,16 @@ final class SettingsViewController: UITableViewController {
             configuration.secondaryText = hidden == 0 ? String(localized: "None") : hidden.formatted()
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
-        case .crashNotifications:
-            configuration.text = String(localized: "Crash Notifications")
+        case .reportNotifications:
+            configuration.text = String(localized: "Allow Notifications")
             cell.accessoryView = toggle(
                 isOn: settings.preferences.value.notifiesOnNewReports,
                 action: #selector(toggleNotifications),
             )
+        case .notificationCategories:
+            configuration.text = String(localized: "Notification Categories")
+            cell.accessoryType = .disclosureIndicator
+            cell.selectionStyle = .default
         case .deleteAll:
             configuration.text = String(localized: "Delete All Reports…")
             configuration.textProperties.color = .systemRed
@@ -184,6 +189,8 @@ final class SettingsViewController: UITableViewController {
             navigationController?.pushViewController(defaultViewChooser(), animated: true)
         case .hiddenProcesses:
             navigationController?.pushViewController(HiddenProcessesViewController(), animated: true)
+        case .notificationCategories:
+            navigationController?.pushViewController(NotificationCategoriesViewController(), animated: true)
         case .deleteAll:
             confirmDeleteAll()
         case .source:

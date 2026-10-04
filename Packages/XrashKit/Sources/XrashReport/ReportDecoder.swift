@@ -37,6 +37,7 @@ public enum ReportDecoder {
     ) -> ReportSummary {
         var row = summary
         row.kind = BugType.kind(of: header.bugType)
+        row.bugType = header.bugType
         row.processName = header.appName ?? header.name ?? summary.processName
         row.date = header.timestamp ?? summary.date
         row.bundleID = header.bundleID ?? summary.bundleID

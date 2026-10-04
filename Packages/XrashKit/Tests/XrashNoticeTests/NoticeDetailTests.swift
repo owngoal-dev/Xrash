@@ -36,4 +36,13 @@ final class NoticeDetailTests: XCTestCase {
         XCTAssertEqual(clamped.reason?.count, 120)
         XCTAssertLessThanOrEqual(try XrashWire.encode(clamped).count, NoticeDetail.maximumEncodedByteCount)
     }
+
+    func testOversizedReportStillUsesActualHeaderCategory() throws {
+        var data = Data("{\"bug_type\":\"142\",\"app_name\":\"Wakeful\"}\n".utf8)
+        data.append(Data(repeating: 32, count: NoticeDetail.maximumReportByteCount))
+        let detail = try XCTUnwrap(NoticeDetail(report: data, fileName: "LooksLikeACrash.ips"))
+        XCTAssertEqual(detail.kind, .resource)
+        XCTAssertEqual(detail.category, .wakeups)
+        XCTAssertEqual(detail.processName, "Wakeful")
+    }
 }
