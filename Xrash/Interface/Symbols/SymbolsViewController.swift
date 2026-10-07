@@ -55,6 +55,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         // and one affordance beats two.
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "symbol")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "systemSymbol")
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] table, indexPath, row in
             self?.cell(for: row, at: indexPath, in: table) ?? UITableViewCell()
         }
@@ -179,15 +180,23 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
             )
 
         case let .symbolSet(build):
-            let cell = table.dequeueReusableCell(withIdentifier: "symbol", for: indexPath)
+            let cell = table.dequeueReusableCell(withIdentifier: "systemSymbol", for: indexPath)
             var content = cell.defaultContentConfiguration()
+            content.text = build
+            cell.accessoryView = nil
+            cell.accessibilityLabel = nil
+            cell.isAccessibilityElement = true
             if let set = environment.systemSymbols.sets.first(where: { $0.id == build }) {
-                content.text = set.id
-                content.secondaryText = [
-                    String(inflecting: "^[\(set.imageCount) image](inflect: true)"),
-                    ReportFormat.byteCount(set.byteCount),
-                    ReportFormat.date(set.extracted),
-                ].joined(separator: " · ")
+                content.secondaryText = String(inflecting: "^[\(set.imageCount) image](inflect: true)")
+                let size = UILabel()
+                size.text = ReportFormat.byteCount(set.byteCount)
+                size.font = content.textProperties.font
+                size.textColor = .secondaryLabel
+                size.adjustsFontForContentSizeCategory = true
+                size.sizeToFit()
+                cell.accessoryView = size
+                cell.accessibilityLabel = [content.text, content.secondaryText, size.text]
+                    .compactMap(\.self).joined(separator: ", ")
             }
             content.secondaryTextProperties.color = .secondaryLabel
             content.image = UIImage(systemName: "cpu")

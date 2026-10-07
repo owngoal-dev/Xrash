@@ -27,11 +27,9 @@ enum DetailSection: Hashable {
         case .crashedThread: String(localized: "Crashed Thread")
         case .lastException: String(localized: "Last Exception Backtrace")
         case .threads: String(localized: "Threads")
-        case .images: String(localized: "Binary Images")
-        case .linked: String(localized: "Similar Reports")
         case .jetsam: String(localized: "Processes")
         case .panic: String(localized: "Panic")
-        case .contents: nil
+        case .images, .linked, .contents: nil
         }
     }
 }
@@ -48,10 +46,11 @@ enum DetailItem: Hashable {
     case exception
     case termination
     case date
+    case device
     case system
     case incident
     case applicationInfo(Int)
-    case suspect(String)
+    case suspect(Int)
     case frame(DetailFrameList, Int)
     case showAllFrames(DetailFrameList)
     case thread(Int)
@@ -65,7 +64,7 @@ enum DetailItem: Hashable {
     /// are the page's bold; every other line is body or monospaced footnote.
     var namesAField: Bool {
         switch self {
-        case .explanation, .exception, .termination, .date, .system, .incident: true
+        case .explanation, .exception, .termination, .date, .device, .system, .incident: true
         default: false
         }
     }
@@ -113,7 +112,8 @@ enum DetailLayout {
                 sections.append((.applicationInfo, crash.applicationInfo.indices.map(DetailItem.applicationInfo)))
             }
             if !content.suspects.isEmpty {
-                sections.append((.suspects, content.suspects.map { DetailItem.suspect($0.id) }))
+                // Paths can be missing or repeated; each array entry still owns a row.
+                sections.append((.suspects, content.suspects.indices.map(DetailItem.suspect)))
             }
             if let faulting = crash.faultingThread, !faulting.frames.isEmpty {
                 sections.append((.crashedThread, frameItems(
@@ -165,6 +165,9 @@ enum DetailLayout {
             items.append(.termination)
         }
         items.append(.date)
+        if let model = content.report.crash?.device.model, !model.isEmpty {
+            items.append(.device)
+        }
         items.append(.system)
         if content.report.header.incidentID != nil {
             items.append(.incident)

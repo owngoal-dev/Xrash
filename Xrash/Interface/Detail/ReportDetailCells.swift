@@ -66,7 +66,9 @@ final class ReportHeaderCell: UITableViewCell {
     static let reuseIdentifier = "reportHeader"
 
     private let nameLabel = UILabel()
-    private let detailLabel = UILabel()
+    private let kindLabel = UILabel()
+    private let versionLabel = UILabel()
+    private let bundleLabel = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -75,20 +77,24 @@ final class ReportHeaderCell: UITableViewCell {
             // The card's own field name: the same body as the rows under it,
             // because the icon above the card is the prominence.
             $0.font = DetailTypography.name
-            $0.numberOfLines = 2
+            $0.numberOfLines = 0
         }
-        detailLabel.do {
-            // A kind, a version and a bundle id: the same second line, and
-            // the same small monospace, as every row under it.
-            $0.font = DetailTypography.mono()
-            $0.textColor = .secondaryLabel
-            $0.numberOfLines = 2
+        for label in [kindLabel, versionLabel, bundleLabel] {
+            label.font = DetailTypography.mono()
+            label.textColor = .secondaryLabel
+            label.numberOfLines = 0
         }
-        for label in [nameLabel, detailLabel] {
+        for label in [nameLabel, kindLabel, versionLabel, bundleLabel] {
             label.adjustsFontForContentSizeCategory = true
         }
 
-        let names = UIStackView(arrangedSubviews: [nameLabel, detailLabel]).then {
+        versionLabel.textAlignment = .right
+        versionLabel.setContentHuggingPriority(.required, for: .horizontal)
+        let metadata = UIStackView(arrangedSubviews: [kindLabel, versionLabel]).then {
+            $0.alignment = .firstBaseline
+            $0.spacing = 8
+        }
+        let names = UIStackView(arrangedSubviews: [nameLabel, metadata, bundleLabel]).then {
             $0.axis = .vertical
             $0.spacing = 3
         }
@@ -117,11 +123,11 @@ final class ReportHeaderCell: UITableViewCell {
         // A daemon's process name often *is* its bundle id, and printing it
         // twice only pushed the version off the end of the line.
         let bundleID = report.crash?.process.bundleID ?? summary.bundleID
-        detailLabel.text = [
-            ReportFormat.kindLabel(report.kind),
-            version.isEmpty ? summary.appVersion : version,
-            bundleID == name ? nil : bundleID,
-        ].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " · ")
+        kindLabel.text = ReportFormat.kindLabel(report.kind)
+        versionLabel.text = version.isEmpty ? summary.appVersion : version
+        versionLabel.isHidden = versionLabel.text?.isEmpty != false
+        bundleLabel.text = bundleID == name ? nil : bundleID
+        bundleLabel.isHidden = bundleLabel.text?.isEmpty != false
     }
 }
 
@@ -159,6 +165,63 @@ final class ValueCell: UITableViewCell {
     }
 }
 
+final class DetailCountCell: UITableViewCell {
+    static let reuseIdentifier = "detailCount"
+    private let titleLabel = UILabel()
+    private let countLabel = UILabel()
+    private let countCapsule = UIView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        accessoryType = .disclosureIndicator
+        isAccessibilityElement = true
+        titleLabel.font = DetailTypography.value
+        titleLabel.numberOfLines = 0
+        countLabel.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(
+            for: .monospacedDigitSystemFont(ofSize: 13, weight: .semibold),
+        )
+        countLabel.textColor = .secondaryLabel
+        countLabel.textAlignment = .center
+        countLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        countLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        for label in [titleLabel, countLabel] {
+            label.adjustsFontForContentSizeCategory = true
+        }
+        countCapsule.backgroundColor = .tertiarySystemFill
+        countCapsule.addSubview(countLabel)
+        countLabel.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(2)
+            make.leading.trailing.equalToSuperview().inset(8)
+            make.width.greaterThanOrEqualTo(12)
+        }
+        let content = UIStackView(arrangedSubviews: [titleLabel, countCapsule]).then {
+            $0.alignment = .center
+            $0.spacing = 10
+        }
+        contentView.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
+            make.top.bottom.equalToSuperview().inset(11)
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        countCapsule.layer.cornerRadius = countCapsule.bounds.height / 2
+    }
+
+    func configure(title: String, count: Int, countDescription: String) {
+        titleLabel.text = title
+        countLabel.text = count.formatted()
+        accessibilityLabel = title + ", " + countDescription
+    }
+}
+
 /// One stack frame, in the shape a crash report has always had: index, what
 /// it is, and which image it came from.
 final class FrameCell: UITableViewCell {
@@ -166,36 +229,45 @@ final class FrameCell: UITableViewCell {
 
     private let indexLabel = UILabel()
     private let symbolLabel = UILabel()
-    private let originLabel = UILabel()
+    private let imageLabel = UILabel()
+    private let addressLabel = UILabel()
+    private let sourceLabel = UILabel()
+    private let inlinedLabel = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        // One monospaced footnote for all three, so the index sits on the
-        // symbol's own baseline and the addresses line up down the column.
-        // What the eye sorts them by is colour.
+        // Keep the frame number on the symbol's baseline, with the image and
+        // address aligned independently on a compact second line.
         indexLabel.do {
             $0.font = DetailTypography.mono()
             $0.textColor = .secondaryLabel
             $0.textAlignment = .right
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
-            $0.setContentHuggingPriority(.required, for: .horizontal)
+            $0.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         }
         symbolLabel.do {
             $0.font = DetailTypography.mono()
             $0.numberOfLines = 2
             $0.lineBreakMode = .byTruncatingMiddle
         }
-        originLabel.do {
-            $0.font = DetailTypography.mono()
-            $0.textColor = .secondaryLabel
-            $0.numberOfLines = 1
-            $0.lineBreakMode = .byTruncatingMiddle
+        for label in [imageLabel, addressLabel, sourceLabel, inlinedLabel] {
+            label.font = DetailTypography.mono()
+            label.textColor = .secondaryLabel
+            label.lineBreakMode = .byTruncatingMiddle
         }
-        for label in [indexLabel, symbolLabel, originLabel] {
+        addressLabel.textAlignment = .right
+        addressLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        addressLabel.setContentHuggingPriority(.required, for: .horizontal)
+        inlinedLabel.setContentHuggingPriority(.required, for: .horizontal)
+        for label in [indexLabel, symbolLabel, imageLabel, addressLabel, sourceLabel, inlinedLabel] {
             label.adjustsFontForContentSizeCategory = true
         }
-
-        let lines = UIStackView(arrangedSubviews: [symbolLabel, originLabel]).then {
+        inlinedLabel.text = String(localized: "inlined")
+        let origin = UIStackView(arrangedSubviews: [imageLabel, inlinedLabel, addressLabel]).then {
+            $0.alignment = .firstBaseline
+            $0.spacing = 8
+        }
+        let lines = UIStackView(arrangedSubviews: [symbolLabel, origin, sourceLabel]).then {
             $0.axis = .vertical
             $0.spacing = 2
         }
@@ -204,7 +276,7 @@ final class FrameCell: UITableViewCell {
             $0.spacing = 8
         }
         contentView.addSubview(content)
-        indexLabel.snp.makeConstraints { $0.width.equalTo(22) }
+        indexLabel.snp.makeConstraints { $0.width.greaterThanOrEqualTo(22) }
         content.snp.makeConstraints { make in
             make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
             make.top.bottom.equalToSuperview().inset(8)
@@ -288,17 +360,19 @@ final class FrameCell: UITableViewCell {
         symbolLabel.textColor = emphasis == .suspect ? .tintColor : .label
         symbolLabel.font = DetailTypography.mono(emphasis == .ordinary ? .regular : .semibold)
 
-        var origin = [image?.name ?? String(localized: "Unknown image")]
-        if let file = frame.sourceFile {
-            origin.append(frame.sourceLine.map { "\(file):\($0)" } ?? file)
-        } else {
-            origin.append(ReportFormat.address(frame.address))
+        imageLabel.text = ReportFormat.imageName(image?.name, path: image?.path) ?? ReportFormat.unknownImageName
+        addressLabel.text = ReportFormat.address(frame.address)
+        addressLabel.isHidden = frame.symbol == nil
+        sourceLabel.text = frame.sourceFile.map { file in
+            frame.sourceLine.map { "\(file):\($0)" } ?? file
         }
-        if frame.isInlined {
-            origin.append(String(localized: "inlined"))
-        }
-        originLabel.text = origin.joined(separator: " · ")
-        accessibilityLabel = [indexLabel.text, symbolLabel.text, originLabel.text]
+        sourceLabel.isHidden = sourceLabel.text?.isEmpty != false
+        inlinedLabel.isHidden = !frame.isInlined
+        accessibilityLabel = [
+            indexLabel.text, symbolLabel.text, imageLabel.text,
+            addressLabel.isHidden ? nil : addressLabel.text, sourceLabel.text,
+            frame.isInlined ? inlinedLabel.text : nil,
+        ]
             .compactMap(\.self)
             .joined(separator: ", ")
     }

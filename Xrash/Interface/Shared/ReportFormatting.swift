@@ -26,6 +26,17 @@ extension String {
 enum ReportFormat {
     // MARK: Names
 
+    static let unknownImageName = String(localized: "<unknown image>")
+
+    static func imageName(_ name: String?, path: String?) -> String? {
+        for value in [name, path.map { ($0 as NSString).lastPathComponent }] {
+            if let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                return value
+            }
+        }
+        return nil
+    }
+
     static func kindLabel(_ kind: ReportKind) -> String {
         switch kind {
         case .crash: String(localized: "Crash")

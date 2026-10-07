@@ -1,3 +1,5 @@
+import SnapKit
+import Then
 import UIKit
 import XrashBlame
 import XrashReport
@@ -44,7 +46,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         navigationItem.hidesSearchBarWhenScrolling = true
         definesPresentationContext = true
 
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "image")
+        tableView.register(BinaryImageCell.self, forCellReuseIdentifier: "image")
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, base in
             let cell = tableView.dequeueReusableCell(withIdentifier: "image", for: indexPath)
             self?.configure(cell, base: base)
@@ -91,26 +93,27 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
 
     private func configure(_ cell: UITableViewCell, base: UInt64) {
         guard let image = shown.first(where: { $0.base == base }) else { return }
-        var configuration = UIListContentConfiguration.subtitleCell()
-        configuration.text = image.name
-        configuration.secondaryTextProperties.numberOfLines = 0
-        configuration.secondaryTextProperties.color = .secondaryLabel
-        configuration.secondaryTextProperties.font = UIFontMetrics(forTextStyle: .caption1)
-            .scaledFont(for: .monospacedSystemFont(ofSize: 11, weight: .regular))
         let owner = packages?.owner(ofPath: image.path)
-        configuration.secondaryText = [
-            [image.arch, ReportFormat.address(image.base)].compactMap(\.self).joined(separator: " · "),
-            image.uuid.isEmpty ? nil : image.uuid,
-            owner.map { [$0.name ?? $0.identifier, $0.version].compactMap(\.self).joined(separator: " ") },
-        ].compactMap(\.self).joined(separator: "\n")
-        cell.contentConfiguration = configuration
-        cell.accessoryType = .disclosureIndicator
+        (cell as? BinaryImageCell)?.configure(
+            with: image,
+            package: owner.map { [$0.name ?? $0.identifier, $0.version].compactMap(\.self).joined(separator: " ") },
+        )
+    }
+
+    private func selectableImage(at indexPath: IndexPath) -> BinaryImage? {
+        guard let base = dataSource.itemIdentifier(for: indexPath),
+              let image = shown.first(where: { $0.base == base }),
+              ReportFormat.imageName(image.name, path: image.path) != nil else { return nil }
+        return image
+    }
+
+    override func tableView(_: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        selectableImage(at: indexPath) == nil ? nil : indexPath
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard let base = dataSource.itemIdentifier(for: indexPath),
-              let image = shown.first(where: { $0.base == base }) else { return }
+        guard let image = selectableImage(at: indexPath) else { return }
         inspectBinary(image)
     }
 
@@ -119,8 +122,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         contextMenuConfigurationForRowAt indexPath: IndexPath,
         point _: CGPoint,
     ) -> UIContextMenuConfiguration? {
-        guard let base = dataSource.itemIdentifier(for: indexPath),
-              let image = shown.first(where: { $0.base == base }) else { return nil }
+        guard let image = selectableImage(at: indexPath) else { return nil }
         let owner = packages?.owner(ofPath: image.path)
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             var elements: [UIMenuElement] = [
@@ -159,6 +161,77 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
             }
             return UIMenu(children: elements)
         }
+    }
+}
+
+private final class BinaryImageCell: UITableViewCell {
+    private let nameLabel = UILabel()
+    private let architectureLabel = UILabel()
+    private let addressLabel = UILabel()
+    private let uuidLabel = UILabel()
+    private let packageLabel = UILabel()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        isAccessibilityElement = true
+        nameLabel.font = DetailTypography.mono()
+        for label in [architectureLabel, addressLabel, uuidLabel, packageLabel] {
+            label.font = DetailTypography.mono()
+            label.textColor = .secondaryLabel
+        }
+        for label in [nameLabel, architectureLabel, addressLabel, uuidLabel, packageLabel] {
+            label.numberOfLines = 0
+            label.adjustsFontForContentSizeCategory = true
+        }
+        nameLabel.numberOfLines = 2
+        nameLabel.lineBreakMode = .byTruncatingMiddle
+        uuidLabel.lineBreakMode = .byCharWrapping
+
+        architectureLabel.numberOfLines = 1
+        addressLabel.numberOfLines = 1
+        addressLabel.setContentHuggingPriority(.required, for: .horizontal)
+        addressLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let metadata = UIStackView(arrangedSubviews: [architectureLabel, addressLabel]).then {
+            $0.alignment = .firstBaseline
+            $0.spacing = 8
+        }
+        let content = UIStackView(arrangedSubviews: [nameLabel, uuidLabel, metadata, packageLabel]).then {
+            $0.axis = .vertical
+            $0.spacing = 2
+        }
+        contentView.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
+            make.top.bottom.equalToSuperview().inset(8)
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+
+    func configure(with image: BinaryImage, package: String?) {
+        let name = ReportFormat.imageName(image.name, path: image.path)
+        nameLabel.text = name ?? ReportFormat.unknownImageName
+        accessoryType = name == nil ? .none : .disclosureIndicator
+        selectionStyle = name == nil ? .none : .default
+        accessibilityTraits = name == nil ? .staticText : .button
+        architectureLabel.text = image.arch
+        architectureLabel.isHidden = image.arch?.isEmpty != false
+        addressLabel.text = ReportFormat.address(image.base)
+        addressLabel.textAlignment = architectureLabel.isHidden ? .natural : .right
+        uuidLabel.text = image.uuid
+        uuidLabel.isHidden = image.uuid.isEmpty
+        packageLabel.text = package
+        packageLabel.isHidden = package?.isEmpty != false
+        accessibilityLabel = [
+            nameLabel.text,
+            image.uuid.isEmpty ? nil : String(localized: "UUID") + ": " + image.uuid,
+            image.arch,
+            String(localized: "Virtual Address") + ": " + ReportFormat.address(image.base),
+            package,
+        ].compactMap(\.self).joined(separator: ", ")
     }
 }
 

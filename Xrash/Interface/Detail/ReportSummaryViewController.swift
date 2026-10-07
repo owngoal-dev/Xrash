@@ -26,6 +26,7 @@ final class ReportSummaryViewController: UITableViewController {
         super.viewDidLoad()
         tableView.register(ReportHeaderCell.self, forCellReuseIdentifier: ReportHeaderCell.reuseIdentifier)
         tableView.register(FrameCell.self, forCellReuseIdentifier: FrameCell.reuseIdentifier)
+        tableView.register(DetailCountCell.self, forCellReuseIdentifier: DetailCountCell.reuseIdentifier)
         tableView.register(ValueCell.self, forCellReuseIdentifier: "value")
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] tableView, indexPath, item in
             self?.cell(for: item, at: indexPath, in: tableView) ?? UITableViewCell()
@@ -138,6 +139,23 @@ final class ReportSummaryViewController: UITableViewController {
                 (cell as? FrameCell)?.menuProvider = { [weak self] in self?.frameActions(frame, in: crash) ?? [] }
             }
             return cell
+        case .binaryImages, .linkedReports:
+            let cell = tableView.dequeueReusableCell(withIdentifier: DetailCountCell.reuseIdentifier, for: indexPath)
+            if item == .binaryImages {
+                let count = content.report.crash?.images.count ?? 0
+                (cell as? DetailCountCell)?.configure(
+                    title: String(localized: "Binary Images"),
+                    count: count,
+                    countDescription: String(inflecting: "^[\(count) image](inflect: true)"),
+                )
+            } else {
+                (cell as? DetailCountCell)?.configure(
+                    title: String(localized: "Similar Reports"),
+                    count: content.similar.count,
+                    countDescription: String(localized: "\(content.similar.count) more of the same crash"),
+                )
+            }
+            return cell
         default:
             let cell = tableView.dequeueReusableCell(withIdentifier: "value", for: indexPath)
             configureValueCell(cell, item: item, content: content)
@@ -197,21 +215,24 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.secondaryText = ReportFormat.fullDate(
                 report.header.timestamp ?? summary?.date ?? Date(),
             )
+        case .device:
+            configuration.text = String(localized: "Device")
+            configuration.secondaryText = report.crash?.device.model
         case .system:
             configuration.text = String(localized: "System")
             configuration.secondaryText = [
-                report.crash?.device.model,
                 report.crash?.device.osTrain ?? report.header.osVersion,
                 report.crash?.device.osBuild.map { "(\($0))" },
-            ].compactMap(\.self).joined(separator: " · ")
+            ].compactMap(\.self).joined(separator: " ")
         case .incident:
             configuration.text = String(localized: "Incident")
             configuration.secondaryText = report.header.incidentID
         case let .applicationInfo(index):
             configuration.text = report.crash?.applicationInfo[index]
-        case let .suspect(id):
-            let suspect = content.suspects.first { $0.id == id }
-            configuration.text = suspect?.imageName
+        case let .suspect(index):
+            let suspect = content.suspects.indices.contains(index) ? content.suspects[index] : nil
+            configuration.text = ReportFormat.imageName(suspect?.imageName, path: suspect?.id)
+                ?? ReportFormat.unknownImageName
             configuration.secondaryText = suspect.map(describe(_:))
             configuration.image = UIImage(systemName: "exclamationmark.circle")
             configuration.imageProperties.tintColor = .systemOrange
@@ -241,18 +262,6 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.secondaryTextProperties.lineBreakMode = .byTruncatingMiddle
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
-        case .binaryImages:
-            configuration.text = String(localized: "Binary Images")
-            configuration.secondaryText = String(
-                inflecting: "^[\(report.crash?.images.count ?? 0) image](inflect: true)",
-            )
-            cell.accessoryType = .disclosureIndicator
-            cell.selectionStyle = .default
-        case .linkedReports:
-            configuration.text = String(localized: "Similar Reports")
-            configuration.secondaryText = String(localized: "\(content.similar.count) more of the same crash")
-            cell.accessoryType = .disclosureIndicator
-            cell.selectionStyle = .default
         case let .jetsamProcess(index):
             let process = report.jetsam?.processes[index]
             let pages = process?.residentPages ?? 0
@@ -269,7 +278,7 @@ final class ReportSummaryViewController: UITableViewController {
             configuration.text = String(localized: "View Contents")
             configuration.textProperties.color = .tintColor
             cell.selectionStyle = .default
-        case .header, .frame:
+        case .header, .frame, .binaryImages, .linkedReports:
             break
         }
         // A tap copies what the row shows, so a row showing nothing is inert.
@@ -358,8 +367,9 @@ final class ReportSummaryViewController: UITableViewController {
             push(RelatedReportsViewController(summaries: content.similar))
         case .viewContents:
             (parent as? ReportDetailViewController)?.showRawSegment()
-        case let .suspect(id):
-            guard let suspect = content.suspects.first(where: { $0.id == id }) else { return }
+        case let .suspect(index):
+            guard content.suspects.indices.contains(index) else { return }
+            let suspect = content.suspects[index]
             // One thing to do is done, not asked about: the row that only
             // copies its path still copies it on the tap. A row with several
             // is under its menu button and never gets here.
@@ -395,8 +405,9 @@ final class ReportSummaryViewController: UITableViewController {
         guard let item = dataSource.itemIdentifier(for: indexPath), let content else { return nil }
         let elements: [UIMenuElement]
         switch item {
-        case let .suspect(id):
-            guard let suspect = content.suspects.first(where: { $0.id == id }) else { return nil }
+        case let .suspect(index):
+            guard content.suspects.indices.contains(index) else { return nil }
+            let suspect = content.suspects[index]
             elements = suspectMenu(suspect)
         case .panicText:
             // A tap copies the panic string; the whole file is one screen away.

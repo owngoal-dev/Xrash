@@ -9,7 +9,6 @@ import XrashReport
 final class SettingsViewController: UITableViewController {
     private enum Row {
         case defaultView
-        case showAnalytics
         case hiddenProcesses
         case reportNotifications
         case notificationCategories
@@ -37,10 +36,8 @@ final class SettingsViewController: UITableViewController {
         [
             Section(
                 title: String(localized: "Reports"),
-                footer: String(
-                    localized: "Most reports the system writes are analytics and logs, not crashes.",
-                ),
-                rows: [.showAnalytics, .defaultView, .hiddenProcesses],
+                footer: nil,
+                rows: [.defaultView, .hiddenProcesses],
             ),
             Section(
                 title: String(localized: "Notifications"),
@@ -131,12 +128,6 @@ final class SettingsViewController: UITableViewController {
             configuration.secondaryText = label(for: settings.preferences.value.defaultView)
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
-        case .showAnalytics:
-            configuration.text = String(localized: "Show Analytics & Logs")
-            cell.accessoryView = toggle(
-                isOn: settings.filter.value.showsAnalytics,
-                action: #selector(toggleAnalytics),
-            )
         case .hiddenProcesses:
             configuration.text = String(localized: "Hidden Processes")
             let hidden = settings.filter.value.hiddenProcessNames.count
@@ -214,10 +205,6 @@ final class SettingsViewController: UITableViewController {
         control.isOn = isOn
         control.addTarget(self, action: action, for: .valueChanged)
         return control
-    }
-
-    @objc private func toggleAnalytics(_ control: UISwitch) {
-        settings.changeFilter { $0.showsAnalytics = control.isOn }
     }
 
     /// Turning it on is where the OS is asked. A refusal is not a state the

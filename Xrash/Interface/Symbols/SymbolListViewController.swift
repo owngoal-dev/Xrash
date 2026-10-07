@@ -53,7 +53,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
         let search = UISearchController(searchResultsController: nil)
         search.searchResultsUpdater = self
         search.obscuresBackgroundDuringPresentation = false
-        search.searchBar.placeholder = String(localized: "Search symbols")
+        search.searchBar.placeholder = String(localized: "Search Symbols")
         navigationItem.searchController = search
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true

@@ -3,9 +3,7 @@ import Foundation
 import XrashNotice
 import XrashReport
 
-/// How the list is filtered and arranged. One value, so the list's menu and
-/// the Settings page cannot drift apart — "Show Analytics & Logs" there is the
-/// same switch as the "Analytics & Logs" kind here.
+/// How the list is filtered and arranged, shared by the list, badge and notifications.
 struct ReportFilter: Codable, Equatable, Sendable {
     enum Grouping: String, Codable, Sendable, CaseIterable {
         case category, process, day
@@ -19,8 +17,7 @@ struct ReportFilter: Codable, Equatable, Sendable {
     static let analyticsKinds: Set<ReportKind> = [.analytics, .other]
 
     var unreadOnly = false
-    /// Everything out of the box, analytics and logs included: the list shows
-    /// what the directory holds, and the switch in Settings takes them away.
+    /// All kinds are included by default; the list's Kinds menu filters them.
     var kinds: Set<ReportKind> = [.crash, .hang, .resource, .jetsam, .panic, .analytics, .other]
     var grouping = Grouping.category
     var order = Order.newest
@@ -47,11 +44,6 @@ struct ReportFilter: Codable, Equatable, Sendable {
     /// hidden process is hidden from every one of them.
     func admits(_ summary: ReportSummary) -> Bool {
         kinds.contains(summary.kind) && !hiddenProcessNames.contains(summary.processName)
-    }
-
-    var showsAnalytics: Bool {
-        get { !kinds.isDisjoint(with: Self.analyticsKinds) }
-        set { newValue ? kinds.formUnion(Self.analyticsKinds) : kinds.subtract(Self.analyticsKinds) }
     }
 }
 
