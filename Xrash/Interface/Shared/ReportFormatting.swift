@@ -98,11 +98,19 @@ enum ReportFormat {
         if abs(now.timeIntervalSince(date)) < 7 * 24 * 60 * 60 {
             return relativeFormatter.localizedString(for: date, relativeTo: now)
         }
+        if Calendar.current.isDate(date, equalTo: now, toGranularity: .year) {
+            return date.formatted(.dateTime.month(.abbreviated).day())
+        }
         return shortDateFormatter.string(from: date)
     }
 
     static func fullDate(_ date: Date) -> String {
         fullDateFormatter.string(from: date)
+    }
+
+    /// A calendar day for a section, never elapsed hours since midnight.
+    static func dayTitle(_ date: Date) -> String {
+        dayFormatter.string(from: date)
     }
 
     /// `Fila-2026-09-08-191717` — a share attachment's name, never a title.
@@ -136,6 +144,12 @@ enum ReportFormat {
         // screen has the full timestamp.
         $0.dateStyle = .medium
         $0.timeStyle = .none
+    }
+
+    private static let dayFormatter = DateFormatter().then {
+        $0.dateStyle = .long
+        $0.timeStyle = .none
+        $0.doesRelativeDateFormatting = true
     }
 
     private static let fullDateFormatter = DateFormatter().then {

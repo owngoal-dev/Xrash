@@ -45,14 +45,12 @@ final class ProcessInboxCell: UITableViewCell {
                 for: .monospacedDigitSystemFont(ofSize: 13, weight: .semibold),
             )
             $0.textAlignment = .center
+            // The label has an intrinsic width; the capsule around it does not.
+            $0.setContentCompressionResistancePriority(.required, for: .horizontal)
+            $0.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         }
         for label in [titleLabel, subtitleLabel, countLabel] {
             label.adjustsFontForContentSizeCategory = true
-        }
-        countCapsule.do {
-            // The count keeps its width; a long process name gives way.
-            $0.setContentCompressionResistancePriority(.required, for: .horizontal)
-            $0.setContentHuggingPriority(.required, for: .horizontal)
         }
         unreadDot.do {
             $0.backgroundColor = .tintColor

@@ -22,15 +22,10 @@ extension ReportListViewController {
 
     func filterElements() -> [UIMenuElement] {
         let filter = settings.filter.value
-        let show = UIMenu(
-            title: String(localized: "Show"),
-            image: UIImage(systemName: "eye"),
-            options: .singleSelection,
-            children: [
-                action(String(localized: "All"), on: !filter.unreadOnly) { $0.unreadOnly = false },
-                action(String(localized: "Unread"), on: filter.unreadOnly) { $0.unreadOnly = true },
-            ],
-        )
+        let unreadOnly = action(String(localized: "Unread Only"), on: filter.unreadOnly) {
+            $0.unreadOnly.toggle()
+        }
+        unreadOnly.image = UIImage(systemName: "envelope.badge")
         let kinds = UIMenu(
             title: String(localized: "Kinds"),
             image: UIImage(systemName: "square.grid.2x2"),
@@ -61,7 +56,7 @@ extension ReportListViewController {
                 action(String(localized: "Name"), on: filter.order == .name) { $0.order = .name },
             ],
         )
-        return [show, kinds, grouping, order]
+        return [unreadOnly, kinds, grouping, order]
     }
 
     private func action(

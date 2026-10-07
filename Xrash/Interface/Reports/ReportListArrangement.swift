@@ -127,7 +127,7 @@ enum ReportListArrangement {
         switch section {
         case let .group(group): ReportFormat.groupTitle(group)
         case let .process(name): name
-        case let .day(day): ReportFormat.date(day)
+        case let .day(day): ReportFormat.dayTitle(day)
         // Never asked for: the inbox's one section carries no header.
         case .inbox: ""
         }
