@@ -33,6 +33,7 @@ final class CrashNotice {
     /// Everything older than this was already on disk when the app opened.
     private let startedAt = Date()
     private var isAuthorized = false
+    private var isRefreshingAuthorization = false
     private var watches = [DispatchSourceFileSystemObject]()
     private var pendingRefresh: Task<Void, Never>?
     private var observers = Set<AnyCancellable>()
@@ -79,7 +80,6 @@ final class CrashNotice {
         #if DEBUG
             assert(Self.arrivalsSelfCheckPassed)
         #endif
-        Task { await readAuthorization() }
         library.summaries
             .combineLatest(library.unreadIDs, settings.filter, settings.preferences)
             .receive(on: DispatchQueue.main)
@@ -105,7 +105,7 @@ final class CrashNotice {
     }
 
     /// Alert, badge and sound. The OS asks a person once however many times
-    /// this is called; the Settings switch asks when it is turned on.
+    /// this is called; the switch, welcome and foreground recovery all ask here.
     func requestAuthorization() async -> Bool {
         let granted = await (try? UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
@@ -233,9 +233,18 @@ final class CrashNotice {
         }
     }
 
-    private func readAuthorization() async {
+    /// A bootstrap can reset the OS permission without changing our switch.
+    /// Recheck on becoming active; the welcome owns the first permission prompt.
+    func refreshAuthorization(requestIfNeeded: Bool) async {
+        guard !isRefreshingAuthorization else { return }
+        isRefreshingAuthorization = true
+        defer { isRefreshingAuthorization = false }
         let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
         isAuthorized = status == .authorized || status == .provisional
+        if requestIfNeeded, settings.preferences.value.notifiesOnNewReports, status == .notDetermined {
+            _ = await requestAuthorization()
+        }
+        render(library.summaries.value, unread: library.unreadIDs.value, filter: settings.filter.value)
     }
 
     // MARK: Watching the directory

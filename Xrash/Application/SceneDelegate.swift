@@ -49,6 +49,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // The helper may have been turned off in System Settings while the app
         // was in the background.
         MacLaunchAgent.shared.refresh()
+        Task {
+            await CrashNotice.shared.refreshAuthorization(requestIfNeeded: !WelcomeController.shouldPresent)
+        }
         // What the system wrote while the app was away, without a pull. Not
         // through the launch budget: that one holds a cold launch back.
         Task { await AppEnvironment.shared.library.refresh() }
