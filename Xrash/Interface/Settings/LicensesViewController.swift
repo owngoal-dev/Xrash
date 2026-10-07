@@ -6,22 +6,24 @@ import UIKit
 /// writes from what the build actually links.
 private struct LicenseEntry: Decodable {
     let name: String
-    let version: String?
     let license: String
     let url: String
     let text: String
 
-    var summary: String {
-        [license, version].compactMap(\.self).joined(separator: " · ")
+    var licenseName: String {
+        switch license {
+        case "MIT": String(localized: "MIT License")
+        case "Apache-2.0": String(localized: "Apache 2.0")
+        default: license
+        }
     }
 }
 
 /// Every license this app ships under, a row per notice and its whole text a
 /// push away. Copied from Irisin's, which reads the same file this build
 /// phase writes.
-final class LicensesViewController: UITableViewController, UISearchResultsUpdating {
+final class LicensesViewController: UITableViewController {
     private var entries: [LicenseEntry] = []
-    private var searchText = ""
 
     /// Rows by position: two notices may read the same.
     private lazy var dataSource = UITableViewDiffableDataSource<Int, Int>(
@@ -30,12 +32,10 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
         let cell = tableView.dequeueReusableCell(withIdentifier: "license", for: indexPath)
         guard let entry = self?.entries[index] else { return cell }
         var content = UIListContentConfiguration.valueCell()
+        content.prefersSideBySideTextAndSecondaryText = false
         content.text = entry.name
-        content.textProperties.numberOfLines = 1
-        content.secondaryText = entry.summary
-        content.secondaryTextProperties.numberOfLines = 1
+        content.secondaryText = entry.licenseName
         content.secondaryTextProperties.color = .secondaryLabel
-        content.secondaryTextProperties.font = .preferredFont(forTextStyle: .footnote)
         cell.contentConfiguration = content
         cell.accessoryType = .disclosureIndicator
         return cell
@@ -55,6 +55,11 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
         title = String(localized: "Licenses")
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.backButtonDisplayMode = .minimal
+        // Match the list's actual side inset once its rows have been laid out.
+        let emptyFrame = CGRect(x: 0, y: 0, width: 0, height: CGFloat.leastNormalMagnitude)
+        tableView.tableHeaderView = UIView(frame: emptyFrame)
+        tableView.tableFooterView = UIView(frame: emptyFrame)
+        tableView.sectionFooterHeight = .leastNormalMagnitude
 
         if let url = Bundle.main.url(forResource: "Licenses", withExtension: "json"),
            let data = try? Data(contentsOf: url),
@@ -62,30 +67,15 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
         {
             entries = decoded
         }
-        let search = UISearchController(searchResultsController: nil)
-        search.searchResultsUpdater = self
-        search.obscuresBackgroundDuringPresentation = false
-        search.searchBar.placeholder = String(localized: "Search Licenses")
-        navigationItem.searchController = search
-        navigationItem.hidesSearchBarWhenScrolling = true
-        definesPresentationContext = true
-
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "license")
         tableView.dataSource = dataSource
         render()
     }
 
-    func updateSearchResults(for searchController: UISearchController) {
-        searchText = searchController.searchBar.text ?? ""
-        render()
-    }
-
     private func render() {
-        let needle = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let shown = entries.indices.filter { entries[$0].name.matches(needle) }
         var snapshot = NSDiffableDataSourceSnapshot<Int, Int>()
         snapshot.appendSections([0])
-        snapshot.appendItems(shown)
+        snapshot.appendItems(Array(entries.indices))
         dataSource.apply(snapshot, animatingDifferences: false)
 
         if entries.isEmpty {
@@ -95,14 +85,20 @@ final class LicensesViewController: UITableViewController, UISearchResultsUpdati
                 description: String(localized: "License information is not available."),
                 actionTitle: nil,
             ))
-        } else {
-            tableView.setEmptyState(shown.isEmpty ? .message(
-                symbolName: "magnifyingglass",
-                title: String(localized: "No Results"),
-                description: String(localized: "No license matches “\(needle)”."),
-                actionTitle: nil,
-            ) : nil)
         }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard let cell = tableView.visibleCells.first,
+              let header = tableView.tableHeaderView,
+              let footer = tableView.tableFooterView else { return }
+        let inset = cell.convert(cell.bounds, to: tableView).minX - tableView.bounds.minX
+        guard inset > 0, header.frame.height != inset else { return }
+        header.frame.size.height = inset
+        footer.frame.size.height = inset
+        tableView.tableHeaderView = header
+        tableView.tableFooterView = footer
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -136,7 +132,7 @@ private final class LicenseTextViewController: UIViewController {
             .font: UIFont.preferredFont(forTextStyle: .title3),
             .foregroundColor: UIColor.label,
         ])
-        text.append(NSAttributedString(string: entry.summary + "\n\n", attributes: [
+        text.append(NSAttributedString(string: entry.licenseName + "\n\n", attributes: [
             .font: UIFont.preferredFont(forTextStyle: .footnote),
             .foregroundColor: UIColor.secondaryLabel,
         ]))

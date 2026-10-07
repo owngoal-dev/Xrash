@@ -1,5 +1,6 @@
 import AlertController
 import Combine
+import SafariServices
 import UIKit
 import XrashReport
 
@@ -194,7 +195,9 @@ final class SettingsViewController: UITableViewController {
         case .deleteAll:
             confirmDeleteAll()
         case .source:
-            URL(string: "https://github.com/owngoal-dev/Xrash").map { UIApplication.shared.open($0) }
+            if let url = URL(string: "https://github.com/owngoal-dev/Xrash") {
+                present(SFSafariViewController(url: url), animated: true)
+            }
         case .licenses:
             navigationController?.pushViewController(LicensesViewController(), animated: true)
         case .welcome:

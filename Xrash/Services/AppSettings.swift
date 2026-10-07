@@ -73,9 +73,11 @@ struct ReportPreferences: Codable, Equatable, Sendable {
     }
 
     var defaultView = DefaultView.summary
-    // The text viewer's two, remembered across reports rather than per file.
+    // The text viewer's choices, remembered across reports rather than per file.
     /// Off: a wrapped stack frame reads as two frames.
     var wrapsLines = false
+    /// Unset uses the viewer's device default: off on iPhone, on elsewhere.
+    var showsLineNumbers: Bool?
     var textScale = 1.0
     /// Master switch, preserved when upgrading from the crash-only wording.
     var notifiesOnNewReports = true
@@ -90,6 +92,7 @@ struct ReportPreferences: Codable, Equatable, Sendable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         defaultView = try values.decodeIfPresent(DefaultView.self, forKey: .defaultView) ?? defaultView
         wrapsLines = try values.decodeIfPresent(Bool.self, forKey: .wrapsLines) ?? wrapsLines
+        showsLineNumbers = try values.decodeIfPresent(Bool.self, forKey: .showsLineNumbers)
         textScale = try values.decodeIfPresent(Double.self, forKey: .textScale) ?? textScale
         notifiesOnNewReports = try values.decodeIfPresent(Bool.self, forKey: .notifiesOnNewReports)
             ?? notifiesOnNewReports

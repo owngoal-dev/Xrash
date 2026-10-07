@@ -38,6 +38,7 @@ final class ReportTextViewController: UIViewController {
     private var text: String
     private let language: Language
     private let settings: AppSettings
+    private var lineNumbersObserver: AnyCancellable?
     private var pinchStartScale = 1.0
 
     init(title: String, text: String, language: Language) {
@@ -78,11 +79,26 @@ final class ReportTextViewController: UIViewController {
             $0.spellCheckingType = .no
             $0.lineSelectionDisplayType = .line
             $0.isEditable = false
+            $0.verticalOverscrollFactor = 0
             $0.isLineWrappingEnabled = settings.preferences.value.wrapsLines
             // A long line scrolls sideways, but its indicator draws a grey
             // rule above the bottom bar that reads as a divider.
             $0.showsHorizontalScrollIndicator = false
         }
+        let numberedInsets = textView.textContainerInset
+        lineNumbersObserver = settings.preferences
+            .map(\.showsLineNumbers)
+            .removeDuplicates()
+            .sink { [weak self] value in
+                guard let self else { return }
+                textView.showLineNumbers = value ?? (traitCollection.userInterfaceIdiom != .phone)
+                var insets = numberedInsets
+                if !textView.showLineNumbers {
+                    insets.left = 16
+                    insets.right = 16
+                }
+                textView.textContainerInset = insets
+            }
 
         let stack = UIStackView(arrangedSubviews: [textView, findBar]).then { $0.axis = .vertical }
         view.addSubview(stack)
@@ -204,6 +220,15 @@ final class ReportTextViewController: UIViewController {
             self?.settings.changePreferences { $0.wrapsLines.toggle() }
             self?.textView.isLineWrappingEnabled = self?.settings.preferences.value.wrapsLines ?? false
         }
+        let lineNumbers = UIAction(
+            title: String(localized: "Line Numbers"),
+            image: UIImage(systemName: "list.number"),
+            state: textView.showLineNumbers ? .on : .off,
+        ) { [weak self] _ in
+            guard let self else { return }
+            let showsLineNumbers = !textView.showLineNumbers
+            settings.changePreferences { $0.showsLineNumbers = showsLineNumbers }
+        }
         let size = UIMenu(title: String(localized: "Text Size"), image: UIImage(systemName: "textformat.size"), children: [
             UIAction(title: String(localized: "Larger"), image: UIImage(systemName: "plus.magnifyingglass")) {
                 [weak self] _ in
@@ -229,7 +254,7 @@ final class ReportTextViewController: UIViewController {
             self?.share()
         }
         let tail = UIMenu(options: .displayInline, children: [copy, share])
-        guard formattedText != nil else { return [find, wrap, size, tail] }
+        guard formattedText != nil else { return [find, wrap, lineNumbers, size, tail] }
         let format = UIAction(
             title: String(localized: "Format JSON"),
             image: UIImage(systemName: "curlybraces"),
@@ -237,7 +262,7 @@ final class ReportTextViewController: UIViewController {
         ) { [weak self] _ in
             self?.toggleFormatted()
         }
-        return [find, wrap, format, size, tail]
+        return [find, wrap, lineNumbers, format, size, tail]
     }
 
     private func toggleFormatted() {

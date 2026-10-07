@@ -516,7 +516,10 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 guard !Task.isCancelled else { return }
                 guard let crash = try? await library.report(for: summary.id).crash else { continue }
                 for image in crash.images where ReportBundleBuilder.isThirdParty(image) {
-                    guard seen.insert(image.uuid).inserted, store.url(forUUID: image.uuid) == nil else { continue }
+                    // Some jailbreak reports omit UUIDs; no dSYM can match those images.
+                    guard UUID(uuidString: image.uuid) != nil,
+                          seen.insert(image.uuid).inserted,
+                          store.url(forUUID: image.uuid) == nil else { continue }
                     found.append(.init(id: image.uuid, group: image.name, text: image.uuid))
                 }
             }
