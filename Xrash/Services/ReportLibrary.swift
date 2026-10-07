@@ -19,6 +19,8 @@ final class ReportLibrary {
     let listingProgress = CurrentValueSubject<(read: Int, total: Int)?, Never>(nil)
     /// Reports never opened on this device.
     let unreadIDs = CurrentValueSubject<Set<String>, Never>([])
+    /// Shared by the main list and process pages; populated before the first snapshot.
+    let reasons = CurrentValueSubject<[String: String], Never>([:])
 
     /// Reports opened from Files, other apps or drag and drop are copied here.
     let importedDirectory: URL
@@ -28,13 +30,20 @@ final class ReportLibrary {
 
     private let backend: ReportBackend
     private let symbolicator: Symbolicator
+    private let metadataCache: ReportMetadataCache
     private var decoded = [String: Report]()
     private var symbolicated = [String: Report]()
     private var refreshing: Task<Void, Never>?
+    private var cacheWrite: Task<Void, Never>?
+    /// An in-flight read must not put a successfully deleted report back in a cache.
+    private var deletedIDs = Set<String>()
 
     nonisolated init(backend: ReportBackend, symbolicator: Symbolicator) {
         self.backend = backend
         self.symbolicator = symbolicator
+        metadataCache = ReportMetadataCache(url: FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("wiki.qaq.xrash/ReportMetadata.sqlite"))
         importedDirectory = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Imported", isDirectory: true)
@@ -42,7 +51,7 @@ final class ReportLibrary {
 
     // MARK: Listing
 
-    /// Lists, reads every header, then publishes once. A row's group and title
+    /// Lists, fills uncached headers, then publishes once. A row's group and title
     /// come from its header, so publishing name-only rows first made every row
     /// hop between sections a moment later; the list waits the extra moment
     /// behind its loading state instead and appears finished.
@@ -67,20 +76,48 @@ final class ReportLibrary {
             listingProgress.send(nil)
         }
 
-        let entries = await ((try? backend.listReports()) ?? []) + importedEntries()
+        await cacheWrite?.value
+        let systemEntries = try? await backend.listReports()
+        let entries = ((systemEntries ?? []) + importedEntries()).filter { !deletedIDs.contains($0.path) }
+        let cached = await metadataCache.load(entries.map(\.path))
         var rows = entries.map {
             ReportDecoder.summary(path: $0.path, byteCount: $0.byteCount, modified: $0.modified)
         }
 
-        // ponytail: headers are re-read on every refresh; persist them keyed
-        // by (path, mtime) if a device with thousands of reports feels it.
+        var headers = [String: ReportMetadataCache.Header]()
         listingProgress.send((read: 0, total: rows.count))
         for index in rows.indices {
             defer { listingProgress.send((read: index + 1, total: rows.count)) }
-            guard let header = await header(of: rows[index].id) else { continue }
-            rows[index] = ReportDecoder.enrich(rows[index], header: header, executablePath: nil)
+            let id = rows[index].id
+            guard !deletedIDs.contains(id) else { continue }
+            let header: ReportMetadataCache.Header
+            if let stored = cached[id]?.header {
+                header = stored
+            } else {
+                guard let read = try? await self.header(of: id) else { continue }
+                header = read
+                headers[id] = read
+            }
+            if let value = header.value {
+                rows[index] = ReportDecoder.enrich(rows[index], header: value, executablePath: nil)
+            }
         }
+        rows.removeAll { deletedIDs.contains($0.id) }
+        let paths = rows.map(\.id)
+        let current = Set(paths)
+        var found = reasons.value.filter { current.contains($0.key) }
+        for path in paths {
+            if let reason = cached[path]?.reason {
+                found[path] = reason
+            }
+        }
+        reasons.send(found)
         publish(rows)
+        let newHeaders = headers.filter { current.contains($0.key) }
+        let allowCleanup = systemEntries != nil
+        enqueueCacheWrite { cache in
+            await cache.saveRefresh(paths: paths, headers: newHeaders, allowCleanup: allowCleanup)
+        }
     }
 
     private func publish(_ rows: [ReportSummary]) {
@@ -104,10 +141,13 @@ final class ReportLibrary {
         return ReportScanner(roots: [root]).scan()
     }
 
-    private func header(of id: String) async -> ReportHeader? {
-        guard let handle = try? await open(id) else { return nil }
-        let prefix = (try? handle.read(upToCount: Self.headerPrefixByteCount)) ?? Data()
-        return ReportDecoder.header(fromPrefix: prefix)
+    private func header(of id: String) async throws -> ReportMetadataCache.Header {
+        let handle = try await open(id)
+        defer { try? handle.close() }
+        guard let prefix = try handle.read(upToCount: Self.headerPrefixByteCount), !prefix.isEmpty else {
+            throw ReportDecodingError.unreadable
+        }
+        return ReportMetadataCache.Header(ReportDecoder.header(fromPrefix: prefix))
     }
 
     // MARK: Reading
@@ -117,14 +157,52 @@ final class ReportLibrary {
     }
 
     func report(for id: String) async throws -> Report {
+        guard !deletedIDs.contains(id) else { throw CocoaError(.fileNoSuchFile) }
         if let report = decoded[id] {
             return report
         }
         let data = try await data(for: id)
         let fileName = (id as NSString).lastPathComponent
         let report = try await Task.detached { try ReportDecoder.decode(data, fileName: fileName) }.value
-        decoded[id] = report
+        if !deletedIDs.contains(id) {
+            decoded[id] = report
+        }
         return report
+    }
+
+    func readReasons(for ids: [String]) async {
+        var found = [String: String]()
+        var failed = Set<String>()
+        for id in ids {
+            guard !Task.isCancelled else { break }
+            guard reasons.value[id] == nil, !deletedIDs.contains(id) else { continue }
+            if let report = try? await report(for: id) {
+                found[id] = report.reason ?? ""
+            } else {
+                failed.insert(id)
+            }
+        }
+        found = found.filter { !deletedIDs.contains($0.key) }
+        var updated = reasons.value
+        updated.merge(found) { _, new in new }
+        // Suppress repeat attempts while scrolling, without persisting read failures.
+        for id in failed where !deletedIDs.contains(id) {
+            updated[id] = ""
+        }
+        reasons.send(updated)
+        if !found.isEmpty {
+            let successful = found
+            enqueueCacheWrite { await $0.saveReasons(successful) }
+        }
+    }
+
+    /// Preserve write/delete order without putting disk commits on the first-frame path.
+    private func enqueueCacheWrite(_ operation: @escaping @Sendable (ReportMetadataCache) async -> Void) {
+        let previous = cacheWrite
+        cacheWrite = Task { [metadataCache] in
+            await previous?.value
+            await operation(metadataCache)
+        }
     }
 
     /// The report with its frames resolved. `force` re-runs after the symbol
@@ -141,7 +219,9 @@ final class ReportLibrary {
         if let crash = report.crash {
             report.crash = await symbolicator.symbolicate(crash, progress: progress)
         }
-        symbolicated[id] = report
+        if !deletedIDs.contains(id) {
+            symbolicated[id] = report
+        }
         return report
     }
 
@@ -158,7 +238,8 @@ final class ReportLibrary {
     /// Returns the ids that could not be removed.
     @discardableResult
     func delete(_ ids: [String]) async -> [String] {
-        let failed = await (try? backend.deleteReports(at: ids.filter { !isImported($0) })) ?? ids
+        let systemIDs = ids.filter { !isImported($0) }
+        let failed = systemIDs.isEmpty ? [] : await (try? backend.deleteReports(at: systemIDs)) ?? systemIDs
         var failedImports = [String]()
         for id in ids where isImported(id) {
             if (try? FileManager.default.removeItem(atPath: id)) == nil {
@@ -166,8 +247,12 @@ final class ReportLibrary {
             }
         }
         let removed = Set(ids).subtracting(failed).subtracting(failedImports)
+        deletedIDs.formUnion(removed)
         removed.forEach { decoded[$0] = nil; symbolicated[$0] = nil }
+        reasons.send(reasons.value.filter { !removed.contains($0.key) })
         publish(summaries.value.filter { !removed.contains($0.id) })
+        enqueueCacheWrite { await $0.remove(removed) }
+        await cacheWrite?.value
         return failed + failedImports
     }
 
@@ -185,8 +270,10 @@ final class ReportLibrary {
             destination = importedDirectory.appendingPathComponent("\(UUID().uuidString)-\(url.lastPathComponent)")
         }
         try FileManager.default.copyItem(at: url, to: destination)
+        let id = PathGuard.canonical(destination.path) ?? destination.path
+        deletedIDs.remove(id)
         await refresh()
-        return PathGuard.canonical(destination.path) ?? destination.path
+        return id
     }
 
     private func isImported(_ id: String) -> Bool {

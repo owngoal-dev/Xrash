@@ -44,8 +44,12 @@ let package = Package(
         // overlay — a dylib iOS 15 does not have. See `XrashXPC`.
         .systemLibrary(name: "CXrashXPC", path: "Sources/CXrashXPC"),
 
-        // The app's end of the wire, and its own-permissions fallback.
-        .target(name: "XrashClient", dependencies: ["XrashProtocol"]),
+        // The app's backend and metadata cache. Neither SQLite nor the cache
+        // is linked into the daemon.
+        .target(
+            name: "XrashClient", dependencies: ["XrashProtocol", "XrashReport"],
+            linkerSettings: [.linkedLibrary("sqlite3")],
+        ),
 
         // The report model, the `.ips` / `.crash` decoders and the text forms.
         // Foundation only.

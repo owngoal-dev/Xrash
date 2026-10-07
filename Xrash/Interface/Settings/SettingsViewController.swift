@@ -40,7 +40,7 @@ final class SettingsViewController: UITableViewController {
                 footer: String(
                     localized: "Most reports the system writes are analytics and logs, not crashes.",
                 ),
-                rows: [.defaultView, .showAnalytics, .hiddenProcesses],
+                rows: [.showAnalytics, .defaultView, .hiddenProcesses],
             ),
             Section(
                 title: String(localized: "Notifications"),
@@ -50,7 +50,7 @@ final class SettingsViewController: UITableViewController {
             Section(
                 title: String(localized: "Cleanup"),
                 footer: nil,
-                rows: [.deleteAll, .storage],
+                rows: [.storage, .deleteAll],
             ),
             Section(
                 title: String(localized: "About"),

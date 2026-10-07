@@ -27,6 +27,7 @@ final class NotificationCategoriesViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = String(localized: "Notification Categories")
+        navigationItem.largeTitleDisplayMode = .never
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "category")
         observer = settings.preferences.receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.tableView.reloadData() }

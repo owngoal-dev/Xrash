@@ -31,7 +31,6 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     private var hasAppliedContent = false
 
     private let searchText = CurrentValueSubject<String, Never>("")
-    private let reasons = CurrentValueSubject<[String: String], Never>([:])
     /// Rows on screen whose report has not been decoded yet.
     private var wantsReason = Set<String>()
     private var reasonPass: Task<Void, Never>?
@@ -172,7 +171,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         ReportListInput(
             summaries: library.summaries.value,
             unread: library.unreadIDs.value,
-            reasons: reasons.value,
+            reasons: library.reasons.value,
             filter: settings.filter.value,
             searchText: searchText.value,
             lockedProcessName: lockedProcessName,
@@ -181,7 +180,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
 
     private func observe() {
         library.summaries
-            .combineLatest(library.unreadIDs, reasons, settings.filter)
+            .combineLatest(library.unreadIDs, library.reasons, settings.filter)
             .combineLatest(searchText, library.isLoading)
             .receive(on: DispatchQueue.main)
             .map { [weak self] _, _, isLoading -> ReportListInput? in
@@ -351,29 +350,14 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     /// them on launch is a second of nothing happening. Only the rows a finger
     /// actually stopped on are read, a few at a time.
     private func scheduleReasonPass() {
-        let wanted = wantsReason.filter { reasons.value[$0] == nil }
+        let wanted = wantsReason.filter { library.reasons.value[$0] == nil }
         guard !wanted.isEmpty else { return }
         reasonPass?.cancel()
         reasonPass = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 350 * NSEC_PER_MSEC)
             guard !Task.isCancelled, let self else { return }
-            await readReasons(for: Array(wanted.prefix(8)))
+            await library.readReasons(for: Array(wanted.prefix(8)))
         }
-    }
-
-    private func readReasons(for ids: [String]) async {
-        var found = reasons.value
-        for id in ids {
-            guard !Task.isCancelled else { return }
-            guard let report = try? await library.report(for: id) else {
-                // Remember the failure too, or the next scroll asks again.
-                found[id] = ""
-                continue
-            }
-            found[id] = ReportFormat.reason(for: report) ?? ""
-        }
-        guard !Task.isCancelled else { return }
-        reasons.send(found)
     }
 
     // MARK: Empty and unavailable states
