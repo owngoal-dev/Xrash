@@ -11,7 +11,7 @@ enum LoadBudget {
     /// A page inside the app. About twelve frames: shorter than a push.
     static let page: TimeInterval = 0.2
     /// The cold launch, spent once behind the launch screen.
-    static let launch: TimeInterval = 1
+    static let launch: TimeInterval = 2
 
     static func wait(_ budget: TimeInterval, for work: @escaping @MainActor () async -> Void) {
         var isFinished = false

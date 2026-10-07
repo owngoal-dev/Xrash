@@ -14,22 +14,34 @@ final class EmptyStateView: UIView {
 
     let content: Content
     private let action: () -> Void
+    private let stack = UIStackView()
 
     init(_ content: Content, action: @escaping () -> Void = {}) {
         self.content = content
         self.action = action
         super.init(frame: .zero)
 
-        let stack = UIStackView(arrangedSubviews: arrangedViews()).then {
-            $0.axis = .vertical
-            $0.alignment = .center
-            $0.spacing = 12
-        }
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 12
+        arrangedViews().forEach(stack.addArrangedSubview)
         addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.center.equalTo(safeAreaLayoutGuide)
-            make.leading.greaterThanOrEqualTo(safeAreaLayoutGuide).offset(24)
-            make.trailing.lessThanOrEqualTo(safeAreaLayoutGuide).offset(-24)
+        updateContentLayout()
+    }
+
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        updateContentLayout()
+    }
+
+    private func updateContentLayout() {
+        // UITableView stretches its background over the bars too, and gives
+        // it no safe-area insets. The table's guide is the visible list area.
+        let guide = (superview as? UITableView)?.safeAreaLayoutGuide ?? safeAreaLayoutGuide
+        stack.snp.remakeConstraints { make in
+            make.center.equalTo(guide)
+            make.leading.greaterThanOrEqualTo(guide).offset(24)
+            make.trailing.lessThanOrEqualTo(guide).offset(-24)
             make.width.lessThanOrEqualTo(420)
         }
     }

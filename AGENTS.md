@@ -216,6 +216,13 @@ Give every parallel worker its own `DERIVED_DATA=/private/tmp/<name>` — spelle
 `/private/tmp`, never `/tmp`, or a package manifest that strips its own
 checkout path finds no headers.
 
+After each implementation, build the roothide package and install it on the
+device through the mapped SSH channel (`root@127.0.0.1`, port `58422`), then
+re-register the app with `uicache -p`. Use this target until the user changes
+it. Create a Git commit only when the user explicitly asks.
+Remove temporary test scripts after verification; do not leave them in the
+repository.
+
 ## Package Pages
 
 `Documents/Site/depiction.json` is the native depiction page. Keep its Details
@@ -315,7 +322,7 @@ sheet grew by a search bar when a symbol list was pushed. Narrow: the same contr
 is the *View As* submenu at the top of its ••• menu, its subtitle the current
 choice; the share formats and *Reveal in Fila* are the *Report File* submenu.
 The bar title is the process name.
-`LoadBudget` holds a screen back for its first data (1 s at launch, 200 ms per
+`LoadBudget` holds a screen back for its first data (2 s at launch, 200 ms per
 page) so it comes up finished and un-animated.
 
 ## Localization

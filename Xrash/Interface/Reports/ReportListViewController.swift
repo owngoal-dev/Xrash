@@ -28,6 +28,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     /// Where the sandboxed footer hangs, whichever arrangement is up.
     private var lastSection: ReportSection?
     private var observers = Set<AnyCancellable>()
+    private var hasAppliedContent = false
 
     private let searchText = CurrentValueSubject<String, Never>("")
     private let reasons = CurrentValueSubject<[String: String], Never>([:])
@@ -128,8 +129,11 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         // What the launch wait already listed goes up before the first frame;
         // the pipeline below hops through a background queue and would show an
         // empty table for that frame otherwise.
-        if !library.summaries.value.isEmpty {
-            apply(ReportListArrangement.content(for: input))
+        if !library.isLoading.value || !library.summaries.value.isEmpty {
+            let input = input
+            apply(ReportListArrangement.content(for: input), for: input)
+        } else {
+            renderLoadingState()
         }
         observe()
         Task { await refresh() }
@@ -178,30 +182,33 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     private func observe() {
         library.summaries
             .combineLatest(library.unreadIDs, reasons, settings.filter)
-            .combineLatest(searchText)
-            .map { [locked = lockedProcessName] combined, text in
-                ReportListInput(
-                    summaries: combined.0,
-                    unread: combined.1,
-                    reasons: combined.2,
-                    filter: combined.3,
-                    searchText: text,
-                    lockedProcessName: locked,
-                )
+            .combineLatest(searchText, library.isLoading)
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] _, _, isLoading -> ReportListInput? in
+                // Wait for both summaries and unread IDs to be published.
+                // During a refresh, keep the last completed presentation.
+                guard !isLoading else { return nil }
+                return self?.input
             }
             .removeDuplicates()
+            .compactMap { $0 }
             .receive(on: DispatchQueue.global(qos: .userInitiated))
-            .map(ReportListArrangement.content(for:))
+            .map { ($0, ReportListArrangement.content(for: $0)) }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.apply($0) }
+            .sink { [weak self] input, content in
+                guard let self, input == self.input else { return }
+                apply(content, for: input)
+            }
             .store(in: &observers)
 
         library.isLoading
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isLoading in
-                guard let self, !isLoading else { return }
-                tableView.refreshControl?.endRefreshing()
-                renderEmptyState()
+                guard let self else { return }
+                if !isLoading {
+                    tableView.refreshControl?.endRefreshing()
+                }
+                renderLoadingState()
             }
             .store(in: &observers)
 
@@ -210,7 +217,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                renderEmptyState()
+                renderLoadingState()
                 // The sandboxed footer hangs off the last section, and only a
                 // fresh layout asks for footer titles again. This fires at
                 // most twice in a launch: connecting, then the answer.
@@ -220,14 +227,14 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             .store(in: &observers)
     }
 
-    private func apply(_ content: ReportListContent) {
+    private func apply(_ content: ReportListContent, for input: ReportListInput) {
         switch content {
-        case let .groups(groups): apply(groups: groups)
-        case let .processes(rows): apply(processes: rows)
+        case let .groups(groups): apply(groups: groups, input: input)
+        case let .processes(rows): apply(processes: rows, input: input)
         }
     }
 
-    private func apply(groups: [ReportListGroup]) {
+    private func apply(groups: [ReportListGroup], input: ReportListInput) {
         self.groups = groups
         shownProcesses = [:]
         let states = Dictionary(
@@ -244,12 +251,12 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             return id
         }
         shown = states
-        commit(snapshot, reconfiguring: changed)
+        commit(snapshot, reconfiguring: changed, input: input)
     }
 
     /// The inbox: one section, one row per process, the process name as the
     /// row's identity so a new report under a known name moves nothing.
-    private func apply(processes rows: [ProcessInboxRow]) {
+    private func apply(processes rows: [ProcessInboxRow], input: ReportListInput) {
         groups = []
         shown = [:]
         let states = Dictionary(rows.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
@@ -261,12 +268,13 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
             return name
         }
         shownProcesses = states
-        commit(snapshot, reconfiguring: changed)
+        commit(snapshot, reconfiguring: changed, input: input)
     }
 
     private func commit(
         _ snapshot: NSDiffableDataSourceSnapshot<ReportSection, String>,
         reconfiguring changed: [String],
+        input: ReportListInput,
     ) {
         var snapshot = snapshot
         if !changed.isEmpty {
@@ -276,11 +284,13 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         // The first load fills an empty table: animating that is every row
         // sliding in at once. Only a change to a list already on screen moves.
         let isFirstLoad = dataSource.snapshot().numberOfItems == 0
-        dataSource.apply(snapshot, animatingDifferences: view.window != nil && !isFirstLoad)
-        refreshVisibleSectionText()
-        restoreSelection()
-        renderEmptyState()
-        scheduleReasonPass()
+        dataSource.apply(snapshot, animatingDifferences: view.window != nil && !isFirstLoad) { [weak self] in
+            guard let self, input == self.input else { return }
+            refreshVisibleSectionText()
+            restoreSelection()
+            renderEmptyState(for: input)
+            scheduleReasonPass()
+        }
     }
 
     /// A header or footer is asked for its title when its section is laid out
@@ -368,12 +378,18 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
 
     // MARK: Empty and unavailable states
 
-    private func renderEmptyState() {
+    /// No empty verdict until a completed listing has reached the table.
+    private func renderLoadingState() {
+        guard !hasAppliedContent else { return }
+        tableView.setEmptyState(.loading(backend.status.value == .connecting
+            ? String(localized: "Connecting…")
+            : String(localized: "Looking for reports…")))
+    }
+
+    private func renderEmptyState(for input: ReportListInput) {
+        hasAppliedContent = true
         guard groups.isEmpty, shownProcesses.isEmpty else { return tableView.setEmptyState(nil) }
-        if backend.status.value == .connecting, library.summaries.value.isEmpty {
-            return tableView.setEmptyState(.loading(String(localized: "Connecting…")))
-        }
-        let needle = searchText.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let needle = input.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !needle.isEmpty {
             return tableView.setEmptyState(.message(
                 symbolName: "magnifyingglass",
@@ -382,7 +398,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
                 actionTitle: nil,
             ))
         }
-        if !library.summaries.value.isEmpty {
+        if !input.summaries.isEmpty {
             tableView.setEmptyState(
                 .message(
                     symbolName: "line.3.horizontal.decrease.circle",

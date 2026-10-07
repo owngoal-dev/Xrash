@@ -12,7 +12,8 @@ import XrashSymbols
 final class ReportLibrary {
     /// Newest first.
     let summaries = CurrentValueSubject<[ReportSummary], Never>([])
-    let isLoading = CurrentValueSubject<Bool, Never>(false)
+    /// The initial listing is pending even before its task starts.
+    let isLoading = CurrentValueSubject<Bool, Never>(true)
     /// How far the header pass has got, while one is running: the welcome page
     /// shows it, and nothing else needs more than `isLoading`.
     let listingProgress = CurrentValueSubject<(read: Int, total: Int)?, Never>(nil)
