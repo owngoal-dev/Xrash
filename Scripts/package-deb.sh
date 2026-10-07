@@ -90,6 +90,13 @@ installed_daemon="$staging$install_prefix/usr/libexec/xrashd"
 installed_plist="$staging$install_prefix/Library/LaunchDaemons/wiki.qaq.xrashd.plist"
 mkdir -p "$debian" "$(dirname "$installed_app")" "$(dirname "$installed_daemon")" "$(dirname "$installed_plist")"
 /usr/bin/ditto "$app_bundle" "$installed_app"
+# The icon is authored in sRGB. Keep every appearance, device family and scale,
+# but omit its redundant P3 renditions. Unspecified scales would drop 2x/3x images.
+xcrun --sdk iphoneos assetutil \
+    -i phone -s 1 -p sRGB -i phone -s 2 -p sRGB -i phone -s 3 -p sRGB \
+    -i pad -s 1 -p sRGB -i pad -s 2 -p sRGB -i pad -s 3 -p sRGB \
+    "$installed_app/Assets.car"
+xcrun --sdk iphoneos assetutil -Z "$installed_app/Assets.car"
 /usr/bin/ditto "$daemon_binary" "$installed_daemon"
 sed -e "s|@PREFIX@|$install_prefix|g" -e "s|@ROOTFS@|$rootfs_prefix|g" "$launch_plist" >"$installed_plist"
 rm -rf "$installed_app/_CodeSignature"

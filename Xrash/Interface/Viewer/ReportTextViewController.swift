@@ -1,5 +1,5 @@
 import Combine
-import RunestoneEditor
+import Runestone
 import RunestoneLanguageSupport
 import SnapKit
 import Then
@@ -32,7 +32,7 @@ final class ReportTextViewController: UIViewController {
     /// menu has something to go back to.
     private var unformattedText: String?
 
-    let textView = RunestoneEditorView.new()
+    let textView = TextView()
     private let findBar = FindBar()
     private let spinner = UIActivityIndicatorView(style: .large)
     private var text: String
@@ -70,6 +70,11 @@ final class ReportTextViewController: UIViewController {
             $0.onDismiss = { [weak self] in self?.toggleFind() }
         }
         textView.do {
+            $0.contentInsetAdjustmentBehavior = .always
+            $0.kern = 0.3
+            $0.lineHeightMultiplier = 1.2
+            $0.gutterMinimumCharacterCount = 3
+            $0.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
             // A viewer shows the file, not the whitespace inside it.
             $0.showTabs = false
             $0.showSpaces = false

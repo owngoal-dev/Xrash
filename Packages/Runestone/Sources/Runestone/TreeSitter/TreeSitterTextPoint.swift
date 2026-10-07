@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: MIT
+// Upstream attribution and license: see Packages/Runestone/README.md and LICENSE files.
+import TreeSitter
+
+final class TreeSitterTextPoint {
+    var row: UInt32 {
+        rawValue.row
+    }
+
+    var column: UInt32 {
+        rawValue.column
+    }
+
+    let rawValue: TSPoint
+
+    init(_ point: TSPoint) {
+        rawValue = point
+    }
+
+    init(row: UInt32, column: UInt32) {
+        rawValue = TSPoint(row: row, column: column)
+    }
+}
+
+extension TreeSitterTextPoint: CustomDebugStringConvertible {
+    var debugDescription: String {
+        "[TreeSitterTextPoint row=\(row) column=\(column)]"
+    }
+}

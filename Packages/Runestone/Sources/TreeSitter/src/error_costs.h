@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: MIT
+// Upstream attribution and license: see Packages/Runestone/README.md and LICENSE files.
+#ifndef TREE_SITTER_ERROR_COSTS_H_
+#define TREE_SITTER_ERROR_COSTS_H_
+
+#define ERROR_STATE 0
+#define ERROR_COST_PER_RECOVERY 500
+#define ERROR_COST_PER_MISSING_TREE 110
+#define ERROR_COST_PER_SKIPPED_TREE 100
+#define ERROR_COST_PER_SKIPPED_LINE 30
+#define ERROR_COST_PER_SKIPPED_CHAR 1
+
+#endif

@@ -1,3 +1,7 @@
 #include "Base.xcconfig"
+
+// Prefer smaller catalogs while retaining every icon appearance and device variant.
+ASSETCATALOG_COMPILER_OPTIMIZATION = space
+
 #include? "Developer.xcconfig"
 #include? "DeveloperRelease.xcconfig"

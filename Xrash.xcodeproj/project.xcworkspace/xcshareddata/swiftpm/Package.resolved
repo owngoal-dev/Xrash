@@ -1,5 +1,5 @@
 {
-  "originHash" : "043c078d2ff556a6d3afe0f0f7b319eaccf77d3bcabd1ccbc457305ba0286bf2",
+  "originHash" : "f7e1797ddf2d70a126f4e7258d23e138bf900f27c6f31f00292ae80fac87b0e9",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -44,15 +44,6 @@
       "state" : {
         "revision" : "96d782a576273b73b277b577943a2a25b00b919e",
         "version" : "0.5.0"
-      }
-    },
-    {
-      "identity" : "runestone.xcframework",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Lakr233/Runestone.xcframework.git",
-      "state" : {
-        "revision" : "90576ae5769b1e0ba49b8616cf2de045a8dc36af",
-        "version" : "0.3.2"
       }
     },
     {

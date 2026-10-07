@@ -1,4 +1,4 @@
-import RunestoneEditor
+import Runestone
 import RunestoneThemeSupport
 import UIKit
 

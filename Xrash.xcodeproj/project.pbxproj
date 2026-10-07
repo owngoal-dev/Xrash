@@ -12,7 +12,7 @@
 		A50000000000000000000052 /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000053 /* Then */; };
 		A50000000000000000000054 /* AlertController in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000055 /* AlertController */; };
 		A50000000000000000000056 /* SPIndicator in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000057 /* SPIndicator */; };
-		A50000000000000000000058 /* RunestoneEditor in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000059 /* RunestoneEditor */; };
+		A50000000000000000000058 /* Runestone in Frameworks */ = {isa = PBXBuildFile; productRef = A50000000000000000000059 /* Runestone */; };
 		A5000000000000000000005A /* RunestoneLanguageSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A5000000000000000000005B /* RunestoneLanguageSupport */; };
 		A5000000000000000000005C /* RunestoneThemeSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A5000000000000000000005D /* RunestoneThemeSupport */; };
 		A51000000000000000000040 /* XrashProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = A51000000000000000000041 /* XrashProtocol */; };
@@ -60,7 +60,7 @@
 				A50000000000000000000052 /* Then in Frameworks */,
 				A50000000000000000000054 /* AlertController in Frameworks */,
 				A50000000000000000000056 /* SPIndicator in Frameworks */,
-				A50000000000000000000058 /* RunestoneEditor in Frameworks */,
+				A50000000000000000000058 /* Runestone in Frameworks */,
 				A5000000000000000000005A /* RunestoneLanguageSupport in Frameworks */,
 				A5000000000000000000005C /* RunestoneThemeSupport in Frameworks */,
 			);
@@ -120,7 +120,7 @@
 				A50000000000000000000053 /* Then */,
 				A50000000000000000000055 /* AlertController */,
 				A50000000000000000000057 /* SPIndicator */,
-				A50000000000000000000059 /* RunestoneEditor */,
+				A50000000000000000000059 /* Runestone */,
 				A5000000000000000000005B /* RunestoneLanguageSupport */,
 				A5000000000000000000005D /* RunestoneThemeSupport */,
 			);
@@ -193,7 +193,7 @@
 				A54000000000000000000002 /* XCRemoteSwiftPackageReference "Then" */,
 				A54000000000000000000003 /* XCRemoteSwiftPackageReference "AlertController" */,
 				A54000000000000000000004 /* XCRemoteSwiftPackageReference "SPIndicator" */,
-				A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */,
+				A53000000000000000000002 /* XCLocalSwiftPackageReference "Packages/Runestone" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A50000000000000000000005 /* Products */;
@@ -517,6 +517,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/XrashKit;
 		};
+		A53000000000000000000002 /* XCLocalSwiftPackageReference "Packages/Runestone" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Runestone;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -552,14 +556,6 @@
 				minimumVersion = 1.6.5;
 			};
 		};
-		A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Lakr233/Runestone.xcframework.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.3.2;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -587,19 +583,19 @@
 			package = A54000000000000000000004 /* XCRemoteSwiftPackageReference "SPIndicator" */;
 			productName = SPIndicator;
 		};
-		A50000000000000000000059 /* RunestoneEditor */ = {
+		A50000000000000000000059 /* Runestone */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */;
-			productName = RunestoneEditor;
+			package = A53000000000000000000002 /* XCLocalSwiftPackageReference "Packages/Runestone" */;
+			productName = Runestone;
 		};
 		A5000000000000000000005B /* RunestoneLanguageSupport */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */;
+			package = A53000000000000000000002 /* XCLocalSwiftPackageReference "Packages/Runestone" */;
 			productName = RunestoneLanguageSupport;
 		};
 		A5000000000000000000005D /* RunestoneThemeSupport */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A54000000000000000000005 /* XCRemoteSwiftPackageReference "Runestone.xcframework" */;
+			package = A53000000000000000000002 /* XCLocalSwiftPackageReference "Packages/Runestone" */;
 			productName = RunestoneThemeSupport;
 		};
 		A51000000000000000000041 /* XrashProtocol */ = {
