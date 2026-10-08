@@ -163,7 +163,22 @@ final class FormTextViewCell: UITableViewCell, UITextViewDelegate {
     }
 }
 
-/// A label, an optional explanation beside it, and a switch.
+final class CollectedFileCell: UITableViewCell {
+    static let reuseIdentifier = "collectedFile"
+
+    override init(style _: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: .value1, reuseIdentifier: reuseIdentifier)
+        textLabel?.lineBreakMode = .byTruncatingMiddle
+        detailTextLabel?.textColor = .secondaryLabel
+        accessoryType = .disclosureIndicator
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+}
+
 final class FormSwitchCell: UITableViewCell {
     static let reuseIdentifier = "FormSwitchCell"
 
@@ -183,11 +198,12 @@ final class FormSwitchCell: UITableViewCell {
         fatalError("init(coder:) is unavailable")
     }
 
-    func configure(title: String, detail: String?, isOn: Bool) {
+    func configure(title: String, detail: String?, detailIsDescription: Bool, isOn: Bool) {
         var content = defaultContentConfiguration()
         content.text = title
         content.secondaryText = detail
-        content.prefersSideBySideTextAndSecondaryText = true
+        content.prefersSideBySideTextAndSecondaryText = !detailIsDescription
+        content.secondaryTextProperties.font = .preferredFont(forTextStyle: detailIsDescription ? .subheadline : .body)
         content.secondaryTextProperties.color = .secondaryLabel
         contentConfiguration = content
         control.isOn = isOn

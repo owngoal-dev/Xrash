@@ -24,9 +24,11 @@ final class SystemStateViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = String(localized: "System State")
+        title = String(localized: "Collected Files")
         navigationItem.largeTitleDisplayMode = .never
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "file")
+        tableView.tableHeaderView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 16))
+        tableView.sectionHeaderHeight = .leastNormalMagnitude
+        tableView.register(CollectedFileCell.self, forCellReuseIdentifier: CollectedFileCell.reuseIdentifier)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -51,16 +53,10 @@ final class SystemStateViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "file", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: CollectedFileCell.reuseIdentifier, for: indexPath)
         let file = files[indexPath.row]
-        var content = cell.defaultContentConfiguration()
-        content.text = file.name
-        content.secondaryText = ReportFormat.byteCount(file.byteCount)
-        content.prefersSideBySideTextAndSecondaryText = true
-        content.secondaryTextProperties.color = .secondaryLabel
-        content.image = UIImage(systemName: "doc.text")
-        cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
+        cell.textLabel?.text = file.name
+        cell.detailTextLabel?.text = ReportFormat.byteCount(file.byteCount)
         return cell
     }
 

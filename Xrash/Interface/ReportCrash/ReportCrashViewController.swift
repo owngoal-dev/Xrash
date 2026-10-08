@@ -14,7 +14,7 @@ import XrashSystemState
 /// The point of the screen is the linking. A system crash rarely happens in
 /// one process on its own, and a bug report that carries only the process the
 /// user happened to tap on throws away the half that explains it.
-final class ReportCrashViewController: UITableViewController {
+final class ReportCrashViewController: UITableViewController, UITextFieldDelegate {
     private enum Section: Hashable {
         case primary, linked, suggestions, details, include
     }
@@ -60,6 +60,19 @@ final class ReportCrashViewController: UITableViewController {
 
     private var dataSource: SectionedTableDataSource<Section, Row>!
 
+    private lazy var keyboardToolbar: UIToolbar = {
+        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 0, height: 44))
+        let dismiss = UIBarButtonItem(
+            image: UIImage(systemName: "keyboard.chevron.compact.down"),
+            style: .plain,
+            target: self,
+            action: #selector(dismissKeyboard),
+        )
+        dismiss.accessibilityLabel = String(localized: "Hide Keyboard")
+        toolbar.items = [UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), dismiss]
+        return toolbar
+    }()
+
     /// `primaryID` is the `ReportSummary.id` of a report in the library.
     init(primaryID: String, environment: AppEnvironment = .shared) {
         self.primaryID = primaryID
@@ -97,6 +110,7 @@ final class ReportCrashViewController: UITableViewController {
         tableView.register(FormTextFieldCell.self, forCellReuseIdentifier: FormTextFieldCell.reuseIdentifier)
         tableView.register(FormTextViewCell.self, forCellReuseIdentifier: FormTextViewCell.reuseIdentifier)
         tableView.register(FormSwitchCell.self, forCellReuseIdentifier: FormSwitchCell.reuseIdentifier)
+        tableView.register(CollectedFileCell.self, forCellReuseIdentifier: CollectedFileCell.reuseIdentifier)
         // Every row is dequeued: reconfiguring a row whose provider answers
         // with a cell the table did not hand out raises in UIKit.
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Self.actionCellIdentifier)
@@ -109,6 +123,7 @@ final class ReportCrashViewController: UITableViewController {
         dataSource.footer = { [weak self] in self?.footer(for: $0) }
         // Only linked rows offer a swipe action; the rest answer nil below.
         dataSource.isEditable = true
+        dataSource.defaultRowAnimation = .fade
         render()
         Task { await load() }
         collectSystemStateOnOpening()
@@ -151,7 +166,7 @@ final class ReportCrashViewController: UITableViewController {
 
     // MARK: Rendering
 
-    private func render() {
+    private func render(animated: Bool = false) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
         snapshot.appendSections([.primary])
         snapshot.appendItems([.primary], toSection: .primary)
@@ -180,7 +195,7 @@ final class ReportCrashViewController: UITableViewController {
             includes.append(.reviewSystemState)
         }
         snapshot.appendItems(includes, toSection: .include)
-        dataSource.apply(snapshot, animatingDifferences: false)
+        dataSource.apply(snapshot, animatingDifferences: animated)
     }
 
     private static let actionCellIdentifier = "action"
@@ -259,6 +274,10 @@ final class ReportCrashViewController: UITableViewController {
             ) as! FormTextFieldCell
             cell.textField.text = bundleTitle
             cell.textField.placeholder = String(localized: "Title")
+            cell.textField.clearButtonMode = .never
+            cell.textField.returnKeyType = .next
+            cell.textField.delegate = self
+            cell.textField.inputAccessoryView = keyboardToolbar
             // A placeholder names the field only while it is empty, and a text
             // field in a row takes no name from the row.
             cell.textField.accessibilityLabel = String(localized: "Title")
@@ -271,6 +290,7 @@ final class ReportCrashViewController: UITableViewController {
                 withIdentifier: FormTextViewCell.reuseIdentifier,
                 for: indexPath,
             ) as! FormTextViewCell
+            cell.textView.inputAccessoryView = keyboardToolbar
             cell.configure(
                 text: notes,
                 placeholder: String(localized: "What were you doing when it happened?"),
@@ -292,23 +312,16 @@ final class ReportCrashViewController: UITableViewController {
             cell.configure(
                 title: title(for: include),
                 detail: detail(for: include),
+                detailIsDescription: include == .systemState,
                 isOn: isOn(include),
             )
             cell.onChange = { [weak self] isOn in self?.set(include, to: isOn) }
             return cell
 
         case .reviewSystemState:
-            let cell = table.dequeueReusableCell(withIdentifier: Self.actionCellIdentifier, for: indexPath)
-            var content = cell.defaultContentConfiguration()
-            content.text = String(localized: "Review Collected Files")
-            content.textProperties.color = view.tintColor
-            content.image = UIImage(systemName: "list.bullet.rectangle")
-            content.imageProperties.tintColor = view.tintColor
-            content.secondaryText = systemFiles.map { ReportFormat.byteCount(collectedByteCount($0)) }
-            content.prefersSideBySideTextAndSecondaryText = true
-            content.secondaryTextProperties.color = .secondaryLabel
-            cell.contentConfiguration = content
-            cell.accessoryType = .disclosureIndicator
+            let cell = table.dequeueReusableCell(withIdentifier: CollectedFileCell.reuseIdentifier, for: indexPath)
+            cell.textLabel?.text = String(localized: "Collected Files")
+            cell.detailTextLabel?.text = systemFiles.map { ReportFormat.byteCount(collectedByteCount($0)) }
             return cell
         }
     }
@@ -334,9 +347,7 @@ final class ReportCrashViewController: UITableViewController {
         }
     }
 
-    /// Two warnings and a running total. System State is the one switch whose
-    /// contents are about the machine rather than the crash, so the footer says
-    /// what it names and leaves the decision where it belongs.
+    /// System State describes the machine, so explain what will be shared.
     private var includeFooter: String {
         var paragraphs = [String(localized: """
         Binaries add the crashed executable and the third-party libraries on the crashing stack. \
@@ -348,7 +359,6 @@ final class ReportCrashViewController: UITableViewController {
             Review the files before you share them.
             """))
         }
-        paragraphs.append(String(localized: "Estimated size: \(estimatedSizeText)"))
         return paragraphs.joined(separator: "\n\n")
     }
 
@@ -358,7 +368,7 @@ final class ReportCrashViewController: UITableViewController {
         case let .suggestion(id):
             guard let suggestion = suggestions.first(where: { $0.id == id }) else { return }
             linked.append(.init(id: id, relation: suggestion.relation))
-            render()
+            render(animated: true)
         case .addOther:
             presentPicker()
         case .reviewSystemState:
@@ -376,13 +386,25 @@ final class ReportCrashViewController: UITableViewController {
         let remove = UIContextualAction(style: .destructive, title: String(localized: "Remove")) {
             [weak self] _, _, done in
             self?.linked.removeAll { $0.id == id }
-            self?.render()
+            self?.render(animated: true)
             done(true)
         }
         return UISwipeActionsConfiguration(actions: [remove])
     }
 
     // MARK: Actions
+
+    func textFieldShouldReturn(_: UITextField) -> Bool {
+        guard let indexPath = dataSource.indexPath(for: .notes) else { return false }
+        tableView.scrollToRow(at: indexPath, at: .none, animated: false)
+        tableView.layoutIfNeeded()
+        (tableView.cellForRow(at: indexPath) as? FormTextViewCell)?.textView.becomeFirstResponder()
+        return false
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
 
     @objc private func titleChanged(_ field: UITextField) {
         bundleTitle = field.text ?? ""
@@ -397,7 +419,7 @@ final class ReportCrashViewController: UITableViewController {
         ) { [weak self] ids in
             guard let self else { return }
             linked.append(contentsOf: ids.map { .init(id: $0, relation: .manual) })
-            render()
+            render(animated: true)
         }
         navigationController?.pushViewController(picker, animated: true)
     }
@@ -438,20 +460,15 @@ final class ReportCrashViewController: UITableViewController {
             systemFiles = collected
             render()
             reconfigure([.include(.systemState), .reviewSystemState])
-            refreshIncludeFooter()
             return collected
         } catch {
             options.includesSystemState = false
             render()
-            refreshIncludeFooter()
             return nil
         }
     }
 
-    /// The switch is on when the sheet opens, and a switch that is on has
-    /// files behind it: the size beside Review and the estimate under the
-    /// section are wrong until they exist. Collected once, without the card —
-    /// nobody asked for anything yet, so nothing is put in front of them.
+    /// Collect once without a progress card, so Review can show its size.
     private func collectSystemStateOnOpening() {
         guard openingCollection == nil, systemFiles == nil,
               options.includesSystemState, SystemState.isAvailable else { return }
@@ -462,7 +479,6 @@ final class ReportCrashViewController: UITableViewController {
             guard let self else { return }
             systemFiles = collected
             reconfigure([.include(.systemState), .reviewSystemState])
-            refreshIncludeFooter()
         }
     }
 
@@ -586,40 +602,6 @@ final class ReportCrashViewController: UITableViewController {
         } else {
             reconfigure([.include(include)])
         }
-        refreshIncludeFooter()
-    }
-
-    /// The footer carries the running estimate, and nothing redraws a section's
-    /// footer on its own.
-    private func refreshIncludeFooter() {
-        guard let section = dataSource.snapshot().indexOfSection(.include) else { return }
-        let view = tableView.footerView(forSection: section)
-        view?.textLabel?.text = footer(for: .include)
-        view?.sizeToFit()
-    }
-
-    // MARK: Text
-
-    private var estimatedSizeText: String {
-        var bytes = UInt64(0)
-        if options.includesReports {
-            let members = [primarySummary].compactMap(\.self) + linked.compactMap { summary(for: $0.id) }
-            for member in members {
-                // The original file and the JSON each come out about the size
-                // of the report; the rendered crash text about half of it.
-                bytes += member.byteCount * 2 + member.byteCount / 2
-            }
-        }
-        if options.includesPDF {
-            bytes += 60 * 1024
-        }
-        if options.includesBinaries {
-            bytes += binaryByteCount
-        }
-        if options.includesSystemState, let systemFiles {
-            bytes += collectedByteCount(systemFiles)
-        }
-        return ReportFormat.byteCount(bytes)
     }
 
     private func summary(for id: String) -> ReportSummary? {

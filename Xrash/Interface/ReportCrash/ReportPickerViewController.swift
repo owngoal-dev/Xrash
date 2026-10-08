@@ -41,6 +41,8 @@ final class ReportPickerViewController: UITableViewController, UISearchResultsUp
         definesPresentationContext = true
 
         tableView.register(BundleReportCell.self, forCellReuseIdentifier: BundleReportCell.reuseIdentifier)
+        tableView.sectionHeaderHeight = 16
+        tableView.sectionFooterHeight = .leastNormalMagnitude
         dataSource = UITableViewDiffableDataSource(tableView: tableView) { [weak self] table, indexPath, id in
             let cell = table.dequeueReusableCell(
                 withIdentifier: BundleReportCell.reuseIdentifier,
@@ -54,10 +56,6 @@ final class ReportPickerViewController: UITableViewController, UISearchResultsUp
         }
         dataSource.defaultRowAnimation = .fade
         render()
-    }
-
-    override func tableView(_: UITableView, titleForHeaderInSection section: Int) -> String? {
-        dataSource.snapshot().sectionIdentifiers[section]
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
