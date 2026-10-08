@@ -14,7 +14,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
     }
 
     private let footer: String
-    private let symbolName: String
+    private let symbolName: String?
     private let isMonospaced: Bool
     private let entries: () -> [Entry]
     private let delete: ((String) -> Void)?
@@ -27,7 +27,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
     init(
         title: String,
         footer: String,
-        symbolName: String,
+        symbolName: String? = nil,
         isMonospaced: Bool = false,
         entries: @escaping () -> [Entry],
         delete: ((String) -> Void)? = nil,
@@ -68,7 +68,7 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
                 // A UUID is read, copied and compared.
                 content.textProperties.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
             }
-            content.image = UIImage(systemName: symbolName)
+            content.image = symbolName.flatMap { UIImage(systemName: $0) }
             cell.contentConfiguration = content
             cell.selectionStyle = .none
             return cell
@@ -110,6 +110,14 @@ final class SymbolListViewController: UITableViewController, UISearchResultsUpda
     func updateSearchResults(for searchController: UISearchController) {
         query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespaces)
         render()
+    }
+
+    override func tableView(_: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+        guard let header = view as? UITableViewHeaderFooterView else { return }
+        var content = UIListContentConfiguration.groupedHeader()
+        content.textProperties.transform = .none
+        content.text = dataSource.sectionIdentifier(for: section)
+        header.contentConfiguration = content
     }
 
     override func tableView(

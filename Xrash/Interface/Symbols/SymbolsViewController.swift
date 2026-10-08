@@ -296,7 +296,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         navigationController?.pushViewController(SymbolListViewController(
             title: String(localized: "Missing Symbols"),
             footer: String(localized: "Images in recent reports that no dSYM covers."),
-            symbolName: "questionmark.square.dashed",
             isMonospaced: true,
             entries: { missing },
         ), animated: true)
