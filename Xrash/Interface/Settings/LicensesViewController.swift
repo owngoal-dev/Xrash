@@ -110,6 +110,8 @@ final class LicensesViewController: UITableViewController {
 /// The whole notice, selectable; its address is a link.
 private final class LicenseTextViewController: UIViewController {
     private let entry: LicenseEntry
+    private let textView = UITextView()
+    private var hasAppeared = false
 
     init(entry: LicenseEntry) {
         self.entry = entry
@@ -146,7 +148,7 @@ private final class LicenseTextViewController: UIViewController {
             .foregroundColor: UIColor.label,
         ]))
 
-        let textView = UITextView().then {
+        textView.do {
             $0.isEditable = false
             $0.backgroundColor = .clear
             $0.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 28, right: 16)
@@ -154,5 +156,19 @@ private final class LicenseTextViewController: UIViewController {
         }
         view.addSubview(textView)
         textView.snp.makeConstraints { $0.edges.equalToSuperview() }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard !hasAppeared else { return }
+        // The navigation inset settles during the push, after the text is assigned.
+        textView.layoutIfNeeded()
+        let inset = textView.adjustedContentInset
+        textView.setContentOffset(CGPoint(x: -inset.left, y: -inset.top), animated: false)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        hasAppeared = true
     }
 }
