@@ -7,7 +7,7 @@ import XrashReport
 /// stack, and a way into the threads and images. It owns no loading — the
 /// container hands it a decoded report and hands it a new one after
 /// symbolication.
-final class ReportSummaryViewController: UITableViewController {
+final class ReportSummaryViewController: SelectionTableViewController {
     private var content: DetailContent?
     private var summary: ReportSummary?
 
@@ -351,10 +351,10 @@ final class ReportSummaryViewController: UITableViewController {
     // MARK: Selection
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
         guard let item = dataSource.itemIdentifier(for: indexPath), let content else { return }
         switch item {
         case let .showAllFrames(list):
+            tableView.deselectRow(at: indexPath, animated: true)
             self.content?.expanded.insert(list)
             rebuild()
         case let .thread(index):
@@ -374,12 +374,14 @@ final class ReportSummaryViewController: UITableViewController {
             // copies its path still copies it on the tap. A row with several
             // is under its menu button and never gets here.
             suspectActions(suspect).first?.run()
+            deselectFinishedAction()
         case _ where item.isCopyable:
             guard let text = displayedText(at: indexPath), !text.isEmpty else { return }
             UIPasteboard.general.string = text
             Toast.show(String(localized: "Copied"))
+            deselectFinishedAction()
         default:
-            break
+            deselectFinishedAction()
         }
     }
 

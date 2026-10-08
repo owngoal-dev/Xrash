@@ -14,7 +14,7 @@ import XrashSystemState
 /// The point of the screen is the linking. A system crash rarely happens in
 /// one process on its own, and a bug report that carries only the process the
 /// user happened to tap on throws away the half that explains it.
-final class ReportCrashViewController: UITableViewController, UITextFieldDelegate {
+final class ReportCrashViewController: SelectionTableViewController, UITextFieldDelegate {
     private enum Section: Hashable {
         case primary, linked, suggestions, details, include
     }
@@ -363,10 +363,10 @@ final class ReportCrashViewController: UITableViewController, UITextFieldDelegat
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
         switch dataSource.itemIdentifier(for: indexPath) {
         case let .suggestion(id):
             guard let suggestion = suggestions.first(where: { $0.id == id }) else { return }
+            tableView.deselectRow(at: indexPath, animated: true)
             linked.append(.init(id: id, relation: suggestion.relation))
             render(animated: true)
         case .addOther:
@@ -374,7 +374,7 @@ final class ReportCrashViewController: UITableViewController, UITextFieldDelegat
         case .reviewSystemState:
             Task { await reviewSystemState() }
         default:
-            break
+            deselectFinishedAction()
         }
     }
 
@@ -427,7 +427,10 @@ final class ReportCrashViewController: UITableViewController, UITextFieldDelegat
     /// Pushes the list of what was collected, collecting first if the switch
     /// was turned on and nothing has needed the files yet.
     private func reviewSystemState() async {
-        guard let files = await collectedSystemFiles() else { return }
+        guard let files = await collectedSystemFiles() else {
+            deselectFinishedAction()
+            return
+        }
         navigationController?.pushViewController(
             SystemStateViewController(files: files),
             animated: true,

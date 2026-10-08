@@ -17,14 +17,12 @@ final class SavedBundleCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         isAccessibilityElement = true
         accessibilityTraits.insert(.button)
-        titleLabel.font = UIFontMetrics(forTextStyle: .headline).scaledFont(
-            for: .systemFont(ofSize: 17, weight: .medium),
-        )
+        titleLabel.font = .preferredFont(forTextStyle: .callout)
         titleLabel.numberOfLines = 2
         previewLabel.font = .preferredFont(forTextStyle: .subheadline)
         previewLabel.numberOfLines = 2
-        dateLabel.font = .preferredFont(forTextStyle: .body)
-        attachmentLabel.font = .preferredFont(forTextStyle: .body)
+        dateLabel.font = .preferredFont(forTextStyle: .footnote)
+        attachmentLabel.font = .preferredFont(forTextStyle: .footnote)
         for label in [previewLabel, dateLabel, attachmentLabel] {
             label.textColor = .secondaryLabel
         }
@@ -33,7 +31,7 @@ final class SavedBundleCell: UITableViewCell {
         }
 
         let paperclip = UIImageView(image: UIImage(systemName: "paperclip")).then {
-            $0.preferredSymbolConfiguration = .init(textStyle: .subheadline)
+            $0.preferredSymbolConfiguration = .init(textStyle: .footnote)
             $0.tintColor = .secondaryLabel
             $0.adjustsImageSizeForAccessibilityContentSizeCategory = true
         }
@@ -103,8 +101,8 @@ final class SavedBundleSummaryCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         isAccessibilityElement = true
         selectionStyle = .none
-        titleLabel.font = UIFontMetrics(forTextStyle: .title3).scaledFont(
-            for: .systemFont(ofSize: 20, weight: .medium),
+        titleLabel.font = UIFontMetrics(forTextStyle: .callout).scaledFont(
+            for: .systemFont(ofSize: 16, weight: .medium),
         )
         notesLabel.font = .preferredFont(forTextStyle: .body)
         for label in [titleLabel, notesLabel] {

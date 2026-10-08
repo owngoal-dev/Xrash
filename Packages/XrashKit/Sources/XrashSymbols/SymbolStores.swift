@@ -31,6 +31,9 @@ public struct DSYMRecord: Codable, Hashable, Sendable, Identifiable {
 
 /// Imported dSYMs, copied into `directory` and indexed by UUID.
 public final class DSYMStore: @unchecked Sendable {
+    /// Posted after a mutation, outside the store lock, on the caller's thread.
+    public static let didChangeNotification = Notification.Name("DSYMStore.didChange")
+
     private struct Index: Codable {
         var revision = 0
         var records = [DSYMRecord]()
@@ -116,16 +119,21 @@ public final class DSYMStore: @unchecked Sendable {
             index.revision += 1
             save()
         }
+        NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
         return imported
     }
 
     public func remove(uuid: String) throws {
-        lock.locked {
-            guard index.records.contains(where: { $0.id == uuid }) else { return }
+        let changed = lock.locked {
+            guard index.records.contains(where: { $0.id == uuid }) else { return false }
             index.records.removeAll { $0.id == uuid }
             index.revision += 1
             save()
             try? FileManager.default.removeItem(at: storedURL(for: uuid))
+            return true
+        }
+        if changed {
+            NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
         }
     }
 
@@ -186,6 +194,9 @@ public struct SystemSymbolSet: Codable, Hashable, Sendable, Identifiable {
 /// OS build, so reports from that build symbolicate without the cache — and
 /// still do after an OS update replaced it.
 public final class SystemSymbolStore: @unchecked Sendable {
+    /// Posted after a mutation, outside the store lock, on the caller's thread.
+    public static let didChangeNotification = Notification.Name("SystemSymbolStore.didChange")
+
     private struct Index: Codable {
         var revision = 0
         var sets = [SystemSymbolSet]()
@@ -339,6 +350,7 @@ public final class SystemSymbolStore: @unchecked Sendable {
             index.revision += 1
             save()
         }
+        NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
         return set
     }
 
@@ -361,12 +373,16 @@ public final class SystemSymbolStore: @unchecked Sendable {
     }
 
     public func remove(build: String) throws {
-        lock.locked {
-            guard index.sets.contains(where: { $0.id == build }) else { return }
+        let changed = lock.locked {
+            guard index.sets.contains(where: { $0.id == build }) else { return false }
             index.sets.removeAll { $0.id == build }
             index.revision += 1
             save()
             try? FileManager.default.removeItem(at: directory.appendingPathComponent(build))
+            return true
+        }
+        if changed {
+            NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
         }
     }
 

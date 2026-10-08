@@ -13,7 +13,7 @@ import XrashSymbols
 /// frames by address only, and the cache that could resolve them is replaced
 /// by the next OS update — extracting once keeps every report from this build
 /// readable afterwards.
-final class SymbolsViewController: UITableViewController, UIDocumentPickerDelegate {
+final class SymbolsViewController: SelectionTableViewController, UIDocumentPickerDelegate {
     private enum Section: Hashable {
         case dsyms, system
     }
@@ -34,6 +34,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
     private let environment: AppEnvironment
     private var missing = [SymbolListViewController.Entry]()
     private var missingScan: Task<Void, Never>?
+    private var observations = Set<AnyCancellable>()
     private var isWorking = false
     private var dataSource: SectionedTableDataSource<Section, Row>!
 
@@ -77,16 +78,32 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         }
         // Only symbol-set rows answer with a swipe action below.
         dataSource.isEditable = true
+        render(animated: false)
+
+        environment.library.summaries
+            .map { Array($0.prefix(20).filter { $0.kind == .crash }.map(\.id)) }
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.scanForMissingSymbols() }
+            .store(in: &observations)
+        NotificationCenter.default.publisher(for: DSYMStore.didChangeNotification)
+            .filter { [store = environment.dsyms] in ($0.object as? DSYMStore) === store }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.render()
+                self?.scanForMissingSymbols()
+            }
+            .store(in: &observations)
+        NotificationCenter.default.publisher(for: SystemSymbolStore.didChangeNotification)
+            .filter { [store = environment.systemSymbols] in ($0.object as? SystemSymbolStore) === store }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.render() }
+            .store(in: &observations)
+        // Only the first scan delays presentation; navigation never reloads the page.
+        LoadBudget.wait(LoadBudget.page) { [weak self] in await self?.missingScan?.value }
     }
 
-    /// The missing-symbols scan decodes reports, so it is the one part of this
-    /// page that is not there at once. It gets a short budget before the page
-    /// comes up; past it the page appears without that section and the section
-    /// is set in place — never animated in — when the scan lands.
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        LoadBudget.wait(LoadBudget.page) { [weak self] in await self?.scanForMissingSymbols() }
-        render()
+    deinit {
+        missingScan?.cancel()
     }
 
     // MARK: Rows
@@ -109,8 +126,8 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 + (store.sets.isEmpty ? [] : [.deleteSystem]),
             toSection: .system,
         )
-        // The counts on the link rows are not part of their identity.
-        snapshot.reconfigureItems([.importedDSYMs, .missingSymbols].filter(snapshot.itemIdentifiers.contains))
+        // Counts and sizes can change without changing a row's identity.
+        snapshot.reconfigureItems(snapshot.itemIdentifiers.filter(dataSource.snapshot().itemIdentifiers.contains))
         let isFirstLoad = dataSource.snapshot().numberOfItems == 0
         dataSource.apply(snapshot, animatingDifferences: animated && !isFirstLoad && view.window != nil)
     }
@@ -256,8 +273,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         return cell
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch dataSource.itemIdentifier(for: indexPath) {
         case .importedDSYMs: showImportedDSYMs()
         case .missingSymbols: showMissingSymbols()
@@ -265,7 +281,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
         case .importFromGitHub: askForRepository()
         case .extractAll: confirmExtractAll()
         case .deleteSystem: confirmDeleteSystemSymbols()
-        default: break
+        default: deselectFinishedAction()
         }
     }
 
@@ -312,7 +328,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                 return done(false)
             }
             try? environment.systemSymbols.remove(build: build)
-            render()
             done(true)
         }
         guard case .symbolSet = dataSource.itemIdentifier(for: indexPath) else { return nil }
@@ -370,9 +385,7 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
     private func showReleases(in repository: GitHubReleaseSymbols.Repository) {
         GitHubReleaseSymbols.remember(repository)
         navigationController?.pushViewController(
-            GitHubReleasesViewController(repository: repository, store: environment.dsyms) { [weak self] in
-                self?.render()
-            },
+            GitHubReleasesViewController(repository: repository, store: environment.dsyms),
             animated: true,
         )
     }
@@ -414,12 +427,10 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                     }
                     return count
                 }
-                render()
                 Toast.show(String(inflecting: "Imported ^[\(imported) dSYM file](inflect: true)"))
             } catch is CancellationError {
-                render()
+                return
             } catch {
-                render()
                 presentFailure("Unable to Import Symbols", error)
             }
         }
@@ -457,12 +468,10 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                         },
                     )
                 }
-                render()
                 Toast.show(String(localized: "System Symbols Extracted"))
             } catch is CancellationError {
-                render()
+                return
             } catch {
-                render()
                 presentFailure("Unable to Extract System Symbols", error)
             }
         }
@@ -486,7 +495,10 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
 
     private func confirmDeleteSystemSymbols() {
         let builds = environment.systemSymbols.sets.map(\.id)
-        guard !builds.isEmpty else { return }
+        guard !builds.isEmpty else {
+            deselectFinishedAction()
+            return
+        }
         let alert = AlertViewController(
             title: String.LocalizationValue("Delete System Symbols"),
             message: String.LocalizationValue(
@@ -501,7 +513,6 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                     for build in builds {
                         try? self.environment.systemSymbols.remove(build: build)
                     }
-                    self.render()
                 }
             }
         }
@@ -511,13 +522,12 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
     // MARK: Missing symbols
 
     /// What recent reports name that nothing here can resolve. Decoding is the
-    /// expensive part, so only the newest handful of reports is looked at and
-    /// only when the page comes up.
-    private func scanForMissingSymbols() async {
+    /// expensive part, so rescan only when the recent reports or dSYMs change.
+    private func scanForMissingSymbols() {
         missingScan?.cancel()
         let library = environment.library
         let store = environment.dsyms
-        let scan = Task { [weak self] in
+        missingScan = Task { [weak self] in
             var found = [SymbolListViewController.Entry]()
             var seen = Set<String>()
             for summary in library.summaries.value.prefix(20) where summary.kind == .crash {
@@ -531,11 +541,9 @@ final class SymbolsViewController: UITableViewController, UIDocumentPickerDelega
                     found.append(.init(id: image.uuid, group: image.name, text: image.uuid))
                 }
             }
-            guard !Task.isCancelled else { return }
-            self?.missing = found
-            self?.render(animated: false)
+            guard !Task.isCancelled, let self, missing != found else { return }
+            missing = found
+            render(animated: false)
         }
-        missingScan = scan
-        await scan.value
     }
 }

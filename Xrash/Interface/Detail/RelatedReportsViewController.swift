@@ -85,8 +85,7 @@ final class RelatedReportsViewController: UITableViewController, UISearchResults
         ) : nil)
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let id = dataSource.itemIdentifier(for: indexPath) else { return }
         navigationController?.pushViewController(ReportDetailViewController(reportID: id), animated: true)
     }

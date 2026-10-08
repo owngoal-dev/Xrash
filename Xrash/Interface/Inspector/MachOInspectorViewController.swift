@@ -352,12 +352,11 @@ final class MachOInspectorViewController: UITableViewController {
         }
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return }
         switch rows[item] {
         case .fact, nil:
-            break
+            tableView.deselectRow(at: indexPath, animated: true)
         case let .entitlements(entitlements):
             navigationController?.pushViewController(
                 ReportTextViewController(

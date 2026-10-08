@@ -6,10 +6,9 @@ import XrashSymbols
 ///
 /// Releases with no symbol archive are still listed, greyed: seeing that the
 /// tag exists and carries nothing is the answer to "why can I not find it".
-final class GitHubReleasesViewController: UITableViewController, UISearchResultsUpdating {
+final class GitHubReleasesViewController: SelectionTableViewController, UISearchResultsUpdating {
     private let repository: GitHubReleaseSymbols.Repository
     private let store: DSYMStore
-    private let onImport: () -> Void
 
     private var releases = [GitHubReleaseSymbols.Release]()
     private var query = ""
@@ -21,11 +20,9 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
     init(
         repository: GitHubReleaseSymbols.Repository,
         store: DSYMStore,
-        onImport: @escaping () -> Void,
     ) {
         self.repository = repository
         self.store = store
-        self.onImport = onImport
         super.init(style: .insetGrouped)
     }
 
@@ -160,8 +157,7 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
 
     // MARK: Importing
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let tag = dataSource.itemIdentifier(for: indexPath),
               let release = releases.first(where: { $0.tag == tag })
         else { return }
@@ -191,14 +187,18 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             // directory above this file is deleted afterwards.
             .appendingPathComponent("symbols.zip")
         let store = store
+        let presenter = navigationController?.topViewController ?? self
         Task { [weak self] in
             guard let self else { return }
             // Whatever happens, nothing of the download is left behind.
-            defer { try? FileManager.default.removeItem(at: destination.deletingLastPathComponent()) }
+            defer {
+                try? FileManager.default.removeItem(at: destination.deletingLastPathComponent())
+                (presenter as? SelectionTableViewController)?.deselectFinishedAction()
+            }
             do {
                 let imported = try await ProgressCard.run(
                     // The archive list may be the page on top.
-                    from: navigationController ?? self,
+                    from: presenter,
                     title: String(localized: "Importing Symbols"),
                 ) { report in
                     try FileManager.default.createDirectory(
@@ -214,7 +214,6 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
                     report(nil, String(localized: "Unpacking \(asset.name)…"))
                     return try await DSYMImport.runDetached(at: destination, into: store)
                 }
-                onImport()
                 Toast.show(imported > 0
                     ? String(inflecting: "Imported ^[\(imported) dSYM file](inflect: true)")
                     : String(localized: "Every dSYM in that archive was already imported"))
@@ -226,14 +225,14 @@ final class GitHubReleasesViewController: UITableViewController, UISearchResults
             } catch is CancellationError {
                 return
             } catch {
-                (navigationController ?? self).presentFailure("Unable to Import Symbols", error)
+                presenter.presentFailure("Unable to Import Symbols", error)
             }
         }
     }
 }
 
 /// The debug symbol archives of one release, when it carries several.
-private final class GitHubAssetsViewController: UITableViewController {
+private final class GitHubAssetsViewController: SelectionTableViewController {
     private let assets: [GitHubReleaseSymbols.Asset]
     private var imported: Set<GitHubReleaseSymbols.Asset>
     /// The second argument is called once the archive is in the store.
@@ -288,12 +287,11 @@ private final class GitHubAssetsViewController: UITableViewController {
         return cell
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         let asset = assets[indexPath.row]
         onPick(asset) { [weak self] in
             self?.imported.insert(asset)
-            self?.tableView.reloadRows(at: [indexPath], with: .none)
+            self?.tableView.reconfigureRows(at: [indexPath])
         }
     }
 }

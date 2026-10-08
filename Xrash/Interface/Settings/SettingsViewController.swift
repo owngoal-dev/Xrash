@@ -6,7 +6,7 @@ import XrashReport
 
 /// The Settings page. A plain grouped table: the rows are fixed, so a snapshot
 /// would only be a second place to keep the same list.
-final class SettingsViewController: UITableViewController {
+final class SettingsViewController: SelectionTableViewController {
     private enum Row {
         case defaultView
         case hiddenProcesses
@@ -78,20 +78,20 @@ final class SettingsViewController: UITableViewController {
 
         settings.preferences
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .sink { [weak self] _ in self?.tableView.reconfigureRows(at: self?.tableView.indexPathsForVisibleRows ?? []) }
             .store(in: &observers)
         CrashNotice.shared.daemonAnnounces
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .sink { [weak self] _ in self?.tableView.reconfigureRows(at: self?.tableView.indexPathsForVisibleRows ?? []) }
             .store(in: &observers)
         settings.filter
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .sink { [weak self] _ in self?.tableView.reconfigureRows(at: self?.tableView.indexPathsForVisibleRows ?? []) }
             .store(in: &observers)
         library.summaries
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.tableView.reloadData() }
+            .sink { [weak self] _ in self?.tableView.reconfigureRows(at: self?.tableView.indexPathsForVisibleRows ?? []) }
             .store(in: &observers)
     }
 
@@ -174,8 +174,7 @@ final class SettingsViewController: UITableViewController {
         return cell
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch sections[indexPath.section].rows[indexPath.row] {
         case .defaultView:
             navigationController?.pushViewController(defaultViewChooser(), animated: true)
@@ -194,7 +193,7 @@ final class SettingsViewController: UITableViewController {
         case .welcome:
             WelcomeController.present(from: self)
         default:
-            break
+            deselectFinishedAction()
         }
     }
 

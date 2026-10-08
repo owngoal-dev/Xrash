@@ -101,8 +101,7 @@ final class LicensesViewController: UITableViewController {
         tableView.tableFooterView = footer
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let index = dataSource.itemIdentifier(for: indexPath) else { return }
         navigationController?.pushViewController(LicenseTextViewController(entry: entries[index]), animated: true)
     }

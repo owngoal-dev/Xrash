@@ -7,7 +7,7 @@ import XrashReport
 /// Every binary that was mapped into the process. Searchable, because the one
 /// question asked here is "was *that* tweak loaded", and there are six hundred
 /// of them in a modern process.
-final class ImagesViewController: UITableViewController, UISearchResultsUpdating {
+final class ImagesViewController: SelectionTableViewController, UISearchResultsUpdating {
     private let crash: CrashReport
     private let packages: DpkgDatabase?
     /// Rows are load addresses: the one thing every report gives every image.
@@ -111,8 +111,7 @@ final class ImagesViewController: UITableViewController, UISearchResultsUpdating
         selectableImage(at: indexPath) == nil ? nil : indexPath
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let image = selectableImage(at: indexPath) else { return }
         inspectBinary(image)
     }

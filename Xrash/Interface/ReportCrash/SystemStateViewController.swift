@@ -9,7 +9,7 @@ import XrashSystemState
 ///
 /// It takes files rather than collecting them, so the form can show exactly
 /// what it is about to ship and a saved bundle can show exactly what it did.
-final class SystemStateViewController: UITableViewController {
+final class SystemStateViewController: SelectionTableViewController {
     private let files: [SystemStateFile]
 
     init(files: [SystemStateFile]) {
@@ -29,13 +29,6 @@ final class SystemStateViewController: UITableViewController {
         tableView.tableHeaderView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 16))
         tableView.sectionHeaderHeight = .leastNormalMagnitude
         tableView.register(CollectedFileCell.self, forCellReuseIdentifier: CollectedFileCell.reuseIdentifier)
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        if let selected = tableView.indexPathForSelectedRow {
-            tableView.deselectRow(at: selected, animated: animated)
-        }
     }
 
     // MARK: Rows
@@ -60,8 +53,7 @@ final class SystemStateViewController: UITableViewController {
         return cell
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         Self.open(files[indexPath.row], from: self)
     }
 

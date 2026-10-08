@@ -5,7 +5,7 @@ import XrashBundle
 import XrashReport
 
 /// The Saved page: the `.xrashreport` bundles made or imported on this device.
-final class SavedReportsViewController: UITableViewController, UIDocumentPickerDelegate, UISearchResultsUpdating {
+final class SavedReportsViewController: SelectionTableViewController, UIDocumentPickerDelegate, UISearchResultsUpdating {
     private let store: SavedBundleStore
     private var observation: AnyCancellable?
     private var dataSource: SectionedTableDataSource<Int, String>!
@@ -60,16 +60,8 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
             return cell
         }
         dataSource.isEditable = true
-        observation = store.bundles.sink { [weak self] bundles in self?.render(bundles) }
+        observation = store.bundles.removeDuplicates().sink { [weak self] bundles in self?.render(bundles) }
         store.reload()
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        store.reload()
-        if let selected = tableView.indexPathForSelectedRow {
-            tableView.deselectRow(at: selected, animated: animated)
-        }
     }
 
     /// Opens a bundle by id — how `ExternalFileRouter` shows what it imported.
@@ -124,7 +116,9 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
     }
 
     func updateSearchResults(for searchController: UISearchController) {
-        query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespaces)
+        let query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespaces)
+        guard query != self.query else { return }
+        self.query = query
         render(store.bundles.value)
     }
 

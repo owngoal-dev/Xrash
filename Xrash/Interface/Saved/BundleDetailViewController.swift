@@ -10,7 +10,7 @@ import XrashSystemState
 /// Nothing here unzips to draw a row. The manifest cached beside the archive
 /// already holds every member's decoded report, so a member opens straight
 /// into the detail screen; only a file the user asks to see is extracted.
-final class BundleDetailViewController: UITableViewController, UISearchResultsUpdating {
+final class BundleDetailViewController: SelectionTableViewController, UISearchResultsUpdating {
     private enum Section: Hashable {
         case about, members, files, systemState, actions
     }
@@ -150,13 +150,6 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         render()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        if let selected = tableView.indexPathForSelectedRow {
-            tableView.deselectRow(at: selected, animated: animated)
-        }
-    }
-
     // MARK: Rows
 
     private func cell(for row: Row, at indexPath: IndexPath, in table: UITableView) -> UITableViewCell {
@@ -263,19 +256,16 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 animated: true,
             )
         case let .systemFile(name):
-            tableView.deselectRow(at: indexPath, animated: true)
             openSystemFile(named: name)
         case .pdf, .exportPDF:
-            tableView.deselectRow(at: indexPath, animated: true)
             openPDF(
                 exporting: item == .exportPDF,
                 from: tableView.cellForRow(at: indexPath),
             )
         case .share:
-            tableView.deselectRow(at: indexPath, animated: true)
             ReportShare.present(bundle, from: self, source: tableView.cellForRow(at: indexPath))
         default:
-            tableView.deselectRow(at: indexPath, animated: true)
+            deselectFinishedAction()
         }
     }
 
@@ -298,7 +288,10 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
     private func openSystemFile(named name: String) {
         do {
             let files = try Self.systemFiles(of: bundle.manifest, in: extracted())
-            guard let file = files.first(where: { $0.name == name }) else { return }
+            guard let file = files.first(where: { $0.name == name }) else {
+                deselectFinishedAction()
+                return
+            }
             SystemStateViewController.open(file, from: self)
         } catch {
             presentFailure("Could Not Open the File", error)
