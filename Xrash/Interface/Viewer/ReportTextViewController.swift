@@ -32,7 +32,7 @@ final class ReportTextViewController: UIViewController {
     /// menu has something to go back to.
     private var unformattedText: String?
 
-    let textView = TextView()
+    let textView = SearchableTextView()
     private let findBar = FindBar()
     private let spinner = UIActivityIndicatorView(style: .large)
     private var text: String
@@ -40,6 +40,11 @@ final class ReportTextViewController: UIViewController {
     private let settings: AppSettings
     private var lineNumbersObserver: AnyCancellable?
     private var pinchStartScale = 1.0
+    private var searchTask: Task<Void, Never>?
+    private var textIsReady = false
+    private var searchAnchor = 0
+    private var isFinding = false
+    private var isFindTransitioning = false
 
     init(title: String, text: String, language: Language) {
         self.text = text
@@ -66,7 +71,9 @@ final class ReportTextViewController: UIViewController {
 
         findBar.do {
             $0.isHidden = true
-            $0.onFind = { [weak self] term, forwards in self?.find(term, forwards: forwards) }
+            $0.onChange = { [weak self] _ in self?.updateSearch() }
+            $0.onNavigate = { [weak self] forwards in self?.navigateSearch(forwards: forwards) }
+            $0.toolbar.isHidden = true
             $0.onDismiss = { [weak self] in self?.toggleFind() }
         }
         textView.do {
@@ -105,8 +112,13 @@ final class ReportTextViewController: UIViewController {
                 textView.textContainerInset = insets
             }
 
-        let stack = UIStackView(arrangedSubviews: [textView, findBar]).then { $0.axis = .vertical }
+        let stack = UIStackView(arrangedSubviews: [textView, findBar.toolbar]).then { $0.axis = .vertical }
         view.addSubview(stack)
+        view.addSubview(findBar)
+        findBar.snp.makeConstraints { make in
+            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+        }
         view.addSubview(spinner)
         if #available(iOS 17.0, *) {
             view.keyboardLayoutGuide.usesBottomSafeArea = false
@@ -115,7 +127,8 @@ final class ReportTextViewController: UIViewController {
         // own content under the bar, and stopping short leaves the gutter
         // ending in a white band.
         stack.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.top.equalToSuperview()
+            make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
         }
         // The safe area's centre: from iOS 26 the view runs under the sidebar.
@@ -135,6 +148,13 @@ final class ReportTextViewController: UIViewController {
             isFormatted = true
         }
         applyText()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        findBar.setKeyboardVisible(
+            view.keyboardLayoutGuide.layoutFrame.minY < view.safeAreaLayoutGuide.layoutFrame.maxY,
+        )
     }
 
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
@@ -159,6 +179,10 @@ final class ReportTextViewController: UIViewController {
     /// Building the state parses the document, so it happens off the main
     /// thread: a megabyte of panic log otherwise freezes the push animation.
     private func applyText() {
+        searchTask?.cancel()
+        textIsReady = false
+        textView.searchMatches = []
+        textView.currentMatch = nil
         spinner.startAnimating()
         let theme = currentTheme()
         let grammar = text.utf8.count <= Self.highlightByteLimit && language == .json
@@ -169,10 +193,16 @@ final class ReportTextViewController: UIViewController {
             let state = grammar.map { TextViewState(text: text, theme: theme, language: $0) }
                 ?? TextViewState(text: text, theme: theme)
             await MainActor.run { [weak self] in
-                guard let self else { return }
+                guard let self, self.text == text else { return }
                 textView.setState(state)
+                view.backgroundColor = theme.backgroundColor
                 textView.backgroundColor = theme.backgroundColor
+                findBar.applyTheme(background: theme.backgroundColor, foreground: theme.textColor)
                 spinner.stopAnimating()
+                textIsReady = true
+                if isFinding {
+                    updateSearch()
+                }
             }
         }
     }
@@ -182,8 +212,11 @@ final class ReportTextViewController: UIViewController {
     /// dimmed the screen.
     private func applyTheme() {
         let theme = currentTheme()
+        view.backgroundColor = theme.backgroundColor
         textView.theme = theme
         textView.backgroundColor = theme.backgroundColor
+        findBar.applyTheme(background: theme.backgroundColor, foreground: theme.textColor)
+        textView.refreshSearchHighlights()
     }
 
     private func currentTheme() -> ScaledEditorTheme {
@@ -314,51 +347,96 @@ final class ReportTextViewController: UIViewController {
     // MARK: Find
 
     private func toggleFind() {
-        findBar.isHidden.toggle()
-        if findBar.isHidden {
-            findBar.endEditing(true)
-        } else {
+        guard !isFindTransitioning else { return }
+        isFindTransitioning = true
+        view.layoutIfNeeded()
+        isFinding.toggle()
+        if isFinding {
+            findBar.isHidden = false
+            findBar.toolbar.isHidden = false
+            searchAnchor = textView.selectedRange.location
             findBar.focusField()
+            view.layoutIfNeeded()
+        } else {
+            searchTask?.cancel()
+            findBar.endEditing(true)
+            textView.searchMatches = []
+            textView.currentMatch = nil
+        }
+        findBar.snp.remakeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            if isFinding {
+                make.top.equalTo(view.safeAreaLayoutGuide)
+            } else {
+                make.bottom.equalTo(view.safeAreaLayoutGuide.snp.top)
+            }
+        }
+        // Keep the document's existing edge-to-edge layout outside search.
+        if let stack = textView.superview as? UIStackView {
+            stack.snp.remakeConstraints { make in
+                make.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+                if !isFinding {
+                    make.top.equalToSuperview()
+                } else {
+                    make.top.equalTo(findBar.snp.bottom)
+                    make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide)
+                }
+                make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).priority(.high)
+            }
+        }
+        UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.2) {
+            self.findBar.toolbar.isHidden = !self.isFinding
+            self.view.layoutIfNeeded()
+        } completion: { _ in
+            self.findBar.isHidden = !self.isFinding
+            self.isFindTransitioning = false
+        }
+        if isFinding { updateSearch() }
+    }
+
+    private func updateSearch() {
+        searchTask?.cancel()
+        let query = findBar.query
+        // Keep the current hit while a query is refined through several
+        // keystrokes, including while the previous debounce is pending.
+        if let index = textView.currentMatch {
+            searchAnchor = textView.searchMatches[index].location
+        }
+        let anchor = searchAnchor
+        textView.currentMatch = nil
+        textView.searchMatches = []
+        findBar.showResult(current: nil, count: 0, searching: !query.isEmpty)
+        guard textIsReady, !query.isEmpty, isFinding else { return }
+        let text = text
+        searchTask = Task { [weak self] in
+            do { try await Task.sleep(nanoseconds: 330_000_000) } catch { return }
+            let worker = Task.detached(priority: .userInitiated) {
+                ReportTextSearch.matches(in: text, query: query)
+            }
+            let matches = await withTaskCancellationHandler {
+                await worker.value
+            } onCancel: {
+                worker.cancel()
+            }
+            guard !Task.isCancelled, let self else { return }
+            textView.searchMatches = matches
+            if !matches.isEmpty {
+                let index = ReportTextSearch.firstMatch(in: matches, after: anchor)
+                textView.currentMatch = index < matches.count ? index : 0
+                textView.revealCurrentMatch()
+            }
+            findBar.showResult(current: textView.currentMatch, count: matches.count)
         }
     }
 
-    private func find(_ term: String, forwards: Bool) {
-        guard !term.isEmpty else { return findBar.showResult(nil) }
-        let text = textView.text as NSString
-        let selection = textView.selectedRange
-        var first: NSRange?
-        var last: NSRange?
-        var target: NSRange?
-        var count = 0
-        var current = 0
-        var position = 0
-        while position < text.length {
-            let match = text.range(
-                of: term,
-                options: [.caseInsensitive],
-                range: NSRange(location: position, length: text.length - position),
-            )
-            guard match.location != NSNotFound, match.length > 0 else { break }
-            count += 1
-            if first == nil {
-                first = match
-            }
-            last = match
-            let isNext = target == nil && match.location >= NSMaxRange(selection)
-            if forwards ? isNext : NSMaxRange(match) <= selection.location {
-                target = match
-                current = count
-            }
-            position = NSMaxRange(match)
-        }
-        guard let first, let last else { return findBar.showResult(String(localized: "No results")) }
-        if target == nil {
-            target = forwards ? first : last
-            current = forwards ? 1 : count
-        }
-        guard let target else { return }
-        textView.selectedRange = target
-        textView.scrollRangeToVisible(target)
-        findBar.showResult(String(localized: "\(current) of \(count)"))
+    private func navigateSearch(forwards: Bool) {
+        let count = textView.searchMatches.count
+        guard count > 0 else { return }
+        let index = textView.currentMatch ?? (forwards ? -1 : 0)
+        textView.currentMatch = (index + (forwards ? 1 : -1) + count) % count
+        textView.revealCurrentMatch()
+        findBar.showResult(current: textView.currentMatch, count: count)
     }
+
+    deinit { searchTask?.cancel() }
 }
