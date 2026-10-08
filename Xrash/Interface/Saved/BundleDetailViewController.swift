@@ -16,8 +16,9 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
     }
 
     private enum Row: Hashable {
-        case notes
+        case message
         case device
+        case system
         case member(String)
         case pdf
         case binary(String)
@@ -57,7 +58,7 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = bundle.manifest.title
+        title = bundle.manifest.primary.summary.processName
         navigationItem.largeTitleDisplayMode = .never
 
         let search = UISearchController(searchResultsController: nil)
@@ -70,20 +71,26 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
 
         tableView.register(BundleReportCell.self, forCellReuseIdentifier: BundleReportCell.reuseIdentifier)
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "plain")
+        tableView.register(SavedBundleSummaryCell.self, forCellReuseIdentifier: SavedBundleSummaryCell.reuseIdentifier)
+        tableView.register(CollectedFileCell.self, forCellReuseIdentifier: CollectedFileCell.reuseIdentifier)
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] table, indexPath, row in
             self?.cell(for: row, at: indexPath, in: table) ?? UITableViewCell()
         }
         dataSource.header = { section in
             switch section {
-            case .about, .actions: nil
+            case .about: String(localized: "Summary")
+            case .actions: nil
             case .members: String(localized: "Reports")
             case .files: String(localized: "Files")
-            case .systemState: String(localized: "System State")
+            case .systemState: String(localized: "Collected Files")
             }
         }
-        dataSource.footer = { section in
-            guard section == .systemState else { return nil }
-            return String(localized: "What was installed and running when the report was made.")
+        dataSource.footer = { [weak self] section in
+            switch section {
+            case .actions: self?.bundle.manifest.generator
+            case .systemState: String(localized: "What was installed and running when the report was made.")
+            default: nil
+            }
         }
         render()
     }
@@ -101,7 +108,9 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         if query.isEmpty {
             snapshot.appendSections([.about])
             snapshot.appendItems(
-                (bundle.manifest.notes.isEmpty ? [] : [Row.notes]) + [.device],
+                [Row.message]
+                    + (bundle.manifest.deviceModel?.isEmpty == false ? [.device] : [])
+                    + (bundle.manifest.osVersion?.isEmpty == false ? [.system] : []),
                 toSection: .about,
             )
         }
@@ -152,22 +161,22 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
 
     private func cell(for row: Row, at indexPath: IndexPath, in table: UITableView) -> UITableViewCell {
         switch row {
-        case .notes:
-            let cell = table.dequeueReusableCell(withIdentifier: "plain", for: indexPath)
-            var content = cell.defaultContentConfiguration()
-            content.text = bundle.manifest.notes
-            content.textProperties.numberOfLines = 0
-            cell.contentConfiguration = content
-            cell.selectionStyle = .none
-            cell.accessoryType = .none
+        case .message:
+            let cell = table.dequeueReusableCell(
+                withIdentifier: SavedBundleSummaryCell.reuseIdentifier,
+                for: indexPath,
+            ) as! SavedBundleSummaryCell
+            cell.configure(
+                title: bundle.manifest.title.isEmpty ? bundle.manifest.primary.summary.processName : bundle.manifest.title,
+                notes: bundle.manifest.notes.trimmingCharacters(in: .whitespacesAndNewlines),
+            )
             return cell
 
-        case .device:
+        case .device, .system:
             let cell = table.dequeueReusableCell(withIdentifier: "plain", for: indexPath)
-            var content = cell.defaultContentConfiguration()
-            content.text = [bundle.manifest.deviceModel, bundle.manifest.osVersion]
-                .compactMap(\.self).joined(separator: " · ")
-            content.secondaryText = bundle.manifest.generator
+            var content = UIListContentConfiguration.valueCell()
+            content.text = row == .device ? String(localized: "Device") : String(localized: "System")
+            content.secondaryText = row == .device ? bundle.manifest.deviceModel : bundle.manifest.osVersion
             content.secondaryTextProperties.color = .secondaryLabel
             cell.contentConfiguration = content
             cell.selectionStyle = .none
@@ -186,37 +195,27 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
             cell.accessoryType = .disclosureIndicator
             return cell
 
-        case .pdf:
-            return action(
-                table,
-                indexPath,
-                title: String(localized: "Report.pdf"),
-                symbol: "doc.richtext",
-                detail: nil,
-                disclosure: true,
-            )
-
-        case let .binary(uuid):
-            let binary = bundle.manifest.binaries.first { $0.uuid == uuid }
-            return action(
-                table,
-                indexPath,
-                title: (binary?.archivePath as NSString?)?.lastPathComponent ?? uuid,
-                symbol: "cube",
-                detail: ReportFormat.byteCount(binary?.byteCount ?? 0),
-                disclosure: false,
-            )
-
-        case let .systemFile(name):
-            let file = manifestSystemFiles.first { $0.name == name }
-            return action(
-                table,
-                indexPath,
-                title: name,
-                symbol: "doc.text",
-                detail: ReportFormat.byteCount(file?.byteCount ?? 0),
-                disclosure: true,
-            )
+        case .pdf, .binary, .systemFile:
+            let cell = table.dequeueReusableCell(withIdentifier: CollectedFileCell.reuseIdentifier, for: indexPath)
+            cell.accessoryType = .disclosureIndicator
+            cell.selectionStyle = .default
+            switch row {
+            case .pdf:
+                cell.textLabel?.text = String(localized: "Report.pdf")
+                cell.detailTextLabel?.text = nil
+            case let .binary(uuid):
+                let binary = bundle.manifest.binaries.first { $0.uuid == uuid }
+                cell.textLabel?.text = (binary?.archivePath as NSString?)?.lastPathComponent ?? uuid
+                cell.detailTextLabel?.text = ReportFormat.byteCount(binary?.byteCount ?? 0)
+                cell.accessoryType = .none
+                cell.selectionStyle = .none
+            case let .systemFile(name):
+                let file = manifestSystemFiles.first { $0.name == name }
+                cell.textLabel?.text = name
+                cell.detailTextLabel?.text = ReportFormat.byteCount(file?.byteCount ?? 0)
+            default: break
+            }
+            return cell
 
         case .share:
             return action(
@@ -224,9 +223,6 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 indexPath,
                 title: String(localized: "Share Archive"),
                 symbol: "square.and.arrow.up",
-                detail: nil,
-                disclosure: false,
-                tinted: true,
             )
 
         case .exportPDF:
@@ -235,9 +231,6 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
                 indexPath,
                 title: String(localized: "Export PDF"),
                 symbol: "arrow.up.doc",
-                detail: nil,
-                disclosure: false,
-                tinted: true,
             )
         }
     }
@@ -247,23 +240,15 @@ final class BundleDetailViewController: UITableViewController, UISearchResultsUp
         _ indexPath: IndexPath,
         title: String,
         symbol: String,
-        detail: String?,
-        disclosure: Bool,
-        tinted: Bool = false,
     ) -> UITableViewCell {
         let cell = table.dequeueReusableCell(withIdentifier: "plain", for: indexPath)
         var content = cell.defaultContentConfiguration()
         content.text = title
-        content.secondaryText = detail
-        content.prefersSideBySideTextAndSecondaryText = true
-        content.secondaryTextProperties.color = .secondaryLabel
         content.image = UIImage(systemName: symbol)
-        if tinted {
-            content.textProperties.color = view.tintColor
-            content.imageProperties.tintColor = view.tintColor
-        }
+        content.textProperties.color = view.tintColor
+        content.imageProperties.tintColor = view.tintColor
         cell.contentConfiguration = content
-        cell.accessoryType = disclosure ? .disclosureIndicator : .none
+        cell.accessoryType = .none
         cell.selectionStyle = .default
         return cell
     }

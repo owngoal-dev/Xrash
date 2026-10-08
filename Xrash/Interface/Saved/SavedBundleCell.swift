@@ -1,54 +1,125 @@
 import SnapKit
 import Then
 import UIKit
-import XrashReport
 
-/// A row on the Saved page: one archive, wearing the icon of the crash it was
-/// made from. A bundle is a report with company, and the tile says which
-/// report — the symbol that stood here said only that the row was a bundle,
-/// which the page already says.
+/// One subject, an optional note preview, and a quiet metadata line.
 final class SavedBundleCell: UITableViewCell {
     static let reuseIdentifier = "SavedBundleCell"
 
-    private let iconView = ReportIconView()
     private let titleLabel = UILabel()
-    private let subtitleLabel = UILabel()
+    private let previewLabel = UILabel()
+    private let dateLabel = UILabel()
+    private let attachmentLabel = UILabel()
+    private let enclosure = UIStackView()
+    private let metadata = UIStackView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        // The row is one sentence, not a title and a subtitle read one stop at
-        // a time: a cell is not an accessibility element until it is told to
-        // be, and the label `configure` assembles is read only once it is one.
-        // The row's one interaction is the push the whole row performs.
         isAccessibilityElement = true
-        titleLabel.do {
-            $0.font = .preferredFont(forTextStyle: .body)
-            // The title carries the date a bundle was made; truncating it
-            // would take exactly the part that tells two of them apart.
-            $0.numberOfLines = 2
+        accessibilityTraits.insert(.button)
+        titleLabel.font = UIFontMetrics(forTextStyle: .headline).scaledFont(
+            for: .systemFont(ofSize: 17, weight: .medium),
+        )
+        titleLabel.numberOfLines = 2
+        previewLabel.font = .preferredFont(forTextStyle: .subheadline)
+        previewLabel.numberOfLines = 2
+        dateLabel.font = .preferredFont(forTextStyle: .body)
+        attachmentLabel.font = .preferredFont(forTextStyle: .body)
+        for label in [previewLabel, dateLabel, attachmentLabel] {
+            label.textColor = .secondaryLabel
         }
-        subtitleLabel.do {
-            $0.font = .preferredFont(forTextStyle: .footnote)
-            $0.textColor = .secondaryLabel
-            $0.numberOfLines = 2
-        }
-        for label in [titleLabel, subtitleLabel] {
+        for label in [titleLabel, previewLabel, dateLabel, attachmentLabel] {
             label.adjustsFontForContentSizeCategory = true
         }
 
-        let names = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel]).then {
-            $0.axis = .vertical
-            $0.spacing = 2
+        let paperclip = UIImageView(image: UIImage(systemName: "paperclip")).then {
+            $0.preferredSymbolConfiguration = .init(textStyle: .subheadline)
+            $0.tintColor = .secondaryLabel
+            $0.adjustsImageSizeForAccessibilityContentSizeCategory = true
         }
-        let content = UIStackView(arrangedSubviews: [iconView, names]).then {
-            $0.alignment = .center
-            $0.spacing = 10
+        enclosure.addArrangedSubview(paperclip)
+        enclosure.addArrangedSubview(attachmentLabel)
+        enclosure.alignment = .center
+        enclosure.spacing = 4
+        metadata.addArrangedSubview(dateLabel)
+        metadata.addArrangedSubview(enclosure)
+        metadata.setContentHuggingPriority(.required, for: .horizontal)
+        metadata.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let footer = UIStackView(arrangedSubviews: [metadata, UIView()])
+
+        let content = UIStackView(arrangedSubviews: [titleLabel, previewLabel, footer]).then {
+            $0.axis = .vertical
+            $0.spacing = 6
         }
         contentView.addSubview(content)
-        iconView.snp.makeConstraints { $0.size.equalTo(ReportIconView.size) }
         content.snp.makeConstraints { make in
             make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
-            make.top.bottom.equalToSuperview().inset(9)
+            make.top.bottom.equalToSuperview().inset(16)
+        }
+        updateMetadataLayout()
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
+            updateMetadataLayout()
+        }
+    }
+
+    private func updateMetadataLayout() {
+        let expanded = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        metadata.axis = expanded ? .vertical : .horizontal
+        metadata.alignment = expanded ? .leading : .center
+        metadata.spacing = expanded ? 4 : 16
+    }
+
+    func configure(title: String, preview: String, date: String, attachmentCount: Int) {
+        let paragraph = NSMutableParagraphStyle().then { $0.lineSpacing = 2 }
+        titleLabel.attributedText = NSAttributedString(string: title, attributes: [.paragraphStyle: paragraph])
+        previewLabel.text = preview
+        previewLabel.isHidden = preview.isEmpty
+        dateLabel.text = date
+        attachmentLabel.text = attachmentCount.formatted()
+        enclosure.isHidden = attachmentCount == 0
+        accessoryType = .none
+        let attachments = attachmentCount == 0 ? "" : String(localized: "Files") + ": " + attachmentCount.formatted()
+        accessibilityLabel = [title, preview, date, attachments].filter { !$0.isEmpty }.joined(separator: ", ")
+    }
+}
+
+/// The saved title and notes form one reading block above the device fields.
+final class SavedBundleSummaryCell: UITableViewCell {
+    static let reuseIdentifier = "SavedBundleSummaryCell"
+
+    private let titleLabel = UILabel()
+    private let notesLabel = UILabel()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        isAccessibilityElement = true
+        selectionStyle = .none
+        titleLabel.font = UIFontMetrics(forTextStyle: .title3).scaledFont(
+            for: .systemFont(ofSize: 20, weight: .medium),
+        )
+        notesLabel.font = .preferredFont(forTextStyle: .body)
+        for label in [titleLabel, notesLabel] {
+            label.numberOfLines = 0
+            label.adjustsFontForContentSizeCategory = true
+            label.textColor = .label
+        }
+        let content = UIStackView(arrangedSubviews: [titleLabel, notesLabel]).then {
+            $0.axis = .vertical
+            $0.spacing = 12
+        }
+        contentView.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
+            make.top.bottom.equalToSuperview().inset(16)
         }
     }
 
@@ -57,13 +128,12 @@ final class SavedBundleCell: UITableViewCell {
         fatalError("init(coder:) is unavailable")
     }
 
-    /// `summary` is the bundle's primary report — the icon — and the words are
-    /// the bundle's own.
-    func configure(icon summary: ReportSummary, executablePath: String?, title: String, subtitle: String) {
-        iconView.configure(with: summary, executablePath: executablePath)
-        titleLabel.text = title
-        subtitleLabel.text = subtitle
-        accessoryType = .disclosureIndicator
-        accessibilityLabel = [title, subtitle].joined(separator: ", ")
+    func configure(title: String, notes: String) {
+        let heading = NSMutableParagraphStyle().then { $0.lineSpacing = 2 }
+        titleLabel.attributedText = NSAttributedString(string: title, attributes: [.paragraphStyle: heading])
+        let paragraph = NSMutableParagraphStyle().then { $0.lineSpacing = 3 }
+        notesLabel.attributedText = NSAttributedString(string: notes, attributes: [.paragraphStyle: paragraph])
+        notesLabel.isHidden = notes.isEmpty
+        accessibilityLabel = [title, notes].filter { !$0.isEmpty }.joined(separator: ", ")
     }
 }

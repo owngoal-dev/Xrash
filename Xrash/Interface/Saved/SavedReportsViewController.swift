@@ -43,12 +43,19 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
         dataSource = SectionedTableDataSource(tableView: tableView) { [weak self] table, indexPath, id in
             let cell = table.dequeueReusableCell(withIdentifier: SavedBundleCell.reuseIdentifier, for: indexPath)
             guard let bundle = self?.shown[id] else { return cell }
-            let primary = bundle.manifest.primary
+            let manifest = bundle.manifest
+            let primary = manifest.primary
+            let reportFileCount = ([primary] + manifest.linked).reduce(0) { count, member in
+                count + [member.rawPath, member.textPath, member.jsonPath].compactMap(\.self).count
+            }
+            let attachmentCount = reportFileCount + manifest.binaries.count + (manifest.systemFiles?.count ?? 0)
+                + (manifest.pdfPath == nil ? 0 : 1)
+            let notes = manifest.notes.split(whereSeparator: \.isWhitespace).joined(separator: " ")
             (cell as? SavedBundleCell)?.configure(
-                icon: primary.summary,
-                executablePath: primary.report.crash?.process.path,
-                title: bundle.manifest.title,
-                subtitle: Self.subtitle(of: bundle),
+                title: bundle.manifest.title.isEmpty ? primary.summary.processName : bundle.manifest.title,
+                preview: notes,
+                date: ReportFormat.date(bundle.manifest.created),
+                attachmentCount: attachmentCount,
             )
             return cell
         }
@@ -239,24 +246,5 @@ final class SavedReportsViewController: UITableViewController, UIDocumentPickerD
                 presentFailure("Could Not Import the Report", error)
             }
         }
-    }
-
-    // MARK: Chrome
-
-    private static func subtitle(of bundle: SavedBundleStore.SavedBundle) -> String {
-        let count = 1 + bundle.manifest.linked.count
-        let attributes = try? FileManager.default.attributesOfItem(atPath: bundle.url.path)
-        let size = (attributes?[.size] as? NSNumber)?.uint64Value ?? 0
-        var parts = [
-            String(inflecting: "^[\(count) report](inflect: true)"),
-            ReportFormat.byteCount(size),
-            ReportFormat.date(bundle.manifest.created),
-        ]
-        // Said on the row, not only inside: this is the one thing about a saved
-        // bundle worth knowing before it is opened or shared.
-        if bundle.manifest.systemFiles?.isEmpty == false {
-            parts.append(String(localized: "System State"))
-        }
-        return parts.joined(separator: " · ")
     }
 }
