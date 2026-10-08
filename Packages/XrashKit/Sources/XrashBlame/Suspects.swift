@@ -50,6 +50,8 @@ extension Blame {
 
         var suspects = [Suspect]()
         for (index, image) in crash.images.enumerated() {
+            guard !image.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || !image.path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
             let origin = origin(of: image, bundleDirectory: bundleDirectory)
             guard origin != .apple, origin != .ownBundle else { continue }
 

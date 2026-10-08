@@ -20,6 +20,30 @@ final class BlameTests: XCTestCase {
         XCTAssertEqual(Blame.suspects(in: report, packages: nil), [])
     }
 
+    func testUnknownImagesAreNeverSuspects() {
+        for path in ["", " \n\t"] {
+            let unknown = image(path, source: "A")
+            let quiet = crash(processPath: "/usr/libexec/backboardd", images: [unknown])
+            XCTAssertEqual(Blame.suspects(in: quiet, packages: nil), [])
+
+            let onStack = crash(
+                images: [unknown, image(tweak)],
+                faultingFrames: [0, 1],
+                exceptionFrames: [0],
+            )
+            XCTAssertEqual(Blame.suspects(in: onStack, packages: nil).map(\.id), [tweak])
+        }
+    }
+
+    func testImagesWithOnlyANameOrPathCanStillBeSuspects() {
+        var nameOnly = image("")
+        nameOnly.name = "Named.dylib"
+        var pathOnly = image(tweak)
+        pathOnly.name = ""
+        let report = crash(images: [nameOnly, pathOnly], faultingFrames: [0, 1])
+        XCTAssertEqual(Blame.suspects(in: report, packages: nil).map(\.id), [tweak, ""])
+    }
+
     func testTweakAtTheTopOfTheFaultingStackScoresHighest() throws {
         let report = crash(images: [image(tweak)], faultingFrames: [0])
         let suspect = try XCTUnwrap(Blame.suspects(in: report, packages: nil).first)
