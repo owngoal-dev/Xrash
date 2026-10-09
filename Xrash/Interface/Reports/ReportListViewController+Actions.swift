@@ -234,7 +234,8 @@ extension ReportListViewController {
             toolbarItems = nil
             return
         }
-        let ids = (tableView.indexPathsForSelectedRows ?? []).compactMap(dataSource.itemIdentifier(for:))
+        let rowIDs = (tableView.indexPathsForSelectedRows ?? []).compactMap(dataSource.itemIdentifier(for:))
+        let ids = ReportListArrangement.reportIDs(for: rowIDs, input: input)
         // Nothing chosen yet: the two useful things are choosing everything
         // and being rid of everything. The verbs take their place as soon as
         // there is something to act on.
@@ -297,9 +298,10 @@ extension ReportListViewController {
     private func share(_ ids: [String], from source: UIView?) {
         Task { [weak self] in
             guard let self else { return }
+            let summaries = Dictionary(library.summaries.value.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             var urls = [URL]()
             for id in ids {
-                guard let summary = summary(for: id), let data = try? await library.data(for: id) else { continue }
+                guard let summary = summaries[id], let data = try? await library.data(for: id) else { continue }
                 let name = ReportFormat.fileStem(for: summary.processName, date: summary.date) + ".ips"
                 if let url = try? ReportShare.file(named: name, contents: data) {
                     urls.append(url)
@@ -366,7 +368,16 @@ extension ReportListViewController {
         if isEditing {
             setEditing(false, animated: true)
         }
-        guard !failed.isEmpty else { return }
+        guard !failed.isEmpty else {
+            if lockedProcessName != nil, ReportListArrangement.admitted(for: input).isEmpty {
+                if let reports = splitViewController as? ReportsSplitViewController, !reports.isCollapsed {
+                    reports.showPlaceholder()
+                } else {
+                    navigationController?.popViewController(animated: true)
+                }
+            }
+            return
+        }
         presentMessage(
             String.LocalizationValue("Unable to Delete Some Reports"),
             message: String.LocalizationValue("\(failed.count) of the reports could not be deleted."),

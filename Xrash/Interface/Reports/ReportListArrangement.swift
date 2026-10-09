@@ -68,6 +68,15 @@ enum ReportListArrangement {
         return .processes(inbox(for: input))
     }
 
+    /// Inbox identities are process names; actions always take report paths.
+    static func reportIDs(for rowIDs: [String], input: ReportListInput) -> [String] {
+        guard input.lockedProcessName == nil, input.filter.grouping == .process else { return rowIDs }
+        let names = Set(rowIDs)
+        return admitted(for: input)
+            .filter { names.contains($0.summary.processName) }
+            .map(\.summary.id)
+    }
+
     static func groups(for input: ReportListInput) -> [ReportListGroup] {
         let needle = input.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let rows = admitted(for: input).filter {
@@ -245,6 +254,20 @@ enum ReportListArrangement {
             assert(newest.first?.hasUnread == false, "no unread report, no unread row")
             assert(newest.last?.hasUnread == true, "an unread report makes the row unread")
 
+            assert(reportIDs(for: ["Fila"], input: input) == ["/Fila-1.ips", "/Fila-30.ips"],
+                   "selecting a process acts on all its reports")
+            assert(reportIDs(for: newest.map(\.name), input: input) == input.summaries.map(\.id),
+                   "select all resolves every process to report paths")
+            assert(reportIDs(for: [], input: input).isEmpty, "no selection means no reports")
+            input.filter.unreadOnly = true
+            assert(reportIDs(for: newest.map(\.name), input: input) == ["/SpringBoard-10.ips"],
+                   "actions respect the unread filter")
+            input.filter.unreadOnly = false
+            input.lockedProcessName = "Fila"
+            assert(reportIDs(for: ["/Fila-1.ips"], input: input) == ["/Fila-1.ips"],
+                   "a process page already selects report paths")
+            input.lockedProcessName = nil
+
             input.filter.order = .oldest
             assert(inbox(for: input).map(\.name) == ["SpringBoard", "Fila"], "oldest turns the inbox around")
             input.filter.order = .name
@@ -252,6 +275,8 @@ enum ReportListArrangement {
 
             input.searchText = "exc_bad"
             assert(inbox(for: input).map(\.name) == ["Fila"], "a search reads every report's reason")
+            assert(reportIDs(for: inbox(for: input).map(\.name), input: input) == ["/Fila-1.ips", "/Fila-30.ips"],
+                   "search actions include the whole matching process and no other process")
             input.searchText = "wiki.qaq"
             assert(inbox(for: input).map(\.name) == ["Fila"], "a search reads the bundle id")
             input.searchText = "nothing here"
@@ -260,10 +285,14 @@ enum ReportListArrangement {
             input.searchText = ""
             input.filter.hiddenProcessNames = ["Fila"]
             assert(inbox(for: input).map(\.name) == ["SpringBoard"], "a hidden process is not in the inbox")
+            assert(reportIDs(for: newest.map(\.name), input: input) == ["/SpringBoard-10.ips"],
+                   "actions exclude hidden processes")
 
             input.summaries.append(report("dtdeviceinfod", minutesAgo: 5, group: .service))
             input.filter.hiddenProcessNames = []
             input.filter.grouping = .category
+            assert(reportIDs(for: ["/Fila-1.ips"], input: input) == ["/Fila-1.ips"],
+                   "ordinary report rows keep their paths")
             input.filter.order = .newest
             assert(groups(for: input).map(\.section) == [.group(.app), .group(.service)],
                    "the section with the newest report comes first")

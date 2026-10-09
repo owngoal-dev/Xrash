@@ -321,13 +321,7 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
     /// Every report the list is showing: the rows under the headers, or every
     /// report of every process the inbox has a row for.
     var shownReportIDs: [String] {
-        guard shownProcesses.isEmpty else {
-            let names = Set(shownProcesses.keys)
-            return ReportListArrangement.admitted(for: input)
-                .filter { names.contains($0.summary.processName) }
-                .map(\.summary.id)
-        }
-        return groups.flatMap(\.rows).map(\.summary.id)
+        ReportListArrangement.reportIDs(for: dataSource.snapshot().itemIdentifiers, input: input)
     }
 
     private func restoreSelection() {
