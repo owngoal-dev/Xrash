@@ -145,7 +145,7 @@ through `UNUserNotificationCenter(bundleIdentifier:)` — the daemon carries
 
 ```
 Xrash/               the app: main.swift (manual UIApplicationMain), Application/,
-                     Interface/<feature>/, Resources/ (AppIcon.icon, Assets, strings)
+                     Interface/<feature>/, Resources/ (Assets, strings)
 xrashd/              the root LaunchDaemon, product `xrashd`; links XrashProtocol only
 Packages/XrashKit/   everything testable on a Mac: CXrashXPC (C shim over the XPC
                      macros), XrashProtocol (wire + service names), and the report,
@@ -161,9 +161,15 @@ Documents/Site/      Pages source: index.html, icon.png, depiction.json
 manifest.json        the owngoal-packages entry
 ```
 
-The app icon is `Xrash/Resources/AppIcon.icon` (Icon Composer): a red fill with
-a white SF Rounded X in light, a dark fill with a red X in dark, and the white
-X for tinted. There is no `AppIcon.appiconset`; actool emits the fallback PNGs.
+The app icon's source is `Documents/Icon/AppIcon.icon` (Icon Composer): a red
+fill with a white SF Rounded X in light, a dark fill with a red X in dark, and
+the white X for tinted. It is in no target. What ships is
+`Xrash/Resources/Assets.xcassets/AppIcon.appiconset`: actool's own three
+1024 renders of it (any, dark, tinted) as JPEGs, which actool stores as they
+are — the `.icon` compiled to lossless renders twice over (phone and pad).
+After editing the `.icon`, render the set again with platformize-app-ios's
+`scripts/render-app-icon.py Documents/Icon/AppIcon.icon
+Xrash/Resources/Assets.xcassets/AppIcon.appiconset`.
 
 ## The Mac product
 

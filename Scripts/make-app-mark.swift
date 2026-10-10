@@ -3,7 +3,7 @@
 // `Xrash/Resources/Assets.xcassets/AppIconMark.imageset`. Fila's script, taught
 // that this document picks its fill and its layer per appearance.
 //
-// Run on a Mac, by hand, when `Xrash/Resources/AppIcon.icon` changes:
+// Run on a Mac, by hand, when `Documents/Icon/AppIcon.icon` changes:
 //
 //     swift Scripts/make-app-mark.swift
 //
@@ -17,7 +17,7 @@
 import AppKit
 
 let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-let document = repository.appendingPathComponent("Xrash/Resources/AppIcon.icon")
+let document = repository.appendingPathComponent("Documents/Icon/AppIcon.icon")
 let output = repository.appendingPathComponent("Xrash/Resources/Assets.xcassets/AppIconMark.imageset")
 
 struct Layer {
