@@ -9,14 +9,12 @@ import XrashReport
 /// side left the reason nothing to be read in.
 final class ProcessInboxCell: UITableViewCell {
     static let reuseIdentifier = "process"
-    private static let unreadDotSize: CGFloat = 8
 
     private let iconView = ReportIconView()
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let countLabel = UILabel()
     private let countCapsule = UIView()
-    private let unreadDot = UIView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -52,23 +50,16 @@ final class ProcessInboxCell: UITableViewCell {
         for label in [titleLabel, subtitleLabel, countLabel] {
             label.adjustsFontForContentSizeCategory = true
         }
-        unreadDot.do {
-            $0.backgroundColor = .tintColor
-            $0.layer.cornerRadius = Self.unreadDotSize / 2
-            $0.isAccessibilityElement = false
-        }
-
         countCapsule.addSubview(countLabel)
         let names = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel]).then {
             $0.axis = .vertical
-            $0.spacing = 2
+            $0.spacing = 4
         }
         let content = UIStackView(arrangedSubviews: [iconView, names, countCapsule]).then {
             $0.alignment = .center
             $0.spacing = 10
         }
         contentView.addSubview(content)
-        contentView.addSubview(unreadDot)
         iconView.snp.makeConstraints { $0.size.equalTo(ReportIconView.size) }
         countLabel.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(2)
@@ -77,12 +68,7 @@ final class ProcessInboxCell: UITableViewCell {
         }
         content.snp.makeConstraints { make in
             make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
-            make.top.bottom.equalToSuperview().inset(9)
-        }
-        unreadDot.snp.makeConstraints { make in
-            make.size.equalTo(Self.unreadDotSize)
-            make.centerY.equalToSuperview()
-            make.centerX.equalTo(contentView.snp.leading).offset(10)
+            make.top.bottom.equalToSuperview().inset(13)
         }
     }
 
@@ -111,7 +97,6 @@ final class ProcessInboxCell: UITableViewCell {
         // the tint is what says some of them have not been read.
         countCapsule.backgroundColor = row.hasUnread ? .tintColor : .tertiarySystemFill
         countLabel.textColor = row.hasUnread ? .white : .secondaryLabel
-        unreadDot.isHidden = !row.hasUnread
         accessibilityLabel = [
             row.name,
             subtitleLabel.text,

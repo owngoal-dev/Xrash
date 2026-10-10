@@ -8,7 +8,7 @@ import XrashReport
 /// that is still alive.
 final class ReportRowCell: UITableViewCell {
     static let reuseIdentifier = "report"
-    private static let unreadDotSize: CGFloat = 8
+    private static let unreadDotSize: CGFloat = 12
 
     /// In a split view's primary column the system fills a selected row with
     /// the accent colour, and this app's accent is red: a selected report
@@ -33,7 +33,11 @@ final class ReportRowCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         accessoryType = .disclosureIndicator
-        configurationUpdateHandler = Self.groupedBackgroundHandler
+        configurationUpdateHandler = { [weak self] cell, state in
+            Self.groupedBackgroundHandler(cell, state)
+            self?.unreadDot.layer.borderColor = cell.backgroundConfiguration?.backgroundColor?
+                .resolvedColor(with: cell.traitCollection).cgColor
+        }
         // The row is one sentence, not an icon, two labels and a date read one
         // stop at a time: a cell is not an accessibility element until it is
         // told to be, and the label `configure` assembles is read only once it
@@ -64,12 +68,13 @@ final class ReportRowCell: UITableViewCell {
         unreadDot.do {
             $0.backgroundColor = .tintColor
             $0.layer.cornerRadius = Self.unreadDotSize / 2
+            $0.layer.borderWidth = 2
             $0.isAccessibilityElement = false
         }
 
         let names = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel]).then {
             $0.axis = .vertical
-            $0.spacing = 2
+            $0.spacing = 4
         }
         let content = UIStackView(arrangedSubviews: [iconView, names, dateLabel]).then {
             $0.alignment = .center
@@ -80,14 +85,12 @@ final class ReportRowCell: UITableViewCell {
         iconView.snp.makeConstraints { $0.size.equalTo(ReportIconView.size) }
         content.snp.makeConstraints { make in
             make.leading.trailing.equalTo(contentView.layoutMarginsGuide)
-            make.top.bottom.equalToSuperview().inset(9)
+            make.top.bottom.equalToSuperview().inset(13)
         }
-        // Mail's place for it: in the leading margin, so a read row and an
-        // unread one keep their icons and titles on the same line.
         unreadDot.snp.makeConstraints { make in
             make.size.equalTo(Self.unreadDotSize)
-            make.centerY.equalToSuperview()
-            make.centerX.equalTo(contentView.snp.leading).offset(10)
+            make.centerY.equalTo(iconView.snp.top).offset(2)
+            make.centerX.equalTo(iconView.snp.trailing).offset(-2)
         }
     }
 
