@@ -1,5 +1,5 @@
 {
-  "originHash" : "f7e1797ddf2d70a126f4e7258d23e138bf900f27c6f31f00292ae80fac87b0e9",
+  "originHash" : "42d77f60aaa32705e575967a45f1082eaf7a155d9801f34117c2b8b3c49065d6",
   "pins" : [
     {
       "identity" : "alertcontroller",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/owngoal-dev/icli.git",
       "state" : {
-        "revision" : "702990b59ca412ad975f9f0ea5dafe95c30fac21",
-        "version" : "0.7.16"
+        "revision" : "eef631078200ea35faded39f46b7d909980c0e1c",
+        "version" : "0.8.0"
       }
     },
     {
