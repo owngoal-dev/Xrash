@@ -74,6 +74,12 @@
 <dict>
 	<key>application-identifier</key>
 	<string>wiki.qaq.xrash</string>
+
+	<!-- Full system-symbol extraction maps the dyld cache and its subcaches.
+	     iOS 15 can otherwise reject the main cache mapping with ENOMEM. -->
+	<key>com.apple.developer.kernel.extended-virtual-addressing</key>
+	<true/>
+
 	<key>com.apple.security.iokit-user-client-class</key>
 	<array>
 		<string>AGXCommandQueue</string>
