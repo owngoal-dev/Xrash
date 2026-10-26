@@ -14176,13 +14176,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "许可信息不可用。"
+            "value" : "许可证信息不可用。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有可用的授權資訊。"
+            "value" : "沒有可用的許可證資訊。"
           }
         }
       }
@@ -14258,13 +14258,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "许可"
+            "value" : "许可证"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "授權"
+            "value" : "許可證"
           }
         }
       }
@@ -15002,7 +15002,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "MIT 授權條款"
+            "value" : "MIT 許可證"
           }
         }
       }
@@ -15980,13 +15980,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无许可信息"
+            "value" : "无许可证信息"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有授權資訊"
+            "value" : "沒有許可證資訊"
           }
         }
       }
