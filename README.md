@@ -65,6 +65,8 @@ make mac-zip          # the Mac app, signed and zipped
 
 `make check` needs xcodebuild, ldid, and dpkg-deb.
 
+The device packages are built against the iOS 27.1 SDK (Xcode 27.1 or later), which is what lets iPhone Duo draw Xrash edge to edge with its bars on the side; `make build` stops on an older SDK.
+
 Contributor notes are in [AGENTS.md](AGENTS.md).
 
 ## License

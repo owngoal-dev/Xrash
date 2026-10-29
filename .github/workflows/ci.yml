@@ -6,6 +6,10 @@
 # Nothing is published from here: a tag publishes, through `release.yml`, the
 # artifact of its commit's run, once that run has passed.
 #
+# Every macOS job runs on the `xcode-27` image with Xcode 27.1 selected: device
+# packages are built against the iOS 27.1 SDK, the tier iPhone Duo draws edge
+# to edge with vertical bars, and `make build` refuses anything older.
+#
 # The version is the commit's. `make set-version`, the release note and the tag
 # are one commit; CI builds what Configuration/Version.xcconfig says, and the
 # release refuses anything not named for its tag.
@@ -30,6 +34,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Named, not left to the image's default, so a new default cannot quietly
+  # change the SDK a release is linked against.
+  DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
   HOMEBREW_NO_AUTO_UPDATE: "1"
   HOMEBREW_NO_INSTALL_CLEANUP: "1"
   HOMEBREW_NO_ANALYTICS: "1"
@@ -37,7 +44,7 @@ env:
 jobs:
   test:
     name: Run host tests
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
 
     steps:
@@ -51,7 +58,7 @@ jobs:
 
   package-deb:
     name: Build and verify the ${{ matrix.flavor }} package
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -88,6 +95,7 @@ jobs:
       - name: Build the package with Xcode
         run: |
           xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
           make deb FLAVOR=${{ matrix.flavor }} CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA" SKIP_HARNESS=1
 
       # On a tag — the dispatch that rebuilds a commit whose artifact has aged
@@ -146,7 +154,7 @@ jobs:
 
   package-macos:
     name: Build and verify the macOS app
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
 
     steps:

@@ -65,6 +65,8 @@ make mac-zip          # 签名并打包 Mac 应用
 
 `make check` 需要 xcodebuild、ldid 和 dpkg-deb。
 
+设备包使用 iOS 27.1 SDK（Xcode 27.1 或更高版本）构建，iPhone Duo 因此能让 Xrash 铺满屏幕、把栏放在侧边；SDK 较旧时 `make build` 会停止。
+
 贡献者须知见 [AGENTS.md](AGENTS.md)。
 
 ## 许可证

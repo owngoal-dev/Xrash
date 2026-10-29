@@ -331,7 +331,17 @@ final class ReportDetailViewController: UIViewController {
 
     private lazy var spinnerItem = UIBarButtonItem(customView: UIActivityIndicatorView(style: .medium).then {
         $0.startAnimating()
-    })
+    }).then { item in
+        // A custom view is kept to horizontal bars unless it says otherwise,
+        // and where iPhone Duo puts the detail's bar on its side there is no
+        // horizontal one: the spinner would not be shown at all. It is a
+        // square, and fits the vertical bar as well as any symbol.
+        #if canImport(UIKit, _version: 9127.0.85) && !targetEnvironment(macCatalyst)
+            if #available(iOS 27.1, *) {
+                item.axisBehavior = .verticalPreferred
+            }
+        #endif
+    }
 
     func renderBarItems() {
         let more = UIBarButtonItem(

@@ -81,7 +81,7 @@ final class ReportTextViewController: UIViewController {
             $0.kern = 0.3
             $0.lineHeightMultiplier = 1.2
             $0.gutterMinimumCharacterCount = 3
-            $0.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
+            $0.textContainerInset = Self.numberedInsets
             // A viewer shows the file, not the whitespace inside it.
             $0.showTabs = false
             $0.showSpaces = false
@@ -97,20 +97,10 @@ final class ReportTextViewController: UIViewController {
             // rule above the bottom bar that reads as a divider.
             $0.showsHorizontalScrollIndicator = false
         }
-        let numberedInsets = textView.textContainerInset
         lineNumbersObserver = settings.preferences
             .map(\.showsLineNumbers)
             .removeDuplicates()
-            .sink { [weak self] value in
-                guard let self else { return }
-                textView.showLineNumbers = value ?? (traitCollection.userInterfaceIdiom != .phone)
-                var insets = numberedInsets
-                if !textView.showLineNumbers {
-                    insets.left = 16
-                    insets.right = 16
-                }
-                textView.textContainerInset = insets
-            }
+            .sink { [weak self] value in self?.applyLineNumbers(value) }
 
         let stack = UIStackView(arrangedSubviews: [textView, findBar.toolbar]).then { $0.axis = .vertical }
         view.addSubview(stack)
@@ -159,9 +149,30 @@ final class ReportTextViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
         super.traitCollectionDidChange(previous)
+        if previous?.horizontalSizeClass != traitCollection.horizontalSizeClass {
+            applyLineNumbers(settings.preferences.value.showsLineNumbers)
+        }
         guard previous?.userInterfaceStyle != traitCollection.userInterfaceStyle
             || previous?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory else { return }
         applyTheme()
+    }
+
+    // MARK: Line numbers
+
+    private static let numberedInsets = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
+
+    /// The reader's choice, or else the width's: a gutter where the column is
+    /// regular width and none where it is compact. A width, not a device —
+    /// iPhone Duo's inner display is regular and its outer one compact, and
+    /// the same report crosses from one to the other when it opens or closes.
+    private func applyLineNumbers(_ preference: Bool?) {
+        textView.showLineNumbers = preference ?? (traitCollection.horizontalSizeClass == .regular)
+        var insets = Self.numberedInsets
+        if !textView.showLineNumbers {
+            insets.left = 16
+            insets.right = 16
+        }
+        textView.textContainerInset = insets
     }
 
     // MARK: Text

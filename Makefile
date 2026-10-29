@@ -41,6 +41,12 @@ base_xcconfig_setting = $(strip $(shell awk -F= '$$1 ~ /^[[:space:]]*$(1)[[:spac
 APP_VERSION         := $(call xcconfig_setting,MARKETING_VERSION)
 BUILD_NUMBER        := $(call xcconfig_setting,CURRENT_PROJECT_VERSION)
 MINIMUM_IOS_VERSION := $(call base_xcconfig_setting,IPHONEOS_DEPLOYMENT_TARGET)
+# The iPhoneOS SDK a device build links against — the other end from the
+# floor. iPhone Duo reads it from the binary: below 27.1 the app is not drawn
+# to the edges of either display and its bars never turn vertical, whatever
+# the source says. `make build` refuses an older SDK; select Xcode 27.1 or
+# later (`xcode-select -s`, or DEVELOPER_DIR for one command).
+IOS_SDK_MINIMUM     ?= 27.1
 DEB_OUTPUT          ?= $(ROOT_DIR)/build/Packages/$(PACKAGE_ID)_$(APP_VERSION)_$(PACKAGE_ARCHITECTURE).deb
 
 XCODEBUILD_WRAPPER  := $(ROOT_DIR)/Scripts/run-xcodebuild.sh
@@ -81,7 +87,7 @@ ifeq ($(BUILD_NUMBER),)
 $(error CURRENT_PROJECT_VERSION is missing from Configuration/Version.xcconfig)
 endif
 
-.PHONY: all help print-version print-build-number print-deb-path print-mac-zip-path print-flavor set-version bump-build check harness build sim deb deb-roothide deb-rootless deb-all audit-floor vphone mac-app mac-daemon mac-daemon-uninstall mac-run mac-zip-check mac-zip clean
+.PHONY: all help print-version print-build-number print-deb-path print-mac-zip-path print-flavor set-version bump-build check harness sdk-tier build sim deb deb-roothide deb-rootless deb-all audit-floor vphone mac-app mac-daemon mac-daemon-uninstall mac-run mac-zip-check mac-zip clean
 
 all: deb-all
 
@@ -89,7 +95,7 @@ help:
 	@echo "Xrash:"
 	@echo "  harness     Run the XrashKit tests on macOS (no device)"
 	@echo "  check       Validate the Xcode project and packaging inputs"
-	@echo "  build       Build the unsigned Xrash.app and xrashd for iPhoneOS"
+	@echo "  build       Build the unsigned Xrash.app and xrashd for iPhoneOS (iOS $(IOS_SDK_MINIMUM) SDK or later)"
 	@echo "  sim         Debug build onto the booted simulator (no daemon there)"
 	@echo "  deb         Build, ad-hoc sign, and package the .deb for FLAVOR (default roothide)"
 	@echo "  deb-all     Package both the roothide and the rootless .deb"
@@ -191,9 +197,16 @@ check:
 harness:
 	swift test --package-path "$(KIT_PACKAGE)"
 
+# Before anything else a device build does, so an old Xcode fails in a second
+# rather than after the harness. The simulator and the Mac are not gated.
+sdk-tier:
+	@sdk="$$(xcrun --sdk iphoneos --show-sdk-version)"; \
+		[[ "$$(printf '%s\n%s\n' "$(IOS_SDK_MINIMUM)" "$$sdk" | sort -V | head -n 1)" == "$(IOS_SDK_MINIMUM)" ]] \
+		|| { echo "error: device builds need the iOS $(IOS_SDK_MINIMUM) SDK or later, and $${DEVELOPER_DIR:-$$(xcode-select -p)} has $$sdk; select a newer Xcode with xcode-select or DEVELOPER_DIR" >&2; exit 69; }
+
 # CI runs the harness as its own job beside the compile (SKIP_HARNESS=1) and
 # releases only when both pass; locally the harness still gates every build.
-build: check $(if $(SKIP_HARNESS),,harness) bump-build
+build: sdk-tier check $(if $(SKIP_HARNESS),,harness) bump-build
 	XCBUILD_LABEL=build-ios $(XCODEBUILD) \
 		-configuration "$(CONFIGURATION)" \
 		-scheme "$(SCHEME)" \

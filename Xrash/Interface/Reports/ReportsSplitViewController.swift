@@ -13,6 +13,7 @@ final class ReportsSplitViewController: UISplitViewController {
 
     init() {
         super.init(style: .doubleColumn)
+        delegate = self
         list.openReport = { [weak self] summary in
             self?.setViewController(
                 UINavigationController(rootViewController: ReportDetailViewController(reportID: summary.id)),
@@ -43,9 +44,8 @@ final class ReportsSplitViewController: UISplitViewController {
         list.tableView.backgroundColor = .systemGroupedBackground
         setViewController(primary, for: .primary)
         setViewController(placeholder(), for: .secondary)
-        // ponytail: the tab bar keeps a report list of its own, so a report
-        // open on one side of a width change is not open on the other. Move
-        // one list between the columns, as Fila does, if that ever matters.
+        // The tab bar keeps a report list of its own; what is open above
+        // either list crosses a width change (the delegate, below).
         setViewController(RootTabBarController(), for: .compact)
         // Both columns from the start, so an iPad launch does not open on an
         // empty detail pane with the list hidden behind a button.
@@ -124,6 +124,40 @@ final class ReportsSplitViewController: UISplitViewController {
             page.navigationItem.leftBarButtonItem?.accessibilityLabel = String(localized: "Close")
             presentAsFormSheet(navigation)
         }
+    }
+}
+
+/// A width change keeps the report that is open. iPhone Duo makes one every
+/// time it opens or closes — the inner display is regular width, the outer one
+/// compact — and the reader is in the middle of something both times.
+///
+/// The two lists stay where they are; what moves is everything open above
+/// them, the controllers themselves, so a report arrives at the view, scroll
+/// position and depth it was left at. Collapsing puts the secondary column's
+/// stack on the Reports tab; expanding takes what is pushed there back into
+/// the secondary column.
+extension ReportsSplitViewController: UISplitViewControllerDelegate {
+    func splitViewControllerDidCollapse(_: UISplitViewController) {
+        guard let tabs = viewController(for: .compact) as? RootTabBarController,
+              let column = viewController(for: .secondary) as? UINavigationController else { return }
+        let open = column.viewControllers.filter { !($0 is ReportPlaceholderViewController) }
+        guard !open.isEmpty else { return }
+        // Out of one stack before into the other: a controller has one parent.
+        column.setViewControllers([ReportPlaceholderViewController()], animated: false)
+        list.markOpen(nil)
+        tabs.showReportScreens(open)
+    }
+
+    func splitViewControllerDidExpand(_: UISplitViewController) {
+        guard let tabs = viewController(for: .compact) as? RootTabBarController else { return }
+        let open = tabs.takeReportScreens()
+        guard let root = open.first else { return }
+        let column = UINavigationController()
+        column.setViewControllers(open, animated: false)
+        setViewController(column, for: .secondary)
+        // The row it came from: a report's path, or a process page's name.
+        list.markOpen((root as? ReportDetailViewController)?.libraryReportID
+            ?? (root as? ReportListViewController)?.lockedProcessName)
     }
 }
 

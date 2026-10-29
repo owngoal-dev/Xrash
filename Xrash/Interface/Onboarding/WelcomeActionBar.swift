@@ -38,7 +38,9 @@ final class WelcomeActionBar: UIView {
         }
         button.snp.makeConstraints { x in
             x.top.equalTo(rule.snp.bottom).offset(12)
-            x.leading.trailing.equalToSuperview().inset(WelcomeStyle.horizontalMargin)
+            // Each side its own inset: the bar's blur runs edge to edge, but
+            // a vertical bar or the camera can take one side and not the other.
+            x.leading.trailing.equalTo(safeAreaLayoutGuide).inset(WelcomeStyle.horizontalMargin)
             x.bottom.equalTo(safeAreaLayoutGuide).inset(28)
             x.height.equalTo(48)
         }
