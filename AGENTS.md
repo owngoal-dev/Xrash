@@ -208,7 +208,12 @@ handshake.
 
 - `make harness` — the package tests on the Mac. Run this first.
 - `make check` — project and packaging validation, including the floor greps.
-- `make build` — unsigned app + daemon for iPhoneOS.
+- `make build` — unsigned app + daemon for iPhoneOS, against the iOS 27.1 SDK
+  or later (`IOS_SDK_MINIMUM`); it stops on an older one. iPhone Duo reads the
+  tier from the binary: below 27.1 the app is not drawn to the edges and its
+  bars stay horizontal. CI selects Xcode 27.1 on the `xcode-27` runners. A
+  27.1-only API is gated twice, `#if canImport(UIKit, _version: 9127.0.85)`
+  for the 27.0 simulator SDK and `if #available(iOS 27.1, *)` for the floor.
 - `make sim` — Debug onto the simulator; no LaunchDaemon there and there cannot be.
 - `make deb` / `make deb-all` — roothide and rootless packages, verified.
 - `make mac-app` — the Mac Catalyst app, signed ad-hoc and re-registered.
@@ -340,6 +345,16 @@ sheet grew by a search bar when a symbol list was pushed. Narrow: the same contr
 is the *View As* submenu at the top of its ••• menu, its subtitle the current
 choice; the share formats and *Reveal in Fila* are the *Report File* submenu.
 The bar title is the process name.
+
+**The two shapes are one hierarchy, and a width change keeps what is open.**
+iPhone Duo makes one each time it opens (inner display, regular: the split)
+or closes (outer display, compact: the tab bar). The split view's delegate
+moves the controllers open above the lists — the secondary column's stack onto
+the Reports tab when it collapses, the Reports tab's pushed screens back into
+the secondary column when it expands — so a report keeps its view, scroll and
+depth. Nothing branches on the device: decisions read the size class (the text
+viewer's line numbers default to on in a regular column, off in a compact
+one) and each safe-area edge on its own: a vertical bar takes one side only.
 `LoadBudget` holds a screen back for its first data (2 s at launch, 200 ms per
 page) so it comes up finished and un-animated.
 

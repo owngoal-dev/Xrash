@@ -139,7 +139,8 @@ final class WelcomeNotificationsController: UIViewController {
             x.leading.trailing.equalToSuperview().inset(WelcomeStyle.horizontalMargin)
         }
         later.snp.makeConstraints { x in
-            x.centerX.equalToSuperview()
+            // Under the content it belongs to, which is the safe area's.
+            x.centerX.equalTo(view.safeAreaLayoutGuide)
             x.bottom.equalTo(actionBar.snp.top).offset(-8)
         }
         actionBar.snp.makeConstraints { x in

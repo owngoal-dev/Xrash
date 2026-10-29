@@ -324,6 +324,18 @@ final class ReportListViewController: UITableViewController, UISearchResultsUpda
         ReportListArrangement.reportIDs(for: dataSource.snapshot().itemIdentifiers, input: input)
     }
 
+    /// The row of what the detail column has open when something other than
+    /// a tap here opened it — a report carried over a width change. Nil
+    /// leaves no row highlighted.
+    func markOpen(_ id: String?) {
+        selectedID = id
+        guard isViewLoaded else { return }
+        if let selected = tableView.indexPathForSelectedRow, dataSource.itemIdentifier(for: selected) != id {
+            tableView.deselectRow(at: selected, animated: false)
+        }
+        restoreSelection()
+    }
+
     private func restoreSelection() {
         guard let selectedID, let indexPath = dataSource.indexPath(for: selectedID),
               tableView.indexPathForSelectedRow != indexPath else { return }

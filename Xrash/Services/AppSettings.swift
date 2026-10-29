@@ -68,7 +68,7 @@ struct ReportPreferences: Codable, Equatable, Sendable {
     // The text viewer's choices, remembered across reports rather than per file.
     /// Off: a wrapped stack frame reads as two frames.
     var wrapsLines = false
-    /// Unset uses the viewer's device default: off on iPhone, on elsewhere.
+    /// Unset follows the viewer's width: off in a compact column, on in a regular one.
     var showsLineNumbers: Bool?
     var textScale = 1.0
     /// Master switch, preserved when upgrading from the crash-only wording.
