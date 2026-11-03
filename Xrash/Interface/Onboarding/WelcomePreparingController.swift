@@ -143,7 +143,7 @@ final class WelcomePreparingController: UIViewController {
             $0.numberOfLines = 1
         }
         let intro = UILabel().then {
-            $0.text = String(localized: "Xrash is reading the reports already on this device.")
+            $0.text = String(localized: "Xrash is reading the reports the system has already written.")
             $0.font = WelcomeStyle.subtitleFont
             $0.adjustsFontForContentSizeCategory = true
             $0.textColor = WelcomeStyle.detailColor

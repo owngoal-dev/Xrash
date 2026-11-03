@@ -78,7 +78,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 已當機"
+            "value" : "%@ 已崩潰"
           }
         }
       }
@@ -646,7 +646,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dSYM 为你自己代码中的地址提供名称。"
+            "value" : "dSYM 可为你自己代码中的地址提供名称。"
           }
         },
         "zh-Hant" : {
@@ -2040,7 +2040,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用"
+            "value" : "App"
           }
         },
         "zh-Hant" : {
@@ -2122,7 +2122,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用信息"
+            "value" : "App 信息"
           }
         },
         "zh-Hant" : {
@@ -2204,7 +2204,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "应用"
+            "value" : "App"
           }
         },
         "zh-Hant" : {
@@ -2450,13 +2450,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "二进制文件会加入崩溃的可执行文件，以及崩溃堆栈上的第三方库。它们可能很大，也可能并非你有权共享的内容。"
+            "value" : "“二进制文件”会包含崩溃的可执行文件及崩溃堆栈上的第三方库。它们体积可能较大，且未必是你可共享的内容。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "二進位檔案會加入崩潰的可執行檔，以及崩潰堆疊上的第三方程式庫。它們可能很大，也可能不是你有權分享的內容。"
+            "value" : "「二進位檔案」會包含崩潰的可執行檔及崩潰堆疊上的第三方程式庫。它們體積可能較大，且未必是你能分享的內容。"
           }
         }
       }
@@ -2784,7 +2784,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "套件"
+            "value" : "套件組合"
           }
         }
       }
@@ -3276,7 +3276,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請選擇一份報告，以查看發生了什麼事。"
+            "value" : "選擇一份報告，查看發生了什麼事。"
           }
         }
       }
@@ -3768,7 +3768,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在連接…"
+            "value" : "正在連線…"
           }
         }
       }
@@ -5818,7 +5818,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "崩潰的執行緒"
+            "value" : "崩潰執行緒"
           }
         }
       }
@@ -5900,7 +5900,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "崩潰的執行緒 %lld"
+            "value" : "崩潰執行緒 %lld"
           }
         }
       }
@@ -6140,13 +6140,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "崩溃、无响应、内核崩溃和内存不足报告，与系统写下的内容一致。"
+            "value" : "崩溃、无响应、内核崩溃和内存不足报告，按系统写入时的原样呈现。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "崩潰、無回應、核心崩潰和記憶體不足報告，與系統寫下的內容一致。"
+            "value" : "崩潰、無回應、核心崩潰和記憶體不足報告，依系統寫入時的原樣呈現。"
           }
         }
       }
@@ -8600,13 +8600,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请按 owner/repo 的形式输入，或粘贴该仓库的 GitHub 地址。"
+            "value" : "请输入仓库（格式为 owner/repo），或粘贴其 GitHub 地址。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請以 owner/repo 的形式輸入，或貼上該儲存庫的 GitHub 網址。"
+            "value" : "請輸入儲存庫（格式為 owner/repo），或貼上其 GitHub 網址。"
           }
         }
       }
@@ -8682,13 +8682,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请按 owner/repo 的形式输入发行版中带有调试符号的仓库。"
+            "value" : "输入发行版附带调试符号的仓库，格式为 owner/repo。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請以 owner/repo 的形式輸入發行版本中帶有除錯符號的儲存庫。"
+            "value" : "輸入發行版本附有除錯符號的儲存庫，格式為 owner/repo。"
           }
         }
       }
@@ -10410,7 +10410,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找下一個"
+            "value" : "尋找下一個"
           }
         }
       }
@@ -10492,7 +10492,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找上一個"
+            "value" : "尋找上一個"
           }
         }
       }
@@ -11224,7 +11224,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "助手"
+            "value" : "辅助程序"
           }
         },
         "zh-Hant" : {
@@ -12946,13 +12946,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "其中包含已安装的应用、软件包和插件，以及正在运行的进程和服务。共享前请先查看。"
+            "value" : "其中包含已安装的 App、软件包和插件，以及正在运行的进程和服务。共享前请先检查。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "其中包含已安裝的 App、套件和外掛，以及正在執行的程序和服務。分享前請先查看。"
+            "value" : "其中包含已安裝的 App、套件和外掛，以及正在執行的程序和服務。分享前請先檢查。"
           }
         }
       }
@@ -13602,13 +13602,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "类型"
+            "value" : "种类"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "類型"
+            "value" : "種類"
           }
         }
       }
@@ -15078,13 +15078,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "邮件联系维护者"
+            "value" : "发邮件给维护者"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用郵件聯絡維護者"
+            "value" : "寄郵件給維護者"
           }
         }
       }
@@ -16724,7 +16724,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "尚未設定郵件帳號。請在「郵件」中設定一個。"
+            "value" : "尚未設定郵件帳號。請在「郵件」中設定。"
           }
         }
       }
@@ -16806,7 +16806,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有其他與「%@」相符的報告。請換個關鍵字搜尋。"
+            "value" : "沒有其他與「%@」相符的報告。請嘗試其他搜尋字詞。"
           }
         }
       }
@@ -18686,13 +18686,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "通知需开启“允许通知”总开关。已隐藏的日志不会发送通知。"
+            "value" : "通知需开启“允许通知”总开关。已隐藏的报告不会发送通知。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "通知需開啟「允許通知」總開關。已隱藏的日誌不會傳送通知。"
+            "value" : "通知需開啟「允許通知」總開關。已隱藏的報告不會傳送通知。"
           }
         }
       }
@@ -21720,7 +21720,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "仅读取此 App 无需助手即可打开的报告。"
+            "value" : "仅读取此 App 无需辅助程序即可打开的报告。"
           }
         },
         "zh-Hant" : {
@@ -22382,7 +22382,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關聯"
+            "value" : "關係"
           }
         }
       }
@@ -23278,13 +23278,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系统写入报告后，报告会出现在这里。"
+            "value" : "系统写入报告后，报告会显示在这里。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系統寫入報告時，報告會顯示在這裡。"
+            "value" : "系統寫入報告後，報告會顯示在這裡。"
           }
         }
       }
@@ -24924,7 +24924,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請選擇報告"
+            "value" : "選擇一份報告"
           }
         }
       }
@@ -25082,7 +25082,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "服务、应用、软件包、插件和进程"
+            "value" : "服务、App、软件包、插件和进程"
           }
         },
         "zh-Hant" : {
@@ -25738,7 +25738,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Fila 中显示此应用"
+            "value" : "在 Fila 中显示此 App"
           }
         },
         "zh-Hant" : {
@@ -26968,13 +26968,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找出可疑对象"
+            "value" : "找出可疑项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找出可疑對象"
+            "value" : "找出可疑項目"
           }
         }
       }
@@ -27870,13 +27870,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“系统状态”会列出已安装和正在运行的每个应用、软件包、插件、进程和服务。共享前请先查看这些文件。"
+            "value" : "“系统状态”会列出所有已安装和正在运行的 App、软件包、插件、进程和服务。共享前请先检查这些文件。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「系統狀態」會列出已安裝和正在執行的每個 App、套件、外掛、程序和服務。分享前請先查看這些檔案。"
+            "value" : "「系統狀態」會列出所有已安裝和正在執行的 App、套件、外掛、程序和服務。分享前請先檢查這些檔案。"
           }
         }
       }
@@ -28116,13 +28116,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系统帧会恢复为地址，直到你重新提取。"
+            "value" : "系统帧将只显示地址，重新提取后才会恢复名称。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系統堆疊框架會恢復為位址，直到你重新提取為止。"
+            "value" : "系統堆疊框架將只顯示位址，重新提取後才會恢復名稱。"
           }
         }
       }
@@ -28444,13 +28444,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "终止进程"
+            "value" : "发起终止的进程"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "終止程序"
+            "value" : "發起終止的程序"
           }
         }
       }
@@ -28936,7 +28936,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "该报告由更新版本的 Xrash 创建。"
+            "value" : "该报告由较新版本的 Xrash 创建。"
           }
         },
         "zh-Hant" : {
@@ -29510,13 +29510,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "代码出现在崩溃堆栈中的软件包会显示在其旁边。"
+            "value" : "若软件包的代码出现在崩溃堆栈中，其名称会标注在旁边。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "程式碼出現在崩潰堆疊中的套件會顯示在其旁邊。"
+            "value" : "若套件的程式碼出現在崩潰堆疊中，其名稱會標示在旁邊。"
           }
         }
       }
@@ -30330,13 +30330,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此 Xrash 副本已不再安装。请退出并重新打开 Xrash。"
+            "value" : "正在运行的 Xrash 已被替换或移除。请退出并重新打开 Xrash。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此 Xrash 副本已不再安裝。請結束並重新打開 Xrash。"
+            "value" : "正在執行的 Xrash 已被取代或移除。請結束並重新打開 Xrash。"
           }
         }
       }
@@ -30582,7 +30582,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此映像位於系統的共享快取中，沒有自己的檔案。"
+            "value" : "此映像位於系統的共享快取中，沒有獨立的檔案。"
           }
         }
       }
@@ -32304,7 +32304,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法發送郵件"
+            "value" : "無法傳送郵件"
           }
         }
       }
@@ -33364,13 +33364,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "唤醒"
+            "value" : "唤醒次数"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "喚醒"
+            "value" : "喚醒次數"
           }
         }
       }
@@ -33616,7 +33616,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "製作此報告時已安裝和正在執行的內容。"
+            "value" : "產生此報告時已安裝與正在執行的內容。"
           }
         }
       }
@@ -34108,7 +34108,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash 無法連接 GitHub。請檢查網路後再試一次。"
+            "value" : "Xrash 無法連線至 GitHub。請檢查網路後再試一次。"
           }
         }
       }
@@ -34195,84 +34195,84 @@
         }
       }
     },
-    "Xrash is reading the reports already on this device." : {
+    "Xrash is reading the reports the system has already written." : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يقرأ Xrash التقارير الموجودة بالفعل على هذا الجهاز."
+            "value" : "يقرأ Xrash التقارير التي كتبها النظام بالفعل."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash liest die Berichte, die bereits auf diesem Gerät sind."
+            "value" : "Xrash liest die Berichte, die das System bereits geschrieben hat."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash is reading the reports already on this device."
+            "value" : "Xrash is reading the reports the system has already written."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash está leyendo los informes que ya hay en este dispositivo."
+            "value" : "Xrash está leyendo los informes que el sistema ya ha escrito."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash lit les rapports déjà présents sur cet appareil."
+            "value" : "Xrash lit les rapports déjà écrits par le système."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash sta leggendo i rapporti già presenti su questo dispositivo."
+            "value" : "Xrash sta leggendo i rapporti già scritti dal sistema."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash がこのデバイスにあるレポートを読み込んでいます。"
+            "value" : "Xrash は、システムがすでに書き出したレポートを読み込んでいます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash가 이 기기에 이미 있는 보고서를 읽고 있습니다."
+            "value" : "Xrash가 시스템이 이미 기록한 보고서를 읽고 있습니다."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Xrash está lendo os relatórios que já estão neste dispositivo."
+            "value" : "O Xrash está lendo os relatórios que o sistema já gravou."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash читает отчёты, уже имеющиеся на этом устройстве."
+            "value" : "Xrash читает отчёты, уже записанные системой."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash đang đọc các báo cáo đã có trên thiết bị này."
+            "value" : "Xrash đang đọc các báo cáo mà hệ thống đã ghi."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash 正在读取此设备上已有的报告。"
+            "value" : "Xrash 正在读取系统已写入的报告。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash 正在讀取此裝置上已有的報告。"
+            "value" : "Xrash 正在讀取系統已寫入的報告。"
           }
         }
       }
@@ -35250,13 +35250,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 %@"
+            "value" : "由 %@ 终止"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由 %@"
+            "value" : "由 %@ 終止"
           }
         }
       }
@@ -35666,7 +35666,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法打開「%@」，檔案可能已損毀。"
+            "value" : "無法打開「%@」。檔案可能已損毀。"
           }
         }
       }
@@ -35906,13 +35906,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "收起键盘"
+            "value" : "隐藏键盘"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "收起鍵盤"
+            "value" : "隱藏鍵盤"
           }
         }
       }
