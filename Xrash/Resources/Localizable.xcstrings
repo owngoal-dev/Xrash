@@ -34195,84 +34195,84 @@
         }
       }
     },
-    "Xrash is reading the reports already on this device." : {
+    "Xrash is reading the reports the system has already written." : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يقرأ Xrash التقارير الموجودة بالفعل على هذا الجهاز."
+            "value" : "يقرأ Xrash التقارير التي كتبها النظام بالفعل."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash liest die Berichte, die bereits auf diesem Gerät sind."
+            "value" : "Xrash liest die Berichte, die das System bereits geschrieben hat."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash is reading the reports already on this device."
+            "value" : "Xrash is reading the reports the system has already written."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash está leyendo los informes que ya hay en este dispositivo."
+            "value" : "Xrash está leyendo los informes que el sistema ya ha escrito."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash lit les rapports déjà présents sur cet appareil."
+            "value" : "Xrash lit les rapports déjà écrits par le système."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash sta leggendo i rapporti già presenti su questo dispositivo."
+            "value" : "Xrash sta leggendo i rapporti già scritti dal sistema."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash がこのデバイスにあるレポートを読み込んでいます。"
+            "value" : "Xrash は、システムがすでに書き出したレポートを読み込んでいます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash가 이 기기에 이미 있는 보고서를 읽고 있습니다."
+            "value" : "Xrash가 시스템이 이미 기록한 보고서를 읽고 있습니다."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Xrash está lendo os relatórios que já estão neste dispositivo."
+            "value" : "O Xrash está lendo os relatórios que o sistema já gravou."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash читает отчёты, уже имеющиеся на этом устройстве."
+            "value" : "Xrash читает отчёты, уже записанные системой."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash đang đọc các báo cáo đã có trên thiết bị này."
+            "value" : "Xrash đang đọc các báo cáo mà hệ thống đã ghi."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash 正在读取此设备上已有的报告。"
+            "value" : "Xrash 正在读取系统已写入的报告。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xrash 正在讀取此裝置上已有的報告。"
+            "value" : "Xrash 正在讀取系統已寫入的報告。"
           }
         }
       }
